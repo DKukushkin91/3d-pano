@@ -39,10 +39,10 @@
 
 ## 5. Состояние и события (viewer-state-events)
 
-- [ ] 5.1 `state/event-emitter.ts`: типизированный `on` с отпиской и изоляцией исключений через `reportError`; контракт-тесты «Подписка и отписка», «Падающий обработчик»
-- [ ] 5.2 `state/viewer-dictionaries.ts`: `EnumViewerStatus`, `EnumErrorCategory`, `EnumErrorCode` и типы значений; контракт-тест «Проверка статуса»
-- [ ] 5.3 `state/snapshot-store.ts`: неизменяемый снимок `{ sceneId, status, loadProgress, isInteracting, error }`, тот же объект без изменений, `subscribe` без привязки контекста; контракт-тесты «Повторное чтение», совместимость с `useSyncExternalStore`
-- [ ] 5.4 Закоммитить `feat(core): добавить снимок состояния и типизированные события`
+- [x] 5.1 `state/event-emitter.ts`: типизированный `on` с отпиской и изоляцией исключений через `reportError`; контракт-тесты «Подписка и отписка», «Падающий обработчик»
+- [x] 5.2 `state/viewer-dictionaries.ts`: `EnumViewerStatus`, `EnumErrorCategory`, `EnumErrorCode` и типы значений; контракт-тест «Проверка статуса»
+- [x] 5.3 `state/snapshot-store.ts`: неизменяемый снимок `{ sceneId, status, loadProgress, isInteracting, error }`, тот же объект без изменений, `subscribe` без привязки контекста; контракт-тесты «Повторное чтение», совместимость с `useSyncExternalStore`
+- [x] 5.4 Закоммитить `feat(core): добавить снимок состояния и типизированные события`
 
 ## 6. Загрузка ресурсов (panorama-sources)
 

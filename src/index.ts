@@ -24,3 +24,12 @@ export type {
   TPanoramaSource,
 } from './tour/tour-types';
 export { validateTour } from './tour/validate-tour';
+export {
+  EnumErrorCategory,
+  EnumErrorCode,
+  EnumViewerStatus,
+  type TErrorCategory,
+  type TErrorCode,
+  type TViewerStatus,
+} from './state/viewer-dictionaries';
+export type { IPanoError, IPanoViewerSnapshot } from './state/viewer-state-types';

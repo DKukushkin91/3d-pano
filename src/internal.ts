@@ -10,3 +10,7 @@ export * from './tour/tour-defaults';
 export * from './tour/url-template';
 export * from './tour/validate-tour';
 export * from './view/view-limits';
+export * from './state/event-emitter';
+export * from './state/report-error';
+export * from './state/snapshot-store';
+export * from './state/viewer-dictionaries';
