@@ -6,13 +6,16 @@ import type { IPanoViewer, IPanoViewerOptions, TPanoViewerUpdate } from '../view
 import { usePanoSnapshot } from './use-pano-snapshot';
 import { type IPanoViewerEventProps, subscribeToViewerEvents } from './use-viewer-events';
 
+/**
+ * Опции хука: опции просмотрщика и те же обработчики событий, что у компонента.
+ */
+export interface IUsePanoViewerOptions extends IPanoViewerOptions, IPanoViewerEventProps {}
+
 export interface IUsePanoViewerResult {
   containerRef: RefCallback<HTMLElement>;
   viewer: IPanoViewer | null;
   snapshot: IPanoViewerSnapshot;
 }
-
-const NO_EVENT_HANDLERS: IPanoViewerEventProps = {};
 
 const updatableOptions = (options: IPanoViewerOptions): TPanoViewerUpdate => ({
   label: options.label,
@@ -67,8 +70,15 @@ export const useViewerInstance = (
 
 /**
  * Просмотрщик в контейнере хоста со своей разметкой. Смена тура пересоздаёт просмотрщик; `controls` и
- * `retry` можно писать прямо в JSX. Контейнер — callback-реф: условный рендер и замена DOM-узла
+ * `retry` можно писать прямо в JSX. Обработчики событий подписываются сразу после создания, поэтому
+ * события стартовой сцены не теряются. Контейнер — callback-реф: условный рендер и замена DOM-узла
  * пересоздают просмотрщик.
  */
-export const usePanoViewer = (options: IPanoViewerOptions): IUsePanoViewerResult =>
-  useViewerInstance(options, NO_EVENT_HANDLERS);
+export const usePanoViewer = ({
+  onSceneLoadStart,
+  onSceneReady,
+  onViewChange,
+  onError,
+  ...options
+}: IUsePanoViewerOptions): IUsePanoViewerResult =>
+  useViewerInstance(options, { onSceneLoadStart, onSceneReady, onViewChange, onError });

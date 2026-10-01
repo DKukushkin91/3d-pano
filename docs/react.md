@@ -62,7 +62,13 @@ import type { ITour } from '@dkukushkin/3d-pano';
 import { usePanoViewer } from '@dkukushkin/3d-pano/react';
 
 export const Balcony = ({ tour }: { tour: ITour }) => {
-  const { containerRef, viewer, snapshot } = usePanoViewer({ tour, label: 'Balcony' });
+  const { containerRef, snapshot } = usePanoViewer({
+    tour,
+    label: 'Balcony',
+    onSceneReady: ({ sceneId }) => {
+      analytics.track('scene_ready', { sceneId });
+    },
+  });
 
   return (
     <figure>
@@ -73,4 +79,4 @@ export const Balcony = ({ tour }: { tour: ITour }) => {
 };
 ```
 
-`containerRef` is a callback ref, so conditional rendering and replacing the node are handled. `viewer` is `null` until the container is mounted. The state you need for rendering is in `snapshot`; events of the start scene are delivered before an effect of yours could subscribe, so prefer the snapshot or `<PanoViewer>` event props for them.
+`containerRef` is a callback ref, so conditional rendering and replacing the node are handled. `viewer` is `null` until the container is mounted. The options take the same event handlers as `<PanoViewer>` — `onSceneLoadStart`, `onSceneReady`, `onViewChange`, `onError` — subscribed right after the viewer is created, so no event of the start scene is missed. Subscribing yourself with `viewer.on()` in an effect runs later and can miss them.

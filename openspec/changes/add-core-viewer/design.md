@@ -259,7 +259,8 @@ export interface IPanoViewerProps extends IPanoViewerOptions {
   onError?: (payload: { error: IPanoError }) => void;
 }
 export const PanoViewer: ForwardRefExoticComponent<IPanoViewerProps & RefAttributes<IPanoViewer | null>>;
-export const usePanoViewer: (options: IPanoViewerOptions) => {
+export interface IUsePanoViewerOptions extends IPanoViewerOptions, IPanoViewerEventProps {}
+export const usePanoViewer: (options: IUsePanoViewerOptions) => {
   containerRef: RefCallback<HTMLElement>;
   viewer: IPanoViewer | null;
   snapshot: IPanoViewerSnapshot;
