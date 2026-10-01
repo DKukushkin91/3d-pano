@@ -46,14 +46,14 @@
 
 ## 6. Загрузка ресурсов (panorama-sources)
 
-- [ ] 6.1 `resources/retry.ts`: опция `retry: { attempts, delayMs }` (по умолчанию 2 и 500 мс, рост ×3), без повтора 4xx и отменённых; контракт-тесты «Кратковременный сбой сети», «Файла нет»
-- [ ] 6.2 `resources/load-errors.ts`: категории и коды ошибок загрузки (`network-failed`, `http-status` с `httpStatus`, `decode-failed`, `loader-failed`, `invalid-image`); контракт-тесты «Ответ 404», «Сбой загрузчика хоста», «Битый файл»
-- [ ] 6.3 `resources/texture-split-plan.ts`: сетка тайлов под лимит текстуры; контракт-тест «8K на устройстве с лимитом 4096»
-- [ ] 6.4 `resources/load-progress.ts`: доля загруженных изображений; контракт-тест «Куб с превью» (4/7)
-- [ ] 6.5 `resources/default-loader.ts`, `resources/image-decoder.ts`: `fetch` с CORS без учётных данных, `createImageBitmap`, вырезание тайлов, проверка квадратности и равенства граней; проверить `pnpm typecheck` и `pnpm lint`
-- [ ] 6.6 `resources/scene-loader.ts`: загрузка превью и основного источника через `loader`, прогресс, статус `preview`, ошибки с категориями, повтор незагруженного по запросу, отмена по `AbortSignal`; проверить `pnpm typecheck`
-- [ ] 6.7 Описать `loader`, `retry` и ошибки (категории, коды) в `docs/api.md` с примером авторизации
-- [ ] 6.8 Закоммитить `feat(sources): добавить загрузку панорам, повтор и нарезку больших изображений`
+- [x] 6.1 `resources/retry.ts`: опция `retry: { attempts, delayMs }` (по умолчанию 2 и 500 мс, рост ×3), без повтора 4xx и отменённых; контракт-тесты «Кратковременный сбой сети», «Файла нет»
+- [x] 6.2 `resources/load-errors.ts`: категории и коды ошибок загрузки (`network-failed`, `http-status` с `httpStatus`, `decode-failed`, `loader-failed`, `invalid-image`); контракт-тесты «Ответ 404», «Сбой загрузчика хоста», «Битый файл»
+- [x] 6.3 `resources/texture-split-plan.ts`: сетка тайлов под лимит текстуры; контракт-тест «8K на устройстве с лимитом 4096»
+- [x] 6.4 `resources/load-progress.ts`: доля загруженных изображений; контракт-тест «Куб с превью» (4/7)
+- [x] 6.5 `resources/default-loader.ts`, `resources/image-decoder.ts`: `fetch` с CORS без учётных данных, `createImageBitmap`, вырезание тайлов, проверка квадратности и равенства граней; проверить `pnpm typecheck` и `pnpm lint`
+- [x] 6.6 `resources/scene-loader.ts`: загрузка превью и основного источника через `loader`, прогресс, статус `preview`, ошибки с категориями, повтор незагруженного по запросу, отмена по `AbortSignal`; проверить `pnpm typecheck`
+- [x] 6.7 Описать `loader`, `retry` и ошибки (категории, коды) в `docs/api.md` с примером авторизации
+- [x] 6.8 Закоммитить `feat(sources): добавить загрузку панорам, повтор и нарезку больших изображений`
 
 ## 7. Рендер и сборка просмотрщика (viewer-lifecycle, panorama-sources, camera-view)
 

@@ -33,3 +33,5 @@ export {
   type TViewerStatus,
 } from './state/viewer-dictionaries';
 export type { IPanoError, IPanoViewerSnapshot } from './state/viewer-state-types';
+export type { TImageLoader } from './resources/load-image';
+export type { IRetryOptions } from './resources/retry';
