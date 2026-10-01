@@ -96,6 +96,12 @@ Named constants: `EnumFovMode.Horizontal`, `EnumFovMode.Vertical`, `EnumFovMode.
 
 Named constants: `EnumBoundsMode.Auto`, `EnumBoundsMode.None`.
 
+How the limits behave:
+
+- **Field of view** is clamped to `fov` in the scene's `fovMode`.
+- **Pixel zoom** is measured against the image that is currently loaded — the preview first, then the full source. It stops zooming _in_ once one source pixel would cover more than `maxPixelZoom` CSS pixels at the centre of the frame, and it never zooms out on its own: while a small preview is on screen the current field of view stays, it just cannot get narrower. When the full image arrives, zooming in is available again down to the `fov` minimum. For cube faces the density at the centre of a face is used, which is the most conservative point.
+- **Bounds** `auto` and `none` behave the same for full spheres: `yaw` is free and the centre of the view stays within `pitch` −90…90. With ranges, the **whole frame** stays inside them: the view stops when its edge reaches the boundary, and if the frame is wider than a range, the field of view is reduced to fit. A `yaw` range may cross the back of the sphere, for example `[150, 210]`.
+
 ## Coordinates
 
 The world uses X to the right, Y up and Z forward (the direction of `yaw` 0, `pitch` 0). A direction `{ x, y, z }` from the centre of the panorama and a sphere point `{ yaw, pitch }` describe the same thing:

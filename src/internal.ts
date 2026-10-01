@@ -9,3 +9,4 @@ export * from './tour/tour-dictionaries';
 export * from './tour/tour-defaults';
 export * from './tour/url-template';
 export * from './tour/validate-tour';
+export * from './view/view-limits';
