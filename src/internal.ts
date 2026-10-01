@@ -6,3 +6,6 @@ export * from './math/field-of-view';
 export * from './math/rectilinear';
 export * from './math/vector3';
 export * from './tour/tour-dictionaries';
+export * from './tour/tour-defaults';
+export * from './tour/url-template';
+export * from './tour/validate-tour';
