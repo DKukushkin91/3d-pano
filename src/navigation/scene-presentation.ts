@@ -1,3 +1,4 @@
+import type { IPanoViewerSnapshot } from '../state/viewer-state-types';
 import { resolveSceneLimits, resolveSceneView } from '../tour/tour-defaults';
 import { EnumSceneView, EnumTransitionType } from './navigation-dictionaries';
 import type {
@@ -34,7 +35,7 @@ export interface IScenePresentationOptions<TSession extends INavigatorSession> {
 }
 
 export interface IScenePresentation<TSession extends INavigatorSession> {
-  syncState: () => void;
+  syncState: (changes?: Partial<IPanoViewerSnapshot>) => void;
   presentCamera: (sceneSwitch: ISceneSwitch<TSession>) => void;
   appear: (sceneSwitch: ISceneSwitch<TSession>, from: ISceneRecord<TSession>) => void;
   finishBlend: () => void;
@@ -43,7 +44,8 @@ export interface IScenePresentation<TSession extends INavigatorSession> {
 
 /**
  * Показ сцены на экране: камера новой сцены в момент её появления, мгновенная смена или смешивание и
- * производное состояние — защита в кэше, `isTransitioning`, пауза предзагрузок.
+ * производное состояние — защита в кэше, `isTransitioning`, пауза предзагрузок. `syncState` принимает
+ * сопутствующие изменения снимка, чтобы подписчики не видели промежуточного состояния.
  */
 export const createScenePresentation = <TSession extends INavigatorSession>({
   host,
@@ -51,11 +53,12 @@ export const createScenePresentation = <TSession extends INavigatorSession>({
   protect,
   setPreloadsPaused,
 }: IScenePresentationOptions<TSession>): IScenePresentation<TSession> => {
-  const syncState = (): void => {
+  const syncState = (changes: Partial<IPanoViewerSnapshot> = {}): void => {
     const { displayed, pending, blend } = state;
 
     protect([displayed?.record.key, blend?.from.key, pending?.record.key].filter(isDefined));
     host.store.update({
+      ...changes,
       isTransitioning: (pending !== null && pending.hasPrevious && !pending.isFailed) || blend !== null,
     });
     setPreloadsPaused(pending !== null && !pending.isFailed);

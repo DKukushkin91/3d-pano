@@ -14,6 +14,7 @@ export const LOCAL_ASSETS = {
 export const GENERATED_ASSETS = {
   balconyPreview: '/local/balcony-preview.jpg',
   hotelRoomPreview: '/local/hotel-room-preview.jpg',
+  balconyFaces: '/local/cube/balcony/{face}.jpg',
   hotelRoomFaces: '/local/cube/hotel-room/{face}.jpg',
 } as const;
 

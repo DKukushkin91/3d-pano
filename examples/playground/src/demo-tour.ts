@@ -15,9 +15,10 @@ export const NEOMETRIA_FACE_NAMES = {
 } as const;
 
 /**
- * Тур из локальных панорам владельца: балкон одним файлом, номер одним файлом и тот же номер гранями
- * куба. Источники нарочно записаны по-разному — константой словаря и строкой: проверка типов песочницы
- * подтверждает, что обе формы равнозначны.
+ * Тур из локальных панорам владельца: балкон и номер — каждый одним файлом и гранями куба. Пара «файл ↔
+ * грани» одного снимка — это «смена ремонта»: при смешивании с `view: 'keep'` смена должна быть
+ * незаметной. Источники нарочно записаны по-разному — константой словаря и строкой: проверка типов
+ * песочницы подтверждает, что обе формы равнозначны.
  */
 export const DEMO_TOUR: ITour = {
   startScene: 'balcony',
@@ -29,6 +30,12 @@ export const DEMO_TOUR: ITour = {
       id: 'balcony',
       title: 'Balcony — one equirectangular file',
       source: { type: EnumSourceType.Equirect, url: LOCAL_ASSETS.balcony },
+      preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
+    },
+    {
+      id: 'balcony-cube',
+      title: 'Balcony — six cube faces',
+      source: { type: 'cube', url: GENERATED_ASSETS.balconyFaces, faceNames: NEOMETRIA_FACE_NAMES },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
     },
     {
@@ -48,6 +55,15 @@ export const DEMO_TOUR: ITour = {
       preview: { type: 'equirect', url: GENERATED_ASSETS.hotelRoomPreview },
     },
   ],
+};
+
+/**
+ * Тот же тур с другими ограничениями: узкие пределы FOV видны сразу. Им проверяется замена тура без
+ * пересоздания просмотрщика («Новый вариант планировки»).
+ */
+export const NARROW_FOV_TOUR: ITour = {
+  ...DEMO_TOUR,
+  defaults: { view: { fov: 70 }, limits: { fov: [50, 80] } },
 };
 
 /**

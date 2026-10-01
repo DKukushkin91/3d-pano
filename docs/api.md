@@ -15,15 +15,16 @@ const viewer = createPanoViewer(container, {
 
 The container must be an element with a size (for example `position: absolute; inset: 0` inside a sized parent, or an explicit height). The viewer appends its own root element with a canvas and an overlay; the container's own attributes and styles are never changed, and `destroy()` removes everything it added. Any number of viewers can live on one page.
 
-| Option          | Default                         | Meaning                                                                                                                                              |
-| --------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tour`          | —                               | The tour to show. The start scene is shown; scene switching comes in a later release.                                                                |
-| `label`         | —                               | Accessible name of the viewer, required. Read out by screen readers.                                                                                 |
-| `loader`        | `fetch`                         | Your own image loading, see [Loading images](#loading-images).                                                                                       |
-| `retry`         | `{ attempts: 2, delayMs: 500 }` | Retries of failed images, see [retry](#retry).                                                                                                       |
-| `controls`      | everything on                   | `drag`, `wheel`, `pinch`, `keyboard`, `inertia` (booleans), `wheelSpeed`, `keyboardSpeed`, `inertiaFriction` (multipliers, default 1), `invertDrag`. |
-| `maxPixelRatio` | `2`                             | Upper limit of the device pixel ratio used for rendering — saves battery on 3× screens.                                                              |
-| `renderScale`   | `1`                             | Extra multiplier of the drawing buffer size, for example `0.75` on weak devices.                                                                     |
+| Option                | Default                         | Meaning                                                                                                                                              |
+| --------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tour`                | —                               | The tour to show. Its start scene is shown first; switch scenes with `showScene` and replace the tour with `setTour`.                                |
+| `label`               | —                               | Accessible name of the viewer, required. Read out by screen readers.                                                                                 |
+| `loader`              | `fetch`                         | Your own image loading, see [Loading images](#loading-images).                                                                                       |
+| `retry`               | `{ attempts: 2, delayMs: 500 }` | Retries of failed images, see [retry](#retry).                                                                                                       |
+| `controls`            | everything on                   | `drag`, `wheel`, `pinch`, `keyboard`, `inertia` (booleans), `wheelSpeed`, `keyboardSpeed`, `inertiaFriction` (multipliers, default 1), `invertDrag`. |
+| `maxPixelRatio`       | `2`                             | Upper limit of the device pixel ratio used for rendering — saves battery on 3× screens.                                                              |
+| `renderScale`         | `1`                             | Extra multiplier of the drawing buffer size, for example `0.75` on weak devices.                                                                     |
+| `sceneCacheMegabytes` | `256`                           | Video memory budget for prepared scenes, see [Preloading and the scene cache](#preloading-and-the-scene-cache).                                      |
 
 Invalid options are programmer errors and throw synchronously: a non-element container or an empty `label` throws `TypeError`, invalid numbers throw `RangeError`. Messages start with `3d-pano:` and name the option. Problems with the tour data or the images never throw — they arrive as [errors](#errors).
 
@@ -31,19 +32,22 @@ Invalid options are programmer errors and throw synchronously: a non-element con
 
 All methods are plain functions without `this`, so they can be passed around as callbacks.
 
-| Method                | Meaning                                                                                                                                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getView()`           | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                              |
-| `setView(view)`       | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                        |
-| `project(point)`      | Screen position of a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera.  |
-| `unproject(x, y)`     | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                           |
-| `retry()`             | Requests again the images of the current scene that failed; resolves when the scene is ready. Does nothing unless the error category is `resource`.                                                            |
-| `update(options)`     | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio` and `renderScale` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole. |
-| `on(name, handler)`   | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                           |
-| `getSnapshot()`       | The current [state snapshot](#state-snapshot).                                                                                                                                                                 |
-| `subscribe(listener)` | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                |
-| `destroy()`           | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                           |
-| `overlay`             | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                  |
+| Method                    | Meaning                                                                                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getView()`               | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                     |
+| `setView(view)`           | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                               |
+| `project(point)`          | Screen position of a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera.                         |
+| `unproject(x, y)`         | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                  |
+| `showScene(id, options?)` | Switches to a scene of the tour, see [Scenes and transitions](#scenes-and-transitions).                                                                                                                                               |
+| `preloadScene(id)`        | Prepares a scene in video memory without showing it, see [Preloading](#preloading-and-the-scene-cache).                                                                                                                               |
+| `setTour(tour, options?)` | Replaces the tour without recreating the viewer, see [Replacing the tour](#replacing-the-tour).                                                                                                                                       |
+| `retry()`                 | Requests again the images of the current scene that failed (including a scene switch that failed) and finishes the switch; resolves when the scene is ready. Does nothing unless the error category is `resource`.                    |
+| `update(options)`         | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio`, `renderScale` and `sceneCacheMegabytes` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole. |
+| `on(name, handler)`       | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                                                  |
+| `getSnapshot()`           | The current [state snapshot](#state-snapshot).                                                                                                                                                                                        |
+| `subscribe(listener)`     | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                                       |
+| `destroy()`               | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                                                  |
+| `overlay`                 | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                                         |
 
 `project` is what you need to place your own markers over the panorama:
 
@@ -54,6 +58,72 @@ if (pin !== null && pin.isInView) {
   marker.style.transform = `translate(${pin.x}px, ${pin.y}px)`;
 }
 ```
+
+## Scenes and transitions
+
+`showScene(id, options?)` switches to another scene of the tour and returns a promise:
+
+```ts
+import { EnumEasing } from '@dkukushkin/3d-pano';
+
+const isShown = await viewer.showScene('kitchen-v2', {
+  transition: { type: 'blend', durationMs: 300, easing: EnumEasing.SineInOut },
+  view: 'keep',
+  keepMotion: true,
+});
+```
+
+While the new scene loads, the current one stays on screen and under the user's control; the switch happens when the full image of the new scene is ready. Its preview is not loaded — there is nothing to show it on. The promise resolves `true` when the switch is complete, including the transition.
+
+| Option       | Default           | Meaning                                                                                                                                                                                                   |
+| ------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transition` | `{ type: 'cut' }` | `{ type: 'cut' }` replaces the scene in one frame. `{ type: 'blend', durationMs?, easing? }` dissolves the old scene into the new one, by default in 500 ms with `sine-in-out`; `durationMs: 0` is a cut. |
+| `view`       | `'scene'`         | `'scene'` — the start view of the new scene from the tour. `'keep'` — the current view, within the limits of the new scene. A view object — its fields over the start view of the new scene.              |
+| `keepMotion` | `false`           | `true` keeps the inertia of the camera across the switch. Dragging and held keys always continue — they are the user's input.                                                                             |
+
+The view and limits of the new scene apply the moment it appears. During a blend both scenes are drawn every frame and the controls stay on: with `view: 'keep'` both move with the camera, so switching between two renovations of the same room is seamless; otherwise the old scene stays still while the camera turns the new one.
+
+`easing` takes a name from `EnumEasing` — `linear` and the `sine`, `quad`, `cubic`, `quart`, `quint`, `expo`, `circ`, `back`, `elastic` and `bounce` families with `-in`, `-out` and `-in-out` (for example `'cubic-out'`) — or your own function from progress `0…1` to `0…1`. The blend weight is clamped to `0…1`, so overshooting curves such as `back-out` never make a scene “brighter than full”.
+
+**Races.** The last call wins. A call superseded by a newer `showScene` or `setTour` resolves `false`, and so does a pending switch when the viewer is destroyed. Calling `showScene` with the scene already on screen resolves `true` at once and cancels a switch that was still loading.
+
+**Errors.** The promise rejects only when something went wrong; the rejection is an `Error` with the [error](#errors) in `details`:
+
+```ts
+try {
+  await viewer.showScene('bedroom');
+} catch (error) {
+  if (error instanceof Error && 'details' in error) {
+    console.warn('could not switch', error.details);
+  }
+}
+```
+
+An unknown id rejects with `unknown-scene` and changes nothing. A loading failure rejects, sets `status: 'error'` for the new scene and emits `error`, while the old scene stays on screen; `viewer.retry()` loads the missing images and finishes the switch. Invalid options are programmer errors and throw `RangeError` synchronously.
+
+## Preloading and the scene cache
+
+`preloadScene(id)` loads a scene and prepares it in video memory in the background; a later `showScene` of that scene starts without network requests. It resolves `true` when the scene is ready and kept in the cache, `false` when it was not kept (it did not fit the budget, the tour was replaced or the viewer destroyed):
+
+```ts
+for (const neighbour of ['bedroom', 'hall']) {
+  void viewer.preloadScene(neighbour);
+}
+```
+
+Preloads wait until the scene on screen (or the one being switched to) has loaded, then run one at a time in call order. A failed preload rejects its own promise only — the snapshot and the `error` event are not touched. A `showScene` of a scene that is being preloaded takes over the started download.
+
+Prepared and recently shown scenes stay in a cache limited by `sceneCacheMegabytes` (default 256, an estimate of texture memory with mipmaps). Least recently used scenes are evicted first; the scene on screen and the one in a transition never are. With `0` only the scene on screen is kept and `preloadScene` resolves `false` without loading. As a guide, an 8K equirectangular image takes about 171 MB, six 2048 × 2048 cube faces about 128 MB. Lowering the budget with `update` evicts at once. A blend additionally uses two frame-sized textures for its duration.
+
+## Replacing the tour
+
+`setTour(tour, options?)` replaces the tour without recreating the viewer. It shows `options.scene`, otherwise the new `startScene`, otherwise the first scene; the other options and the promise work as in `showScene`:
+
+```ts
+await viewer.setTour(tour, { scene: 'kitchen', view: 'keep' });
+```
+
+Scenes whose sources are the same in the new tour stay in the cache. If the scene on screen keeps its id and sources, nothing reloads and the view stays — only the new limits apply. An invalid tour rejects with `invalid-tour` (and `issues`) and leaves the old tour working; preloads of scenes missing from the new tour resolve `false`.
 
 ## Controls
 
@@ -81,12 +151,13 @@ const unsubscribe = viewer.on('sceneReady', ({ sceneId }) => {
 });
 ```
 
-| Event            | Payload       | When                                                |
-| ---------------- | ------------- | --------------------------------------------------- |
-| `sceneLoadStart` | `{ sceneId }` | A scene starts loading.                             |
-| `sceneReady`     | `{ sceneId }` | The full image of the scene is on screen.           |
-| `viewChange`     | `{ view }`    | The view changed; at most once per animation frame. |
-| `error`          | `{ error }`   | See [Errors](#errors).                              |
+| Event            | Payload                        | When                                                                                             |
+| ---------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `sceneChange`    | `{ sceneId, previousSceneId }` | `snapshot.sceneId` changed: a switch was accepted, or the start scene (`previousSceneId: null`). |
+| `sceneLoadStart` | `{ sceneId }`                  | A scene starts loading — on every accepted switch, also for a scene from the cache.              |
+| `sceneReady`     | `{ sceneId }`                  | The full image of the scene is ready; for a cached scene right after `sceneLoadStart`.           |
+| `viewChange`     | `{ view }`                     | The view changed; at most once per animation frame.                                              |
+| `error`          | `{ error }`                    | See [Errors](#errors).                                                                           |
 
 Events of the start scene are delivered from the next microtask, so handlers attached right after `createPanoViewer` receive all of them, including tour and WebGL errors. An exception thrown by a handler does not stop the viewer or other handlers — it is reported with `reportError`, like any uncaught error.
 
@@ -94,13 +165,14 @@ Events of the start scene are delivered from the next microtask, so handlers att
 
 `getSnapshot()` returns an immutable object that changes only when the state does — pass `subscribe` and `getSnapshot` straight to `useSyncExternalStore` or any store adapter. The camera view is not part of the snapshot, so rotating the panorama does not re-render your interface; use the `viewChange` event for that.
 
-| Field           | Meaning                                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `sceneId`       | Id of the current scene, `null` before the first one.                                                               |
-| `status`        | `loading` (nothing on screen yet), `preview` (the preview is shown, the full image is loading), `ready` or `error`. |
-| `loadProgress`  | 0…1, the share of loaded images of the scene, preview included — enough for a loading bar.                          |
-| `isInteracting` | `true` while the user is dragging or holding control keys.                                                          |
-| `error`         | The last error or `null`.                                                                                           |
+| Field             | Meaning                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sceneId`         | Id of the scene of the last accepted switch, `null` before the first one. It changes at once, while the previous scene may still be on screen. |
+| `status`          | State of that scene: `loading` (not shown yet), `preview` (its preview is shown, the full image is loading), `ready` or `error`.               |
+| `loadProgress`    | 0…1, the share of loaded images of that scene — enough for a loading bar, also during a switch.                                                |
+| `isInteracting`   | `true` while the user is dragging or holding control keys.                                                                                     |
+| `isTransitioning` | `true` from an accepted switch until the new scene is fully on screen (end of a blend); `false` for the start scene and after a failed switch. |
+| `error`           | The last error or `null`.                                                                                                                      |
 
 Status values have constants: `EnumViewerStatus.Loading`, `EnumViewerStatus.Preview`, `EnumViewerStatus.Ready`, `EnumViewerStatus.Error`. Comparing with the constant or with the string is the same.
 
@@ -157,7 +229,7 @@ Every error is an object `{ category, code, message, url?, httpStatus?, issues?,
 | `category` | What to do                                             | `code`                                                                                |
 | ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | `webgl`    | Show a fallback: the browser cannot render.            | `webgl-unavailable`                                                                   |
-| `tour`     | Fix the tour data; `issues` lists every problem.       | `invalid-tour`                                                                        |
+| `tour`     | Fix the tour data; `issues` lists every problem.       | `invalid-tour`, `unknown-scene`                                                       |
 | `resource` | Offer “Try again” — call `viewer.retry()`.             | `network-failed`, `http-status` (with `httpStatus`), `decode-failed`, `loader-failed` |
 | `image`    | Fix the assets: for example a cube face is not square. | `invalid-image`                                                                       |
 

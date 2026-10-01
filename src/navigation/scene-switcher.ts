@@ -72,7 +72,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
   const publishScene = (sceneId: string, changes: Partial<IPanoViewerSnapshot>): void => {
     const previousSceneId = store.getSnapshot().sceneId;
 
-    store.update({ ...changes, sceneId });
+    syncState({ ...changes, sceneId });
 
     if (previousSceneId !== sceneId) {
       emitter.emit('sceneChange', { sceneId, previousSceneId });
@@ -134,8 +134,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
     const loadError = toSceneLoadError(error, sceneSwitch.scene.id);
 
     sceneSwitch.isFailed = true;
-    store.update({ status: EnumViewerStatus.Error, error: loadError.details });
-    syncState();
+    syncState({ status: EnumViewerStatus.Error, error: loadError.details });
     emitter.emit('error', { error: loadError.details });
     rejectPromises(sceneSwitch.promises, loadError);
   };
@@ -193,7 +192,6 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
     };
 
     state.pending = sceneSwitch;
-    syncState();
     publishScene(scene.id, {
       status: EnumViewerStatus.Loading,
       loadProgress: sceneSwitch.record.isComplete ? 1 : sceneSwitch.record.state.loadProgress,
@@ -222,8 +220,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
     const loading = failed.record.session.load();
 
     failed.isFailed = false;
-    store.update({ status: failed.record.state.status, error: null });
-    syncState();
+    syncState({ status: failed.record.state.status, error: null });
     watchLoading(failed, loading);
 
     return loading.then(
@@ -264,7 +261,6 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
         : acceptSwitch(tour, scene, options),
     stayOnScreen: (sceneId) => {
       cancelPending();
-      syncState();
       publishScene(sceneId, { status: EnumViewerStatus.Ready, loadProgress: 1, error: null });
 
       return Promise.resolve(true);

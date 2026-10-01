@@ -7,11 +7,14 @@ import { touchActionFor } from './touch-action';
 
 /**
  * Ввод просмотрщика. `step` вызывается из кадра отрисовки и двигает камеру по инерции и клавиатуре;
- * возвращает `true`, пока движение продолжается и нужен следующий кадр.
+ * возвращает `true`, пока движение продолжается и нужен следующий кадр. `handleSceneChange` вызывается в
+ * момент появления новой сцены: без `keepMotion` гасит инерцию, а идущее перетаскивание и щипок
+ * продолжаются от нового вида — это ввод пользователя, а не движение камеры.
  */
 export interface IInputController {
   update: (controls: TResolvedControlsOptions) => void;
   step: (timeMs: number) => boolean;
+  handleSceneChange: (keepMotion: boolean) => void;
   dispose: () => void;
 }
 
@@ -105,6 +108,13 @@ export const createInputController = (
   return {
     update,
     step,
+    handleSceneChange: (keepMotion) => {
+      if (!keepMotion) {
+        pointerGestures.stopInertia();
+      }
+
+      pointerGestures.reanchor();
+    },
     dispose: () => {
       for (const remove of removers) {
         remove();

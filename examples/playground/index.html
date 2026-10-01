@@ -14,18 +14,40 @@
         Drag, scroll or pinch to look around. Arrow keys and <kbd>+</kbd>/<kbd>−</kbd> work when the viewer is
         focused. Add <code>?maxTextureSize=4096</code> to the URL to force splitting of large images.
       </p>
+      <fieldset class="toolbar" data-scene-buttons>
+        <legend>Show scene</legend>
+      </fieldset>
       <fieldset class="toolbar">
+        <legend>Transition</legend>
         <label>
-          Scene
-          <select data-scene>
-            <option value="balcony">Balcony — one file</option>
-            <option value="hotel-room">Hotel room — one file</option>
-            <option value="hotel-room-cube">Hotel room — cube faces</option>
+          type
+          <select data-transition-type>
+            <option value="cut">cut</option>
+            <option value="blend" selected>blend</option>
           </select>
         </label>
+        <label>duration, ms <input type="number" min="0" step="50" value="500" data-duration /></label>
+        <label
+          >easing
+          <select data-easing></select
+        ></label>
+        <label>
+          view
+          <select data-view>
+            <option value="scene">scene</option>
+            <option value="keep">keep</option>
+          </select>
+        </label>
+        <label><input type="checkbox" data-keep-motion /> keepMotion</label>
+      </fieldset>
+      <fieldset class="toolbar" data-preload-buttons>
+        <legend>Preload</legend>
+      </fieldset>
+      <fieldset class="toolbar">
         <label><input type="checkbox" data-slow /> slow network</label>
         <label><input type="checkbox" data-fail-face /> fail face <code>l.jpg</code></label>
         <button type="button" data-retry>Retry</button>
+        <button type="button" data-replace-tour>Replace tour (narrow FOV)</button>
         <button type="button" data-broken-tour>Broken tour</button>
         <button type="button" data-toggle-viewer>Destroy</button>
         <button type="button" data-toggle-size>Toggle size</button>

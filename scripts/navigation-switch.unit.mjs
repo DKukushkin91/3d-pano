@@ -67,6 +67,24 @@ describe('viewer-state-events · Снимок и события при смен�
     assert.equal(harness.snapshot().loadProgress, 0.4);
   });
 
+  it('подписчик не видит промежуточных снимков: sceneId, статус и isTransitioning меняются вместе', async () => {
+    const harness = createHarness();
+
+    await harness.startAt('kitchen');
+
+    const seen = [];
+
+    harness.store.subscribe(() => {
+      const { sceneId, status, isTransitioning } = harness.snapshot();
+
+      seen.push(`${sceneId}/${status}/${String(isTransitioning)}`);
+    });
+    void harness.navigator.showScene('bedroom');
+    await harness.complete('bedroom');
+
+    assert.deepEqual(seen, ['bedroom/loading/true', 'bedroom/ready/true', 'bedroom/ready/false']);
+  });
+
   it('Подсветка комнаты в списке хоста: sceneChange в момент вызова с previousSceneId', async () => {
     const harness = createHarness();
 

@@ -1,3 +1,4 @@
+import type { ISetTourOptions, IShowSceneOptions } from '../navigation/navigation-types';
 import type { TImageLoader } from '../resources/load-image';
 import type { IRetryOptions } from '../resources/retry';
 import type { IPanoError, IPanoViewerSnapshot } from '../state/viewer-state-types';
@@ -78,7 +79,9 @@ export interface IPanoViewerEventMap {
 }
 
 /**
- * Просмотрщик. Методы — обычные функции без `this`: их можно передавать как колбэки.
+ * Просмотрщик. Методы — обычные функции без `this`: их можно передавать как колбэки. `showScene`,
+ * `preloadScene` и `setTour` разрешаются `true`, когда дело сделано, и `false`, когда вызов перебит
+ * следующим или просмотрщик уничтожен; отклоняются исключением с полем `details: IPanoError`.
  */
 export interface IPanoViewer {
   readonly overlay: HTMLElement;
@@ -86,6 +89,9 @@ export interface IPanoViewer {
   setView: (view: IViewSettings) => void;
   project: (point: ISpherePoint | IDirection) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
+  showScene: (sceneId: string, options?: IShowSceneOptions) => Promise<boolean>;
+  preloadScene: (sceneId: string) => Promise<boolean>;
+  setTour: (tour: ITour, options?: ISetTourOptions) => Promise<boolean>;
   retry: () => Promise<void>;
   update: (options: TPanoViewerUpdate) => void;
   on: <TName extends keyof IPanoViewerEventMap>(

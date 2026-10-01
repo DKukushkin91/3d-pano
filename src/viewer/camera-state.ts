@@ -18,10 +18,12 @@ export interface ICameraState {
   getView: () => IView;
   setView: (settings: IViewSettings) => void;
   resetScene: (view: IView, limits: IResolvedViewLimits) => void;
+  setLimits: (limits: IResolvedViewLimits) => void;
   setViewport: (size: ICssSize) => void;
   getViewport: () => ICssSize;
   setSourceDensity: (pixelsPerRadian: number | null) => void;
   frameCamera: () => IFrameCamera | null;
+  frameCameraOf: (view: IView) => IFrameCamera | null;
   project: (point: ISpherePoint | IDirection) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
   takeViewChange: () => IView | null;
@@ -101,10 +103,20 @@ export const createCameraState = (
     isViewChanged = true;
   };
 
-  const currentCamera = (): IFrameCamera => ({
-    basis: cameraBasisFromAngles(toRadians(view.yaw), toRadians(view.pitch), toRadians(view.roll)),
-    halfTangents: halfTangentsFromFov(toRadians(view.fov), view.fovMode, viewport.width / viewport.height),
+  const cameraOf = (cameraView: IView): IFrameCamera => ({
+    basis: cameraBasisFromAngles(
+      toRadians(cameraView.yaw),
+      toRadians(cameraView.pitch),
+      toRadians(cameraView.roll),
+    ),
+    halfTangents: halfTangentsFromFov(
+      toRadians(cameraView.fov),
+      cameraView.fovMode,
+      viewport.width / viewport.height,
+    ),
   });
+
+  const currentCamera = (): IFrameCamera => cameraOf(view);
 
   const project = (point: ISpherePoint | IDirection): IProjectedPoint | null => {
     if (!hasArea(viewport)) {
@@ -149,6 +161,10 @@ export const createCameraState = (
       sourcePixelsPerRadian = null;
       constrain(nextView, null);
     },
+    setLimits: (nextLimits) => {
+      limits = nextLimits;
+      constrain(view, view.fov);
+    },
     setViewport: (size) => {
       viewport = size;
       constrain(view, view.fov);
@@ -159,6 +175,7 @@ export const createCameraState = (
       constrain(view, view.fov);
     },
     frameCamera: () => (hasArea(viewport) ? currentCamera() : null),
+    frameCameraOf: (cameraView) => (hasArea(viewport) ? cameraOf(cameraView) : null),
     project,
     unproject,
     takeViewChange,

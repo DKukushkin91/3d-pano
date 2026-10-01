@@ -20,6 +20,7 @@ export interface IPointerGestures {
   handleWheel: (event: WheelEvent) => void;
   stepInertia: (elapsedSeconds: number) => boolean;
   stopInertia: () => void;
+  reanchor: () => void;
   activePointerCount: () => number;
   isDragging: () => boolean;
 }
@@ -184,6 +185,18 @@ export const createPointerGestures = ({
     return isMoving(velocity);
   };
 
+  const reanchor = (): void => {
+    const position = drag === null ? undefined : pointers.get(drag.pointerId);
+
+    if (drag !== null && position !== undefined) {
+      startDrag(drag.pointerId, position);
+    }
+
+    if (pinch !== null) {
+      pinch = { distance: pointerDistance(), fov: target.getView().fov };
+    }
+  };
+
   return {
     handlePointerDown,
     handlePointerMove,
@@ -193,6 +206,7 @@ export const createPointerGestures = ({
     stopInertia: () => {
       velocity = ZERO_VELOCITY;
     },
+    reanchor,
     activePointerCount: () => pointers.size,
     isDragging: () => drag !== null,
   };

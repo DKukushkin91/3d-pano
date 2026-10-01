@@ -2,14 +2,16 @@ import {
   EnumErrorCategory,
   EnumViewerStatus,
   type IPanoViewer,
+  type IShowSceneOptions,
   type ITour,
   type IView,
 } from '@dkukushkin/3d-pano';
 
-import { BROKEN_TOUR_JSON, DEMO_TOUR } from './demo-tour';
+import { BROKEN_TOUR_JSON, DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
 import { createEventLog } from './event-log';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
+import { createSceneControls } from './scene-controls';
 import { createPlaygroundViewer } from './viewer-factory';
 
 import './styles.css';
@@ -31,10 +33,10 @@ const required = <TElement extends Element>(element: TElement | null): TElement 
 const localHint = required(document.querySelector<HTMLParagraphElement>('[data-local-hint]'));
 const viewerContainer = required(document.querySelector<HTMLDivElement>('[data-viewer]'));
 const secondViewerContainer = required(document.querySelector<HTMLDivElement>('[data-second-viewer]'));
-const sceneSelect = required(document.querySelector<HTMLSelectElement>('[data-scene]'));
 const slowToggle = required(document.querySelector<HTMLInputElement>('[data-slow]'));
 const failFaceToggle = required(document.querySelector<HTMLInputElement>('[data-fail-face]'));
 const retryButton = required(document.querySelector<HTMLButtonElement>('[data-retry]'));
+const replaceTourButton = required(document.querySelector<HTMLButtonElement>('[data-replace-tour]'));
 const brokenTourButton = required(document.querySelector<HTMLButtonElement>('[data-broken-tour]'));
 const toggleViewerButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-viewer]'));
 const toggleSizeButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-size]'));
@@ -46,6 +48,7 @@ const network: IPlaygroundNetwork = { isSlow: false, failingSuffix: null };
 const loader = createPlaygroundLoader(network);
 let viewer: IPanoViewer | null = null;
 let lastView: IView | null = null;
+let isNarrowTour = false;
 
 const formatView = (view: IView | null): string =>
   view === null
@@ -66,7 +69,7 @@ const renderReadout = (): void => {
 
   retryButton.disabled = !canRetry;
   readout.textContent = [
-    `scene ${snapshot.sceneId ?? '—'} · status ${snapshot.status}${isReady ? ' ✓' : ''} · progress ${(snapshot.loadProgress * 100).toFixed(0)}% · interacting ${String(snapshot.isInteracting)}`,
+    `scene ${snapshot.sceneId ?? '—'} · status ${snapshot.status}${isReady ? ' ✓' : ''} · progress ${(snapshot.loadProgress * 100).toFixed(0)}% · interacting ${String(snapshot.isInteracting)} · transitioning ${String(snapshot.isTransitioning)}`,
     `view ${formatView(lastView)}`,
     snapshot.error === null
       ? 'error —'
@@ -75,6 +78,9 @@ const renderReadout = (): void => {
 };
 
 const attachLogging = (target: IPanoViewer, name: string): void => {
+  target.on('sceneChange', ({ sceneId, previousSceneId }) => {
+    logEvent(`${name} sceneChange ${previousSceneId ?? '—'} → ${sceneId}`);
+  });
   target.on('sceneLoadStart', ({ sceneId }) => {
     logEvent(`${name} sceneLoadStart ${sceneId}`);
   });
@@ -105,8 +111,46 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
   renderReadout();
 };
 
-const showSelectedScene = (): void => {
-  createMainViewer({ ...DEMO_TOUR, startScene: sceneSelect.value }, viewer?.getView() ?? null);
+const describeOutcome = (action: string, promise: Promise<boolean>): void => {
+  promise.then(
+    (isDone) => {
+      logEvent(`${action} → ${String(isDone)}`);
+    },
+    (error: unknown) => {
+      const code =
+        error instanceof Error && 'details' in error ? JSON.stringify(error.details) : String(error);
+
+      logEvent(`${action} rejected ${code}`);
+    },
+  );
+};
+
+const handleShowScene = (sceneId: string, options: IShowSceneOptions): void => {
+  if (viewer !== null) {
+    describeOutcome(`showScene ${sceneId}`, viewer.showScene(sceneId, options));
+  }
+};
+
+const handlePreloadScene = (sceneId: string): void => {
+  if (viewer !== null) {
+    describeOutcome(`preloadScene ${sceneId}`, viewer.preloadScene(sceneId));
+  }
+};
+
+const handleReplaceTourClick = (): void => {
+  if (viewer === null) {
+    return;
+  }
+
+  isNarrowTour = !isNarrowTour;
+  replaceTourButton.textContent = isNarrowTour ? 'Replace tour (wide FOV)' : 'Replace tour (narrow FOV)';
+  describeOutcome(
+    'setTour',
+    viewer.setTour(isNarrowTour ? NARROW_FOV_TOUR : DEMO_TOUR, {
+      scene: viewer.getSnapshot().sceneId ?? undefined,
+      view: 'keep',
+    }),
+  );
 };
 
 const handleSlowChange = (): void => {
@@ -131,7 +175,7 @@ const handleBrokenTourClick = (): void => {
 
 const handleToggleViewerClick = (): void => {
   if (viewer === null) {
-    showSelectedScene();
+    createMainViewer(DEMO_TOUR, null);
 
     return;
   }
@@ -159,14 +203,27 @@ const showLocalHint = async (): Promise<void> => {
   localHint.hidden = false;
 };
 
-sceneSelect.addEventListener('change', showSelectedScene);
+createSceneControls(
+  DEMO_TOUR,
+  {
+    sceneButtons: required(document.querySelector<HTMLElement>('[data-scene-buttons]')),
+    preloadButtons: required(document.querySelector<HTMLElement>('[data-preload-buttons]')),
+    transitionType: required(document.querySelector<HTMLSelectElement>('[data-transition-type]')),
+    duration: required(document.querySelector<HTMLInputElement>('[data-duration]')),
+    easing: required(document.querySelector<HTMLSelectElement>('[data-easing]')),
+    view: required(document.querySelector<HTMLSelectElement>('[data-view]')),
+    keepMotion: required(document.querySelector<HTMLInputElement>('[data-keep-motion]')),
+  },
+  { onShow: handleShowScene, onPreload: handlePreloadScene },
+);
 slowToggle.addEventListener('change', handleSlowChange);
 failFaceToggle.addEventListener('change', handleFailFaceChange);
 retryButton.addEventListener('click', handleRetryClick);
+replaceTourButton.addEventListener('click', handleReplaceTourClick);
 brokenTourButton.addEventListener('click', handleBrokenTourClick);
 toggleViewerButton.addEventListener('click', handleToggleViewerClick);
 toggleSizeButton.addEventListener('click', handleToggleSizeClick);
 
-showSelectedScene();
+createMainViewer(DEMO_TOUR, null);
 attachLogging(createPlaygroundViewer(secondViewerContainer, { tour: DEMO_TOUR, label: 'Balcony' }), 'second');
 void showLocalHint();
