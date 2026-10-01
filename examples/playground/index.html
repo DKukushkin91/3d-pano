@@ -10,6 +10,32 @@
       <nav><a href="/react.html">React playground</a></nav>
       <h1>createPanoViewer</h1>
       <p class="hint" data-local-hint hidden></p>
+      <p>
+        Drag, scroll or pinch to look around. Arrow keys and <kbd>+</kbd>/<kbd>−</kbd> work when the viewer is
+        focused. Add <code>?maxTextureSize=4096</code> to the URL to force splitting of large images.
+      </p>
+      <fieldset class="toolbar">
+        <label>
+          Scene
+          <select data-scene>
+            <option value="balcony">Balcony — one file</option>
+            <option value="hotel-room">Hotel room — one file</option>
+            <option value="hotel-room-cube">Hotel room — cube faces</option>
+          </select>
+        </label>
+        <label><input type="checkbox" data-slow /> slow network</label>
+        <label><input type="checkbox" data-fail-face /> fail face <code>l.jpg</code></label>
+        <button type="button" data-retry>Retry</button>
+        <button type="button" data-broken-tour>Broken tour</button>
+        <button type="button" data-toggle-viewer>Destroy</button>
+        <button type="button" data-toggle-size>Toggle size</button>
+      </fieldset>
+      <div class="viewer" data-viewer></div>
+      <pre class="readout" data-readout></pre>
+      <h2>Events</h2>
+      <ol class="events" data-events></ol>
+      <h2>Second viewer</h2>
+      <div class="viewer viewer--small" data-second-viewer></div>
     </main>
     <script type="module" src="/src/main-vanilla.ts"></script>
   </body>

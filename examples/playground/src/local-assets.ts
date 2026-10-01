@@ -7,6 +7,16 @@ export const LOCAL_ASSETS = {
   hotelRoom: '/local/hotel-room.png',
 } as const;
 
+/**
+ * Файлы, которые делает `scripts/make-cube-faces.mjs` из локальных панорам: превью 1024×512 и грани куба с
+ * именами граней neometria (`f`, `r`, `b`, `l`, `u`, `d`).
+ */
+export const GENERATED_ASSETS = {
+  balconyPreview: '/local/balcony-preview.jpg',
+  hotelRoomPreview: '/local/hotel-room-preview.jpg',
+  hotelRoomFaces: '/local/cube/hotel-room/{face}.jpg',
+} as const;
+
 const LOCAL_ASSETS_FOLDER = 'examples/playground/public/local/';
 
 const isImageResponse = (response: Response): boolean =>
