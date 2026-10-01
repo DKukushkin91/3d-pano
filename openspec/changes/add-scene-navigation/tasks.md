@@ -11,13 +11,13 @@
 
 ## 2. Опции переходов, словари и состояние (scene-transitions, scene-navigation, viewer-state-events, viewer-lifecycle)
 
-- [ ] 2.1 `navigation/navigation-dictionaries.ts` (`EnumTransitionType`, `EnumSceneView`) и `navigation/navigation-types.ts` (`TSceneTransition`, `IShowSceneOptions`, `ISetTourOptions`, `TEasing`, `TEasingFunction`). Контракт-тесты «Словари переходов» и «Словари режима вида»
-- [ ] 2.2 `navigation/show-scene-options.ts`: разрешение умолчаний (`cut`, blend 500 мс `sine-in-out`, `view: 'scene'`, `keepMotion: false`), `durationMs: 0` → `cut`, синхронный `RangeError` по D59. Контракт-тесты «Переход по умолчанию», «Смешивание по умолчанию», «Отрицательная длительность» (требования «Проверка опций смены сцены», «Мгновенная смена», «Смешивание»)
-- [ ] 2.3 Разрешение вида после смены: `scene`, `keep` (через ограничения новой сцены), объект поверх стартового вида. Контракт-тесты «Смена ремонта» (на уровне функции) и «Явный вид с недостающими полями» (требование «Вид после смены»)
-- [ ] 2.4 `navigation/transition-weight.ts`: вес `clamp(easing(elapsed / duration), 0, 1)`. Контракт-тесты «Смешивание с перелётом» (`back-out`) и «Своя функция» (вес 0.25 в середине)
-- [ ] 2.5 Состояние: поле `isTransitioning` в снимке (`INITIAL_SNAPSHOT` — `false`), код `unknown-scene` категории `tour`, событие `sceneChange` в `IPanoViewerEventMap`. Контракт-тесты «Неизвестная сцена» (классификация) и «Повторное чтение» с новым полем (требования «Снимок состояния», «Описание ошибок», «Типизированные события»)
-- [ ] 2.6 Опция `sceneCacheMegabytes` в `viewer-options.ts`: умолчание 256, `undefined` сбрасывает, `RangeError` для нечислового, бесконечного и отрицательного значения, участие в `areViewerOptionsEqual`. Контракт-тест «Отрицательный бюджет кэша» (требование «Проверка опций»)
-- [ ] 2.7 Закоммитить `feat(navigation): добавить опции переходов, словари и поля состояния`
+- [x] 2.1 `navigation/navigation-dictionaries.ts` (`EnumTransitionType`, `EnumSceneView`) и `navigation/navigation-types.ts` (`TSceneTransition`, `IShowSceneOptions`, `ISetTourOptions`, `TEasing`, `TEasingFunction`). Контракт-тесты «Словари переходов» и «Словари режима вида»
+- [x] 2.2 `navigation/show-scene-options.ts`: разрешение умолчаний (`cut`, blend 500 мс `sine-in-out`, `view: 'scene'`, `keepMotion: false`), `durationMs: 0` → `cut`, синхронный `RangeError` по D59. Контракт-тесты «Переход по умолчанию», «Смешивание по умолчанию», «Отрицательная длительность» (требования «Проверка опций смены сцены», «Мгновенная смена», «Смешивание»)
+- [x] 2.3 Разрешение вида после смены: `scene`, `keep` (через ограничения новой сцены), объект поверх стартового вида. Контракт-тесты «Смена ремонта» (на уровне функции) и «Явный вид с недостающими полями» (требование «Вид после смены»)
+- [x] 2.4 `navigation/transition-weight.ts`: вес `clamp(easing(elapsed / duration), 0, 1)`. Контракт-тесты «Смешивание с перелётом» (`back-out`) и «Своя функция» (вес 0.25 в середине)
+- [x] 2.5 Состояние: поле `isTransitioning` в снимке (`INITIAL_SNAPSHOT` — `false`), код `unknown-scene` категории `tour`, событие `sceneChange` в `IPanoViewerEventMap`. Контракт-тесты «Неизвестная сцена» (классификация) и «Повторное чтение» с новым полем (требования «Снимок состояния», «Описание ошибок», «Типизированные события»)
+- [x] 2.6 Опция `sceneCacheMegabytes` в `viewer-options.ts`: умолчание 256, `undefined` сбрасывает, `RangeError` для нечислового, бесконечного и отрицательного значения, участие в `areViewerOptionsEqual`. Контракт-тест «Отрицательный бюджет кэша» (требование «Проверка опций»)
+- [x] 2.7 Закоммитить `feat(navigation): добавить опции переходов, словари и поля состояния`
 
 ## 3. Кэш сцен и очередь предзагрузки (scene-navigation)
 

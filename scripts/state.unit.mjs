@@ -113,6 +113,7 @@ describe('viewer-state-events · Снимок состояния', () => {
       status: 'loading',
       loadProgress: 0,
       isInteracting: false,
+      isTransitioning: false,
       error: null,
     });
     assert.ok(Object.isFrozen(INITIAL_SNAPSHOT));
@@ -178,6 +179,7 @@ describe('viewer-state-events · Словари категорий, кодов �
     assert.deepEqual(Object.values(EnumErrorCode), [
       'webgl-unavailable',
       'invalid-tour',
+      'unknown-scene',
       'network-failed',
       'http-status',
       'decode-failed',
@@ -190,6 +192,7 @@ describe('viewer-state-events · Словари категорий, кодов �
     assert.deepEqual(ERROR_CATEGORY_BY_CODE, {
       'webgl-unavailable': 'webgl',
       'invalid-tour': 'tour',
+      'unknown-scene': 'tour',
       'network-failed': 'resource',
       'http-status': 'resource',
       'decode-failed': 'resource',

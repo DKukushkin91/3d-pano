@@ -34,7 +34,7 @@ describe('viewer-lifecycle · Безопасный импорт без DOM', () 
 });
 
 describe('viewer-lifecycle · Проверка опций', () => {
-  it('умолчания: maxPixelRatio 2, renderScale 1, повтор 2 × 500 мс, всё управление включено', () => {
+  it('умолчания: maxPixelRatio 2, renderScale 1, кэш сцен 256 МБ, повтор 2 × 500 мс, всё управление включено', () => {
     assert.deepEqual(createOptions(), {
       label: LABEL,
       loader: null,
@@ -42,6 +42,7 @@ describe('viewer-lifecycle · Проверка опций', () => {
       controls: DEFAULT_CONTROLS_OPTIONS,
       maxPixelRatio: 2,
       renderScale: 1,
+      sceneCacheMegabytes: 256,
     });
   });
 
@@ -52,7 +53,20 @@ describe('viewer-lifecycle · Проверка опций', () => {
     });
   });
 
+  it('Отрицательный бюджет кэша: RangeError с префиксом 3d-pano: и именем опции', () => {
+    assert.throws(() => createOptions({ sceneCacheMegabytes: -1 }), {
+      name: 'RangeError',
+      message: /^3d-pano: .*sceneCacheMegabytes/,
+    });
+    assert.throws(() => createOptions({ sceneCacheMegabytes: Number.POSITIVE_INFINITY }), RangeError);
+  });
+
+  it('бюджет кэша 0 допустим: хранится только сцена на экране', () => {
+    assert.equal(createOptions({ sceneCacheMegabytes: 0 }).sceneCacheMegabytes, 0);
+  });
+
   const invalidOptions = [
+    { name: 'sceneCacheMegabytes', fields: { sceneCacheMegabytes: Number.NaN } },
     { name: 'renderScale', fields: { renderScale: 0 } },
     { name: 'controls.wheelSpeed', fields: { controls: { wheelSpeed: Number.NaN } } },
     { name: 'controls.keyboardSpeed', fields: { controls: { keyboardSpeed: -2 } } },
@@ -81,6 +95,13 @@ describe('viewer-lifecycle · Обновление опций', () => {
     const updated = resolveViewerOptions(createOptions({ maxPixelRatio: 1 }), { maxPixelRatio: undefined });
 
     assert.equal(updated.maxPixelRatio, 2);
+  });
+
+  it('сброс бюджета кэша к умолчанию: ключ со значением undefined возвращает 256', () => {
+    const current = createOptions({ sceneCacheMegabytes: 64 });
+
+    assert.equal(resolveViewerOptions(current, { sceneCacheMegabytes: undefined }).sceneCacheMegabytes, 256);
+    assert.equal(resolveViewerOptions(current, { label: 'Kitchen' }).sceneCacheMegabytes, 64);
   });
 
   it('незатронутые ключи сохраняют текущие значения', () => {

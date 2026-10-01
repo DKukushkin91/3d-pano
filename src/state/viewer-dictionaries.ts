@@ -30,6 +30,7 @@ export type TErrorCategory = (typeof EnumErrorCategory)[keyof typeof EnumErrorCa
 export const EnumErrorCode = {
   WebglUnavailable: 'webgl-unavailable',
   InvalidTour: 'invalid-tour',
+  UnknownScene: 'unknown-scene',
   NetworkFailed: 'network-failed',
   HttpStatus: 'http-status',
   DecodeFailed: 'decode-failed',
@@ -45,6 +46,7 @@ export type TErrorCode = (typeof EnumErrorCode)[keyof typeof EnumErrorCode];
 export const ERROR_CATEGORY_BY_CODE: Readonly<Record<TErrorCode, TErrorCategory>> = {
   [EnumErrorCode.WebglUnavailable]: EnumErrorCategory.Webgl,
   [EnumErrorCode.InvalidTour]: EnumErrorCategory.Tour,
+  [EnumErrorCode.UnknownScene]: EnumErrorCategory.Tour,
   [EnumErrorCode.NetworkFailed]: EnumErrorCategory.Resource,
   [EnumErrorCode.HttpStatus]: EnumErrorCategory.Resource,
   [EnumErrorCode.DecodeFailed]: EnumErrorCategory.Resource,

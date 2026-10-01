@@ -37,6 +37,19 @@ export type { IPanoError, IPanoViewerSnapshot } from './state/viewer-state-types
 export type { TImageLoader } from './resources/load-image';
 export type { IRetryOptions } from './resources/retry';
 export { createPanoViewer } from './viewer/create-pano-viewer';
+export {
+  EnumSceneView,
+  EnumTransitionType,
+  type TSceneView,
+  type TTransitionType,
+} from './navigation/navigation-dictionaries';
+export type {
+  IBlendTransition,
+  ICutTransition,
+  ISetTourOptions,
+  IShowSceneOptions,
+  TSceneTransition,
+} from './navigation/navigation-types';
 export type {
   IControlsOptions,
   IDirection,

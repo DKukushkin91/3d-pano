@@ -13,6 +13,7 @@ export interface IResolvedViewerOptions {
   controls: TResolvedControlsOptions;
   maxPixelRatio: number;
   renderScale: number;
+  sceneCacheMegabytes: number;
 }
 
 export const DEFAULT_CONTROLS_OPTIONS: Readonly<TResolvedControlsOptions> = {
@@ -29,6 +30,7 @@ export const DEFAULT_CONTROLS_OPTIONS: Readonly<TResolvedControlsOptions> = {
 
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_RENDER_SCALE = 1;
+export const DEFAULT_SCENE_CACHE_MEGABYTES = 256;
 
 const failRange = (name: string, requirement: string, value: unknown): never => {
   throw new RangeError(`3d-pano: option "${name}" must be ${requirement}, got ${String(value)}`);
@@ -36,6 +38,9 @@ const failRange = (name: string, requirement: string, value: unknown): never => 
 
 const positiveNumber = (name: string, value: number): number =>
   Number.isFinite(value) && value > 0 ? value : failRange(name, 'a finite number > 0', value);
+
+const nonNegativeNumber = (name: string, value: number): number =>
+  Number.isFinite(value) && value >= 0 ? value : failRange(name, 'a finite number >= 0', value);
 
 const resolveLabel = (value: unknown): string => {
   if (typeof value !== 'string' || value.trim() === '') {
@@ -115,6 +120,9 @@ export const resolveViewerOptions = (
     renderScale: has('renderScale')
       ? positiveNumber('renderScale', next.renderScale ?? DEFAULT_RENDER_SCALE)
       : (current?.renderScale ?? DEFAULT_RENDER_SCALE),
+    sceneCacheMegabytes: has('sceneCacheMegabytes')
+      ? nonNegativeNumber('sceneCacheMegabytes', next.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES)
+      : (current?.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES),
   };
 };
 
@@ -123,6 +131,7 @@ const comparableValues = (options: IResolvedViewerOptions): readonly unknown[] =
   options.loader,
   options.maxPixelRatio,
   options.renderScale,
+  options.sceneCacheMegabytes,
   options.retry.attempts,
   options.retry.delayMs,
   ...CONTROLS_OPTION_KEYS.map((key) => options.controls[key]),

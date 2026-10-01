@@ -18,11 +18,14 @@ export interface IPanoError {
 /**
  * Снимок состояния для фреймворков. Вид камеры сюда не входит: он меняется каждый кадр и приходит
  * событием `viewChange`, а снимок меняется редко и не заставляет интерфейс перерисовываться при вращении.
+ * `sceneId` — сцена последней принятой смены, даже пока на экране ещё предыдущая; `status` и
+ * `loadProgress` описывают её же. `isTransitioning` — идёт смена сцены (загрузка или смешивание).
  */
 export interface IPanoViewerSnapshot {
   sceneId: string | null;
   status: TViewerStatus;
   loadProgress: number;
   isInteracting: boolean;
+  isTransitioning: boolean;
   error: IPanoError | null;
 }

@@ -10,6 +10,7 @@ export const INITIAL_SNAPSHOT: Readonly<IPanoViewerSnapshot> = Object.freeze({
   status: EnumViewerStatus.Loading,
   loadProgress: 0,
   isInteracting: false,
+  isTransitioning: false,
   error: null,
 });
 
@@ -25,6 +26,7 @@ const SNAPSHOT_KEYS: readonly (keyof IPanoViewerSnapshot)[] = [
   'status',
   'loadProgress',
   'isInteracting',
+  'isTransitioning',
   'error',
 ];
 

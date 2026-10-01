@@ -31,6 +31,7 @@ export interface IPanoViewerOptions {
   controls?: IControlsOptions;
   maxPixelRatio?: number;
   renderScale?: number;
+  sceneCacheMegabytes?: number;
 }
 
 /**
@@ -64,9 +65,14 @@ export interface IProjectedPoint {
   isInView: boolean;
 }
 
+/**
+ * События просмотрщика. `sceneChange` приходит, когда меняется `snapshot.sceneId`: в момент принятой
+ * смены (до загрузки новой сцены) и для стартовой сцены с `previousSceneId: null`.
+ */
 export interface IPanoViewerEventMap {
   sceneLoadStart: { sceneId: string };
   sceneReady: { sceneId: string };
+  sceneChange: { sceneId: string; previousSceneId: string | null };
   viewChange: { view: IView };
   error: { error: IPanoError };
 }
