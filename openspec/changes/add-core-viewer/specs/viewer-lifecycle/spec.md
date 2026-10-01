@@ -89,7 +89,7 @@
 
 ### Requirement: Обновление опций
 
-`update(partialOptions)` SHALL применять `label`, `loader`, `controls`, `maxPixelRatio` и `renderScale`
+`update(partialOptions)` SHALL применять `label`, `loader`, `retry`, `controls`, `maxPixelRatio` и `renderScale`
 к работающему просмотрщику без пересоздания. Ключ, явно переданный со значением `undefined`, MUST
 возвращать опцию к значению по умолчанию. Проверка: контракт-тест разрешения опций и сценарий песочницы.
 
@@ -106,8 +106,9 @@
 ### Requirement: Проверка опций
 
 Неверные опции — ошибки программиста — SHALL отклоняться синхронно: не-элемент вместо контейнера и
-пустой `label` — `TypeError`, нечисловые, бесконечные или неположительные `maxPixelRatio` и
-`renderScale` — `RangeError`. Текст ошибки MUST начинаться с `3d-pano:` и называть опцию.
+пустой `label` — `TypeError`; нечисловые, бесконечные или неположительные `maxPixelRatio`,
+`renderScale`, `controls.wheelSpeed`, `controls.keyboardSpeed`, `controls.inertiaFriction`, а также
+отрицательные или дробные `retry.attempts` и отрицательный `retry.delayMs` — `RangeError`. Текст ошибки MUST начинаться с `3d-pano:` и называть опцию.
 Проверка: контракт-тест.
 
 #### Scenario: Отрицательная плотность пикселей

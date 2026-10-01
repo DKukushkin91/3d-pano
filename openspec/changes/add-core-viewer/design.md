@@ -27,37 +27,87 @@ SDD) и шаблон пакета video-scrubber (фабрика + снимок/
 
 ### Таблица решений
 
-| #   | Решение                                                                                                                               | Альтернативы                                         | Статус                                                   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
-| D1  | Фабрика `createPanoViewer(container, options)` → объект-контроллер                                                                    | класс `new PanoViewer()`, `createPanorama()`         | согласовано                                              |
-| D2  | События `on(name, handler)` + снимок `getSnapshot()`/`subscribe()`; вид в снимок не входит                                            | DOM-события на контейнере; только снимок             | согласовано                                              |
-| D3  | На вход — сразу тур (`tour`), показывается стартовая сцена                                                                            | одна панорама, тур позже                             | согласовано                                              |
-| D4  | Куб: `{ type: 'cube', url: '…{face}…', faceNames? }`; дискриминатор источников — `type`                                               | шесть явных URL; оба варианта                        | согласовано                                              |
-| D5  | Эквиректангулярная: `{ type: 'equirect', url }`; превью — те же типы                                                                  | —                                                    | согласовано                                              |
-| D6  | `view` и `limits` отдельно, общие — в `tour.defaults`, сцена переопределяет по полям                                                  | всё в одном `view`; ограничения — опция просмотрщика | согласовано                                              |
-| D7  | Умолчания: `fov` 90, `fovMode` `max`, пределы FOV [30, 120], `maxPixelZoom` 2, `bounds` `auto`                                        | как в neometria (70–140); без ограничений            | согласовано                                              |
-| D8  | Мышь — только режим «тянуть»                                                                                                          | оба режима                                           | согласовано                                              |
-| D9  | React: `<PanoViewer>` + `usePanoViewer`, как ScrubVideo + useVideoScrubber                                                            | только хук; только компонент                         | согласовано                                              |
-| D10 | Подмена загрузки функцией `loader({ url, signal })` → `Blob` или `ImageBitmap`                                                        | только `crossOrigin`/`resolveUrl`; не сейчас         | согласовано                                              |
-| D11 | Один файл или грани — равноправно; большие изображения режутся автоматически уже в M1                                                 | только в M3                                          | согласовано                                              |
-| D12 | Песочница: 8K-панорамы владельца локально (вне git), грани режет служебный скрипт песочницы на `sharp`                                | в браузере; файлы в git                              | согласовано                                              |
-| D13 | Рендер — по пикселю: фрагментный шейдер строит луч и выбирает текстуру (см. ниже)                                                     | растеризация геометрии куба                          | согласовано (вариант «свой WebGL2» описывал этот подход) |
-| D14 | Имена событий: `sceneLoadStart`, `sceneReady`, `viewChange`, `error`                                                                  | `sceneLoaded`, `load`, kebab-case                    | ждёт согласования                                        |
-| D15 | Снимок: `{ sceneId, status: 'loading' \| 'ready' \| 'error', loadProgress, error }`                                                   | + `isInteracting`; статус `preview`                  | ждёт согласования                                        |
-| D16 | Коды ошибок: `webgl-unavailable`, `invalid-tour`, `resource-failed`, `invalid-image`                                                  | общий `load-error`                                   | ждёт согласования                                        |
-| D17 | `controls: { drag, wheel, pinch, keyboard, inertia }` — булевы, все `true` по умолчанию; скоростей и инверсии в M1 нет                | скорости и инверсия сразу                            | ждёт согласования                                        |
-| D18 | `bounds`-объект держит внутри диапазонов весь кадр; если кадр шире диапазона — FOV уменьшается                                        | ограничивается только центр взгляда                  | ждёт согласования                                        |
-| D19 | `maxPixelZoom` считается в CSS-пикселях (не в физических)                                                                             | физические пиксели                                   | ждёт согласования                                        |
-| D20 | `roll` поддерживается в M1 (neometria не нужен, стоит одну строку математики)                                                         | убрать до этапа расширения                           | ждёт согласования                                        |
-| D21 | `project` принимает и `{ yaw, pitch }`, и направление `{ x, y, z }` (для пинов neometria до хотспотов); `null` — только позади камеры | только `{ yaw, pitch }`; `null` и вне кадра          | ждёт согласования                                        |
-| D22 | Повтор загрузки: 2 повтора с задержками 500 и 1500 мс                                                                                 | без повторов; настраиваемо                           | ждёт согласования                                        |
-| D23 | Исключения обработчиков уходят в `reportError`                                                                                        | глотать; бросать                                     | ждёт согласования                                        |
-| D24 | Корневой элемент: `role="application"`, `tabindex="0"`, `aria-label` = `label`; `label` обязателен                                    | `role="img"`; `label` необязателен                   | ждёт согласования                                        |
-| D25 | Дети `<PanoViewer>` попадают в оверлей через портал после монтирования → peer-зависимость `react-dom` (необязательная, как `react`)   | дети рядом с canvas без портала                      | ждёт согласования                                        |
-| D26 | Смена пропа `tour` в React в M1 пересоздаёт просмотрщик                                                                               | игнорировать до M2                                   | ждёт согласования                                        |
-| D27 | Отдельный хук `usePanoSnapshot(viewer)` для пользователей компонента                                                                  | не добавлять                                         | ждёт согласования                                        |
+Все решения согласованы с владельцем 2026-10-01.
+
+| #   | Решение                                                                                                                                                                                                                                                                                   | Альтернативы                                         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| D1  | Фабрика `createPanoViewer(container, options)` → объект-контроллер                                                                                                                                                                                                                        | класс `new PanoViewer()`, `createPanorama()`         |
+| D2  | События `on(name, handler)` + снимок `getSnapshot()`/`subscribe()`; вид в снимок не входит                                                                                                                                                                                                | DOM-события на контейнере; только снимок             |
+| D3  | На вход — сразу тур (`tour`), показывается стартовая сцена                                                                                                                                                                                                                                | одна панорама, тур позже                             |
+| D4  | Куб: `{ type: 'cube', url: '…{face}…', faceNames? }`; дискриминатор источников — `type`                                                                                                                                                                                                   | шесть явных URL; оба варианта                        |
+| D5  | Эквиректангулярная: `{ type: 'equirect', url }`; превью — те же типы                                                                                                                                                                                                                      | —                                                    |
+| D6  | `view` и `limits` отдельно, общие — в `tour.defaults`, сцена переопределяет по полям                                                                                                                                                                                                      | всё в одном `view`; ограничения — опция просмотрщика |
+| D7  | Умолчания: `fov` 90, `fovMode` `max`, пределы FOV [30, 120], `maxPixelZoom` 2, `bounds` `auto`                                                                                                                                                                                            | как в neometria (70–140); без ограничений            |
+| D8  | Мышь — только режим «тянуть»                                                                                                                                                                                                                                                              | оба режима                                           |
+| D9  | React: `<PanoViewer>` + `usePanoViewer`, как ScrubVideo + useVideoScrubber                                                                                                                                                                                                                | только хук; только компонент                         |
+| D10 | Подмена загрузки функцией `loader({ url, signal })` → `Blob` или `ImageBitmap`                                                                                                                                                                                                            | только `crossOrigin`/`resolveUrl`; не сейчас         |
+| D11 | Один файл или грани — равноправно; большие изображения режутся автоматически уже в M1                                                                                                                                                                                                     | только в M3                                          |
+| D12 | Песочница: 8K-панорамы владельца локально (вне git), грани режет служебный скрипт песочницы на `sharp`                                                                                                                                                                                    | в браузере; файлы в git                              |
+| D13 | Рендер — по пикселю: фрагментный шейдер строит луч и выбирает текстуру (см. ниже)                                                                                                                                                                                                         | растеризация геометрии куба                          |
+| D14 | События в camelCase: `sceneLoadStart`, `sceneReady`, `viewChange`, `error`                                                                                                                                                                                                                | kebab-case; слитно, как DOM                          |
+| D15 | Снимок: `{ sceneId, status, loadProgress, isInteracting, error }`, статусы `loading`, `preview`, `ready`, `error`                                                                                                                                                                         | без `isInteracting`; без статуса превью              |
+| D16 | Ошибка: `{ category, code, message, url?, httpStatus?, issues?, cause? }`. Категории (`webgl`, `tour`, `resource`, `image`) задают действие хоста, коды уточняют: `webgl-unavailable`, `invalid-tour`, `network-failed`, `http-status`, `decode-failed`, `loader-failed`, `invalid-image` | четыре кода без категорий; три кода                  |
+| D17 | `controls`: `drag`, `wheel`, `pinch`, `keyboard`, `inertia` (вкл/выкл), `wheelSpeed`, `keyboardSpeed`, `inertiaFriction` (множители, по умолчанию 1), `invertDrag`                                                                                                                        | только вкл/выкл                                      |
+| D18 | `bounds`-объект держит внутри диапазонов весь кадр; если кадр шире диапазона — FOV уменьшается                                                                                                                                                                                            | только центр взгляда; оба режима                     |
+| D19 | `maxPixelZoom` считается в CSS-пикселях                                                                                                                                                                                                                                                   | физические пиксели                                   |
+| D20 | `roll` есть в M1                                                                                                                                                                                                                                                                          | позже, с гироскопом                                  |
+| D21 | `project` принимает `{ yaw, pitch }` или направление `{ x, y, z }`, возвращает `{ x, y, isInView }`; `null` — только позади камеры                                                                                                                                                        | без флага видимости; только `{ yaw, pitch }`         |
+| D22 | Повтор загрузки по опции `retry: { attempts, delayMs }`, по умолчанию 2 повтора с 500 мс и ростом ×3; ответы 4xx и отменённые загрузки не повторяются; `attempts: 0` — без повторов                                                                                                       | жёстко; без повторов                                 |
+| D23 | Исключения обработчиков уходят в `reportError`, работа продолжается                                                                                                                                                                                                                       | не ловить                                            |
+| D24 | Корень: `role="application"`, `tabindex="0"`, `aria-label` = `label`; `label` обязателен                                                                                                                                                                                                  | `role="img"`; роль задаёт хост                       |
+| D25 | Дети `<PanoViewer>` попадают в оверлей через портал после монтирования; `react-dom` — необязательная peer-зависимость                                                                                                                                                                     | дети рядом с canvas без портала                      |
+| D26 | Смена пропа `tour` в React в M1 пересоздаёт просмотрщик                                                                                                                                                                                                                                   | игнорировать до M2                                   |
+| D27 | Хук `usePanoSnapshot(viewer)`                                                                                                                                                                                                                                                             | не добавлять                                         |
+| D28 | Перечисления — словари `as const` с префиксом `Enum` и производным типом `T…` во всём коде; строки принимаются наравне с константами; `enum` и `const enum` не используются                                                                                                               | `const enum` внутри; обычные `enum`                  |
+| D29 | `viewer.retry()` повторно запрашивает незагруженные изображения текущей сцены, сохраняя вид и загруженное                                                                                                                                                                                 | пересоздание просмотрщика; ждать M2                  |
 
 ### Контракт публичного API (M1)
+
+Словари (каждый экспортируется вместе с типом `T…` из своих значений):
+
+```ts
+export const EnumSourceType = { Equirect: 'equirect', Cube: 'cube' } as const;
+export const EnumCubeFace = {
+  Front: 'front',
+  Right: 'right',
+  Back: 'back',
+  Left: 'left',
+  Up: 'up',
+  Down: 'down',
+} as const;
+export const EnumFovMode = {
+  Horizontal: 'horizontal',
+  Vertical: 'vertical',
+  Diagonal: 'diagonal',
+  Max: 'max',
+} as const;
+export const EnumBoundsMode = { Auto: 'auto', None: 'none' } as const;
+export const EnumViewerStatus = {
+  Loading: 'loading',
+  Preview: 'preview',
+  Ready: 'ready',
+  Error: 'error',
+} as const;
+export const EnumErrorCategory = {
+  Webgl: 'webgl',
+  Tour: 'tour',
+  Resource: 'resource',
+  Image: 'image',
+} as const;
+export const EnumErrorCode = {
+  WebglUnavailable: 'webgl-unavailable',
+  InvalidTour: 'invalid-tour',
+  NetworkFailed: 'network-failed',
+  HttpStatus: 'http-status',
+  DecodeFailed: 'decode-failed',
+  LoaderFailed: 'loader-failed',
+  InvalidImage: 'invalid-image',
+} as const;
+
+export type TSourceType = (typeof EnumSourceType)[keyof typeof EnumSourceType];
+```
+
+Ядро:
 
 ```ts
 export const createPanoViewer: (container: HTMLElement, options: IPanoViewerOptions) => IPanoViewer;
@@ -67,6 +117,7 @@ export interface IPanoViewerOptions {
   tour: ITour;
   label: string;
   loader?: TImageLoader;
+  retry?: IRetryOptions;
   controls?: IControlsOptions;
   maxPixelRatio?: number;
   renderScale?: number;
@@ -76,8 +127,9 @@ export interface IPanoViewer {
   readonly overlay: HTMLElement;
   getView: () => IView;
   setView: (view: IViewSettings) => void;
-  project: (point: ISpherePoint | IDirection) => IScreenPoint | null;
+  project: (point: ISpherePoint | IDirection) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
+  retry: () => Promise<void>;
   update: (options: Partial<Omit<IPanoViewerOptions, 'tour'>>) => void;
   on: <TName extends keyof IPanoViewerEventMap>(
     name: TName,
@@ -105,17 +157,15 @@ export interface IScene {
 
 export type TPanoramaSource = IEquirectSource | ICubeSource;
 export interface IEquirectSource {
-  type: 'equirect';
+  type: typeof EnumSourceType.Equirect;
   url: string;
 }
 export interface ICubeSource {
-  type: 'cube';
+  type: typeof EnumSourceType.Cube;
   url: string;
   faceNames?: Partial<Record<TCubeFace, string>>;
 }
-export type TCubeFace = 'front' | 'right' | 'back' | 'left' | 'up' | 'down';
 
-export type TFovMode = 'horizontal' | 'vertical' | 'diagonal' | 'max';
 export interface IViewSettings {
   yaw?: number;
   pitch?: number;
@@ -133,7 +183,7 @@ export interface IView {
 export interface IViewLimits {
   fov?: readonly [number, number];
   maxPixelZoom?: number;
-  bounds?: 'auto' | 'none' | { yaw?: readonly [number, number]; pitch?: readonly [number, number] };
+  bounds?: TBoundsMode | { yaw?: readonly [number, number]; pitch?: readonly [number, number] };
 }
 
 export interface IControlsOptions {
@@ -142,6 +192,14 @@ export interface IControlsOptions {
   pinch?: boolean;
   keyboard?: boolean;
   inertia?: boolean;
+  wheelSpeed?: number;
+  keyboardSpeed?: number;
+  inertiaFriction?: number;
+  invertDrag?: boolean;
+}
+export interface IRetryOptions {
+  attempts?: number;
+  delayMs?: number;
 }
 export type TImageLoader = (request: { url: string; signal: AbortSignal }) => Promise<Blob | ImageBitmap>;
 
@@ -154,22 +212,27 @@ export interface IDirection {
   y: number;
   z: number;
 }
-export interface IScreenPoint {
+export interface IProjectedPoint {
   x: number;
   y: number;
+  isInView: boolean;
 }
 
 export interface IPanoViewerSnapshot {
   sceneId: string | null;
-  status: 'loading' | 'ready' | 'error';
+  status: TViewerStatus;
   loadProgress: number;
+  isInteracting: boolean;
   error: IPanoError | null;
 }
 export interface IPanoError {
-  code: 'webgl-unavailable' | 'invalid-tour' | 'resource-failed' | 'invalid-image';
+  category: TErrorCategory;
+  code: TErrorCode;
   message: string;
   url?: string;
+  httpStatus?: number;
   issues?: ITourIssue[];
+  cause?: unknown;
 }
 export interface ITourIssue {
   path: string;
@@ -201,9 +264,12 @@ export const usePanoViewer: (options: IPanoViewerOptions) => {
   viewer: IPanoViewer | null;
   snapshot: IPanoViewerSnapshot;
 };
+export const usePanoSnapshot: (viewer: IPanoViewer | null) => IPanoViewerSnapshot;
 ```
 
 `forwardRef` — чтобы проп `ref` работал и в React 18 (peer `react >= 18`, как в video-scrubber).
+`usePanoSnapshot(null)` возвращает начальный снимок (`status: 'loading'`), чтобы хук можно было вызывать
+до монтирования.
 
 ### Координаты
 
@@ -247,27 +313,28 @@ export const usePanoViewer: (options: IPanoViewerOptions) => {
 
 ### Модули
 
-| Модуль                                                                             | Ответственность                                                                 | Чистый?                  |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------ |
-| `math/angles.ts`                                                                   | градусы ↔ радианы, нормализация `yaw`, `clamp`                                  | да                       |
-| `math/vector3.ts`                                                                  | операции над векторами                                                          | да                       |
-| `math/camera-basis.ts`                                                             | базис и матрица камеры, направление по `yaw/pitch` и обратно                    | да                       |
-| `math/field-of-view.ts`                                                            | режимы FOV → тангенсы половин углов по ширине и высоте                          | да                       |
-| `math/rectilinear.ts`                                                              | экран ↔ направление (зеркало шага 1 шейдера)                                    | да                       |
-| `math/cube-faces.ts`                                                               | направление ↔ грань и `(s, t)` (зеркало шага 2)                                 | да                       |
-| `math/equirect.ts`                                                                 | направление ↔ `(u, v)` (зеркало шага 2)                                         | да                       |
-| `tour/*`                                                                           | типы тура, умолчания и их наложение, шаблоны URL, проверка схем, `validateTour` | да                       |
-| `view/view-limits.ts`                                                              | ограничения FOV, `maxPixelZoom`, `bounds`                                       | да                       |
-| `controls/drag-gesture.ts`, `inertia.ts`, `pinch-gesture.ts`, `keyboard-motion.ts` | математика жестов                                                               | да                       |
-| `controls/input-controller.ts`                                                     | слушатели Pointer Events, колеса, клавиатуры                                    | нет                      |
-| `state/event-emitter.ts`, `state/snapshot-store.ts`                                | события и снимок                                                                | да (кроме `reportError`) |
-| `resources/retry.ts`, `texture-split-plan.ts`, `load-progress.ts`                  | политика повтора, план нарезки, прогресс                                        | да                       |
-| `resources/default-loader.ts`, `image-decoder.ts`, `scene-loader.ts`               | сеть, декодирование, загрузка сцены                                             | нет                      |
-| `render/*`                                                                         | контекст, шейдеры, текстуры-массивы, слои, кадр, цикл по требованию             | нет                      |
-| `dom/viewer-root.ts`, `dom/size-observer.ts`                                       | корневой элемент, доступность, размер и плотность                               | нет                      |
-| `viewer/viewer-options.ts`                                                         | проверка и разрешение опций                                                     | да                       |
-| `viewer/create-pano-viewer.ts`                                                     | сборка всего вместе                                                             | нет                      |
-| `react/*`                                                                          | компонент, хуки                                                                 | нет                      |
+| Модуль                                                                              | Ответственность                                                                 | Чистый?                  |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------ |
+| `math/angles.ts`                                                                    | градусы ↔ радианы, нормализация `yaw`, `clamp`                                  | да                       |
+| `math/vector3.ts`                                                                   | операции над векторами                                                          | да                       |
+| `math/camera-basis.ts`                                                              | базис и матрица камеры, направление по `yaw/pitch` и обратно                    | да                       |
+| `math/field-of-view.ts`                                                             | режимы FOV → тангенсы половин углов по ширине и высоте                          | да                       |
+| `math/rectilinear.ts`                                                               | экран ↔ направление (зеркало шага 1 шейдера)                                    | да                       |
+| `math/cube-faces.ts`                                                                | направление ↔ грань и `(s, t)` (зеркало шага 2)                                 | да                       |
+| `math/equirect.ts`                                                                  | направление ↔ `(u, v)` (зеркало шага 2)                                         | да                       |
+| `tour/tour-dictionaries.ts`, `state/viewer-dictionaries.ts`                         | словари `Enum…` и производные типы `T…`                                         | да                       |
+| `tour/*`                                                                            | типы тура, умолчания и их наложение, шаблоны URL, проверка схем, `validateTour` | да                       |
+| `view/view-limits.ts`                                                               | ограничения FOV, `maxPixelZoom`, `bounds`                                       | да                       |
+| `controls/drag-gesture.ts`, `inertia.ts`, `pinch-gesture.ts`, `keyboard-motion.ts`  | математика жестов                                                               | да                       |
+| `controls/input-controller.ts`                                                      | слушатели Pointer Events, колеса, клавиатуры                                    | нет                      |
+| `state/event-emitter.ts`, `state/snapshot-store.ts`                                 | события и снимок                                                                | да (кроме `reportError`) |
+| `resources/retry.ts`, `texture-split-plan.ts`, `load-progress.ts`, `load-errors.ts` | политика повтора, план нарезки, прогресс, категории и коды ошибок загрузки      | да                       |
+| `resources/default-loader.ts`, `image-decoder.ts`, `scene-loader.ts`                | сеть, декодирование, загрузка сцены                                             | нет                      |
+| `render/*`                                                                          | контекст, шейдеры, текстуры-массивы, слои, кадр, цикл по требованию             | нет                      |
+| `dom/viewer-root.ts`, `dom/size-observer.ts`                                        | корневой элемент, доступность, размер и плотность                               | нет                      |
+| `viewer/viewer-options.ts`                                                          | проверка и разрешение опций                                                     | да                       |
+| `viewer/create-pano-viewer.ts`                                                      | сборка всего вместе                                                             | нет                      |
+| `react/*`                                                                           | компонент, хуки                                                                 | нет                      |
 
 Формулы, живущие и в GLSL, и в TypeScript: `direction(yaw, pitch)`, луч прямолинейной проекции, грани
 куба, эквиректангулярные `u, v`. В шейдере функции называются так же, как в TS; TS-версии покрыты
@@ -283,6 +350,10 @@ export const usePanoViewer: (options: IPanoViewerOptions) => {
 - Колесо: `tan(fov/2)` умножается на `2^(Δ · k)`; `deltaMode` строк и страниц приводится к пикселям.
 - Щипок: `tan(fov/2) = tan(fov₀/2) · d₀ / d`.
 - Клавиатура: нажатые клавиши задают целевую угловую скорость с разгоном и торможением.
+- `wheelSpeed`, `keyboardSpeed`, `inertiaFriction` — множители к именованным константам по умолчанию;
+  `invertDrag` меняет знак смещения перетаскивания, клавиатура не инвертируется.
+- `isInteracting` — `true` от нажатия до отпускания указателя и пока зажаты клавиши; инерция
+  взаимодействием не считается.
 - Жест начинается, только если цель события — canvas или сам оверлей; элементы хоста в оверлее получают
   свои события. `touch-action: none` на корне, пока включены перетаскивание или щипок.
 
@@ -313,4 +384,4 @@ export const usePanoViewer: (options: IPanoViewerOptions) => {
 
 ## Open Questions
 
-Нет: всё, что меняет требования или задачи, вынесено в таблицу решений со статусом «ждёт согласования».
+Нет: все решения, влияющие на требования и задачи, согласованы и перечислены в таблице решений.

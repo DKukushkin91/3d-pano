@@ -24,20 +24,30 @@
 
 ## 2. Именование
 
-| Сущность        | Формат                                                   | Пример                                     |
-| --------------- | -------------------------------------------------------- | ------------------------------------------ |
-| Type alias      | `T` + PascalCase                                         | `TPanoramaSource`, `TEasing`               |
-| Interface       | `I` + PascalCase                                         | `IViewState`, `ITileRequest`               |
-| Enum            | `Enum` + PascalCase, только `const enum` и только внутри | `EnumGesturePhase`                         |
-| Функция-фабрика | `create` + PascalCase                                    | `createTileCache`, `createRenderLoop`      |
-| Предикат        | `is`/`has`/`should` + PascalCase                         | `isCubeSource`, `hasWebGl2`                |
-| Хук             | `use` + camelCase                                        | `useViewerSnapshot`                        |
-| Обработчик      | `handle` + PascalCase                                    | `handlePointerDown`                        |
-| Константа       | `UPPER_SNAKE_CASE` с единицами                           | `MAX_PIXEL_RATIO`, `TILE_FADE_DURATION_MS` |
-| Файл, папка     | `kebab-case`                                             | `view-limits.ts`, `tile-cache/`            |
+| Сущность        | Формат                                                                   | Пример                                     |
+| --------------- | ------------------------------------------------------------------------ | ------------------------------------------ |
+| Type alias      | `T` + PascalCase                                                         | `TPanoramaSource`, `TEasing`               |
+| Interface       | `I` + PascalCase                                                         | `IViewState`, `ITileRequest`               |
+| Перечисление    | `Enum` + PascalCase — словарь `as const`, тип значений — `T` + то же имя | `EnumSourceType` + `TSourceType`           |
+| Функция-фабрика | `create` + PascalCase                                                    | `createTileCache`, `createRenderLoop`      |
+| Предикат        | `is`/`has`/`should` + PascalCase                                         | `isCubeSource`, `hasWebGl2`                |
+| Хук             | `use` + camelCase                                                        | `useViewerSnapshot`                        |
+| Обработчик      | `handle` + PascalCase                                                    | `handlePointerDown`                        |
+| Константа       | `UPPER_SNAKE_CASE` с единицами                                           | `MAX_PIXEL_RATIO`, `TILE_FADE_DURATION_MS` |
+| Файл, папка     | `kebab-case`                                                             | `view-limits.ts`, `tile-cache/`            |
 
-- **Публичные типы без `enum`** — только объединения строковых литералов (`'cube' | 'equirect'`).
-  Проекты с `isolatedModules` не должны спотыкаться о наши типы.
+- **Перечисления — словари `as const`, а не `enum`.** Везде, где значение — одно из фиксированного
+  набора строк, объявляется словарь и тип его значений:
+
+  ```ts
+  export const EnumSourceType = { Equirect: 'equirect', Cube: 'cube' } as const;
+  export type TSourceType = (typeof EnumSourceType)[keyof typeof EnumSourceType];
+  ```
+
+  В коде библиотеки сравниваем только с константами словаря (`EnumSourceType.Cube`), хост может писать и
+  строку — JSON тура с сервера проходит без приведения. `enum` номинален и запрещён при
+  `erasableSyntaxOnly`, `const enum` ломает хосты с `isolatedModules` — оба не используются.
+
 - **Имена несут смысл.** Однобуквенные имена запрещены (`e`, `i`, `t`, `a`, `b`) — включая счётчики и
   параметры колбэков. Исключение — `x`, `y`, `z`, `w` как компоненты векторов и экранных координат.
   Сокращения `btn`, `msg`, `cfg`, `tex` запрещены — пишем `button`, `message`, `config`, `texture`.

@@ -92,8 +92,8 @@ pnpm exec openspec list --specs    # живые спецификации
 
 Полные правила — [.claude/reference/RULES.md](.claude/reference/RULES.md). Коротко:
 
-- Имена: `TFoo` (type), `IFoo` (interface), `EnumFoo` (только внутренние `const enum`; в публичных
-  типах — строковые литералы), `useFoo` (хук), `handleFoo` (обработчик), `UPPER_SNAKE_CASE`
+- Имена: `TFoo` (type), `IFoo` (interface), `EnumFoo` (словарь `as const` + тип `TFoo` из его значений;
+  `enum` и `const enum` не используются), `useFoo` (хук), `handleFoo` (обработчик), `UPPER_SNAKE_CASE`
   (константы, с единицами в имени), `kebab-case` для файлов.
 - Однобуквенные имена запрещены, кроме `x`, `y`, `z`, `w` в векторной математике.
 - Файл — не больше 300 строк; когнитивная сложность функции — не выше 15, вложенность — не глубже 4
