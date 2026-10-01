@@ -1,0 +1,5 @@
+packages:
+  - '.'
+  - 'examples/*'
+minimumReleaseAgeExclude:
+  - '@fission-ai/openspec@1.14.0'
