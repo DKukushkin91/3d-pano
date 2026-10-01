@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "isolatedDeclarations": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["globals.d.ts", "snippets"]
+}

@@ -70,5 +70,12 @@
     "sonarjs/no-inverted-boolean-check": "error",
     "sonarjs/no-useless-catch": "error"
   },
-  "ignorePatterns": ["dist", "examples/**/dist", ".agents", ".cursor", ".claude"]
+  "ignorePatterns": [
+    "dist",
+    "examples/**/dist",
+    ".agents",
+    ".cursor",
+    ".claude",
+    "examples/doc-snippets/snippets"
+  ]
 }

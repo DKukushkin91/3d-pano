@@ -12,6 +12,8 @@ pnpm build:watch
 pnpm dev
 ```
 
+`doc-snippets/` is not an app: `pnpm check:docs` copies every TypeScript example from `README.md` and `docs/` into it and type-checks them against the built package. Values a host would provide (`container`, `tour`, `viewer` and so on) are declared once in `doc-snippets/globals.d.ts`.
+
 The playground uses local panoramas that are not part of the repository. Put two 2:1 equirectangular images into `playground/public/local/` (ignored by git):
 
 - `balcony.jpg`

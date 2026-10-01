@@ -143,7 +143,9 @@ The signal is aborted when the image is no longer needed, for example when the v
 A failed image is requested again before an error is reported. By default there are two retries, 500 ms and then 1500 ms later (each delay is three times the previous one):
 
 ```ts
-createPanoViewer(container, { tour, label, retry: { attempts: 2, delayMs: 500 } });
+import { createPanoViewer } from '@dkukushkin/3d-pano';
+
+createPanoViewer(container, { tour, label: 'Apartment tour', retry: { attempts: 2, delayMs: 500 } });
 ```
 
 `attempts: 0` turns retries off. Network failures, `5xx` responses and failures of a custom `loader` are retried; `4xx` responses, undecodable files, wrong cube faces and cancelled requests are not.

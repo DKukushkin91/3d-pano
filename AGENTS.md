@@ -47,6 +47,7 @@ pnpm lint             # oxlint --type-aware
 pnpm format           # oxfmt
 pnpm typecheck        # tsc --noEmit (TypeScript 7)
 pnpm check:specs      # openspec validate --all --strict
+pnpm check:docs       # TS/TSX-примеры из README.md и docs/ компилируются против dist
 pnpm exec openspec list            # активные изменения
 pnpm exec openspec list --specs    # живые спецификации
 ```

@@ -12,6 +12,7 @@
     ".agents",
     ".cursor",
     ".claude/commands/opsx",
-    ".claude/skills/openspec-*"
+    ".claude/skills/openspec-*",
+    "examples/doc-snippets/snippets"
   ]
 }

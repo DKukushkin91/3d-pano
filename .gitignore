@@ -11,3 +11,6 @@ scripts/clean-room.local.json
 
 # Локальные панорамы песочницы: клиентские рендеры не публикуем
 examples/playground/public/local/
+
+# Примеры кода из документации, которые check:docs раскладывает для компиляции
+examples/doc-snippets/snippets/
