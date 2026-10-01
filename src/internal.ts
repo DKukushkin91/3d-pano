@@ -1,6 +1,7 @@
 export * from './math/angles';
 export * from './math/camera-basis';
 export * from './math/cube-faces';
+export * from './math/easing';
 export * from './math/equirect';
 export * from './math/field-of-view';
 export * from './math/rectilinear';

@@ -24,6 +24,7 @@ export type {
   TPanoramaSource,
 } from './tour/tour-types';
 export { validateTour } from './tour/validate-tour';
+export { EnumEasing, type TEasing, type TEasingFunction, type TEasingName } from './math/easing';
 export {
   EnumErrorCategory,
   EnumErrorCode,
