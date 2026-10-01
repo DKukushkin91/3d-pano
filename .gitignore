@@ -8,3 +8,6 @@ examples/**/dist
 
 # Локальный список чужих имён для check:clean-room: не публикуем
 scripts/clean-room.local.json
+
+# Локальные панорамы песочницы: клиентские рендеры не публикуем
+examples/playground/public/local/
