@@ -35,3 +35,14 @@ export {
 export type { IPanoError, IPanoViewerSnapshot } from './state/viewer-state-types';
 export type { TImageLoader } from './resources/load-image';
 export type { IRetryOptions } from './resources/retry';
+export { createPanoViewer } from './viewer/create-pano-viewer';
+export type {
+  IControlsOptions,
+  IDirection,
+  IPanoViewer,
+  IPanoViewerEventMap,
+  IPanoViewerOptions,
+  IProjectedPoint,
+  ISpherePoint,
+  TPanoViewerUpdate,
+} from './viewer/viewer-types';

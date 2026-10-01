@@ -17,6 +17,31 @@ pnpm add @dkukushkin/3d-pano
 
 React is an optional peer dependency (`>=18`) — only needed for the `/react` entry.
 
+## Quick start
+
+```ts
+import { createPanoViewer } from '@dkukushkin/3d-pano';
+
+const viewer = createPanoViewer(document.querySelector('#tour')!, {
+  label: 'Apartment tour',
+  tour: {
+    scenes: [
+      {
+        id: 'room',
+        source: { type: 'equirect', url: '/panoramas/room.jpg' },
+        preview: { type: 'equirect', url: '/panoramas/room-preview.jpg' },
+      },
+    ],
+  },
+});
+
+viewer.on('sceneReady', ({ sceneId }) => {
+  console.info('scene is ready', sceneId);
+});
+```
+
+The container needs a size. A scene can also be six cube faces: `{ type: 'cube', url: '/tiles/room/{face}.jpg' }`.
+
 ## Documentation
 
 - [Tour format](docs/tour.md) — scenes, image sources, initial view and limits, coordinate conventions.

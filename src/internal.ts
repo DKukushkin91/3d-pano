@@ -22,3 +22,7 @@ export * from './resources/retry';
 export * from './resources/scene-loader';
 export * from './resources/texture-split-plan';
 export * from './resources/image-decoder';
+export * from './dom/drawing-buffer-size';
+export * from './viewer/camera-state';
+export * from './viewer/create-pano-viewer';
+export * from './viewer/viewer-options';

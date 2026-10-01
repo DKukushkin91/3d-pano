@@ -55,9 +55,9 @@ export const isRetryableError = (error: unknown): boolean => {
 
 /**
  * Любое исключение конвейера, кроме отмены, превращается в описание ошибки; непредвиденное считается
- * сбоем сети.
+ * сбоем сети. `subject` — что загружалось, для текста сообщения (например, `scene "room"`).
  */
-export const toPanoError = (error: unknown, url: string): IPanoError =>
+export const toPanoError = (error: unknown, subject: string): IPanoError =>
   error instanceof PanoLoadError
     ? error.details
-    : createPanoError(EnumErrorCode.NetworkFailed, { message: `Failed to load ${url}`, url, cause: error });
+    : createPanoError(EnumErrorCode.NetworkFailed, { message: `Failed to load ${subject}`, cause: error });
