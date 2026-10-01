@@ -31,6 +31,7 @@ export * from './navigation/navigation-dictionaries';
 export * from './navigation/preload-queue';
 export * from './navigation/scene-cache';
 export * from './navigation/scene-key';
+export * from './navigation/scene-navigator';
 export * from './navigation/show-scene-options';
 export * from './navigation/transition-weight';
 export * from './controls/drag-gesture';
