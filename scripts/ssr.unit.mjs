@@ -59,7 +59,11 @@ describe('react-adapter · Серверный рендеринг', () => {
         controls: { wheel: false },
         maxPixelRatio: 1,
         renderScale: 0.5,
+        sceneCacheMegabytes: 64,
+        scene: 'room',
+        sceneOptions: { transition: { type: 'blend', durationMs: 300 }, view: 'keep' },
         onSceneReady: () => undefined,
+        onSceneChange: () => undefined,
       }),
       markup,
     );

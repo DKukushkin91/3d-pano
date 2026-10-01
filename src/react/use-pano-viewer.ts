@@ -4,12 +4,14 @@ import type { IPanoViewerSnapshot } from '../state/viewer-state-types';
 import { createPanoViewer } from '../viewer/create-pano-viewer';
 import type { IPanoViewer, IPanoViewerOptions, TPanoViewerUpdate } from '../viewer/viewer-types';
 import { usePanoSnapshot } from './use-pano-snapshot';
+import { type IPanoViewerSceneProps, tourWithStartScene, useSceneSync } from './use-scene-sync';
 import { type IPanoViewerEventProps, subscribeToViewerEvents } from './use-viewer-events';
 
 /**
- * Опции хука: опции просмотрщика и те же обработчики событий, что у компонента.
+ * Опции хука: опции просмотрщика, пропсы сцены и те же обработчики событий, что у компонента.
  */
-export interface IUsePanoViewerOptions extends IPanoViewerOptions, IPanoViewerEventProps {}
+export interface IUsePanoViewerOptions
+  extends IPanoViewerOptions, IPanoViewerSceneProps, IPanoViewerEventProps {}
 
 export interface IUsePanoViewerResult {
   containerRef: RefCallback<HTMLElement>;
@@ -24,26 +26,29 @@ const updatableOptions = (options: IPanoViewerOptions): TPanoViewerUpdate => ({
   controls: options.controls,
   maxPixelRatio: options.maxPixelRatio,
   renderScale: options.renderScale,
+  sceneCacheMegabytes: options.sceneCacheMegabytes,
 });
 
 /**
  * Общая часть компонента и хука: создание просмотрщика в эффекте (синхронизация с внешней системой) по
- * контейнеру и туру, подписка на события сразу после создания и передача остальных опций в `update()`
- * после каждого рендера — одинаковые значения он пропускает.
+ * контейнеру, подписка на события сразу после создания, передача опций в `update()` после каждого рендера
+ * (одинаковые значения он пропускает) и применение `scene` и `tour` без пересоздания.
  */
 export const useViewerInstance = (
   options: IPanoViewerOptions,
+  sceneProps: IPanoViewerSceneProps,
   eventHandlers: IPanoViewerEventProps,
 ): IUsePanoViewerResult => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [viewer, setViewer] = useState<IPanoViewer | null>(null);
   const latestOptions = useRef(options);
+  const latestScene = useRef(sceneProps.scene);
   const latestHandlers = useRef(eventHandlers);
   const snapshot = usePanoSnapshot(viewer);
-  const { tour } = options;
 
   useEffect(() => {
     latestOptions.current = options;
+    latestScene.current = sceneProps.scene;
     latestHandlers.current = eventHandlers;
     viewer?.update(updatableOptions(options));
   });
@@ -53,7 +58,11 @@ export const useViewerInstance = (
       return undefined;
     }
 
-    const createdViewer = createPanoViewer(container, { ...latestOptions.current, tour });
+    const { tour } = latestOptions.current;
+    const createdViewer = createPanoViewer(container, {
+      ...latestOptions.current,
+      tour: tourWithStartScene(tour, latestScene.current),
+    });
     const unsubscribe = subscribeToViewerEvents(createdViewer, () => latestHandlers.current);
 
     setViewer(createdViewer);
@@ -63,22 +72,31 @@ export const useViewerInstance = (
       createdViewer.destroy();
       setViewer(null);
     };
-  }, [container, tour]);
+  }, [container]);
+
+  useSceneSync(viewer, options.tour, sceneProps, () => latestHandlers.current.onError);
 
   return { containerRef: setContainer, viewer, snapshot };
 };
 
 /**
- * Просмотрщик в контейнере хоста со своей разметкой. Смена тура пересоздаёт просмотрщик; `controls` и
- * `retry` можно писать прямо в JSX. Обработчики событий подписываются сразу после создания, поэтому
- * события стартовой сцены не теряются. Контейнер — callback-реф: условный рендер и замена DOM-узла
- * пересоздают просмотрщик.
+ * Просмотрщик в контейнере хоста со своей разметкой. Смена `tour` по содержимому вызывает `setTour`, смена
+ * `scene` — `showScene` с `sceneOptions` того же рендера; просмотрщик пересоздаётся только при замене
+ * DOM-узла контейнера. `controls` и `retry` можно писать прямо в JSX. Обработчики событий подписываются
+ * сразу после создания, поэтому события стартовой сцены не теряются.
  */
 export const usePanoViewer = ({
+  scene,
+  sceneOptions,
   onSceneLoadStart,
   onSceneReady,
+  onSceneChange,
   onViewChange,
   onError,
   ...options
 }: IUsePanoViewerOptions): IUsePanoViewerResult =>
-  useViewerInstance(options, { onSceneLoadStart, onSceneReady, onViewChange, onError });
+  useViewerInstance(
+    options,
+    { scene, sceneOptions },
+    { onSceneLoadStart, onSceneReady, onSceneChange, onViewChange, onError },
+  );

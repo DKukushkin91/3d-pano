@@ -6,6 +6,7 @@ import type { IPanoViewer, IPanoViewerEventMap } from '../viewer/viewer-types';
 export interface IPanoViewerEventProps {
   onSceneLoadStart?: (payload: IPanoViewerEventMap['sceneLoadStart']) => void;
   onSceneReady?: (payload: IPanoViewerEventMap['sceneReady']) => void;
+  onSceneChange?: (payload: IPanoViewerEventMap['sceneChange']) => void;
   onViewChange?: (payload: IPanoViewerEventMap['viewChange']) => void;
   onError?: (payload: IPanoViewerEventMap['error']) => void;
 }
@@ -23,6 +24,7 @@ export const subscribeToViewerEvents = (
   const unsubscribers = [
     viewer.on('sceneLoadStart', (payload) => readHandlers().onSceneLoadStart?.(payload)),
     viewer.on('sceneReady', (payload) => readHandlers().onSceneReady?.(payload)),
+    viewer.on('sceneChange', (payload) => readHandlers().onSceneChange?.(payload)),
     viewer.on('viewChange', (payload) => readHandlers().onViewChange?.(payload)),
     viewer.on('error', (payload) => readHandlers().onError?.(payload)),
   ];
