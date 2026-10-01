@@ -1,3 +1,4 @@
+import { createInputController } from '../controls/input-controller';
 import { drawingBufferSize } from '../dom/drawing-buffer-size';
 import { observeElementSize, readElementSize } from '../dom/size-observer';
 import { createViewerRoot } from '../dom/viewer-root';
@@ -69,7 +70,8 @@ export const createViewer = (
   let session: ISceneSession | null = null;
   let isDestroyed = false;
 
-  const renderFrame = (): boolean => {
+  const renderFrame = (timeMs: number): boolean => {
+    const isAnimating = input.step(timeMs);
     const changedView = camera.takeViewChange();
 
     if (changedView !== null) {
@@ -79,7 +81,7 @@ export const createViewer = (
     const frameCamera = camera.frameCamera();
 
     if (renderer === null || frameCamera === null) {
-      return false;
+      return isAnimating;
     }
 
     const viewport = camera.getViewport();
@@ -98,10 +100,25 @@ export const createViewer = (
 
     renderer.drawFrame(frameCamera, session?.drawings() ?? [], bufferSize.width, bufferSize.height);
 
-    return false;
+    return isAnimating;
   };
 
   const loop = createRenderLoop(renderFrame);
+  const input = createInputController(
+    {
+      root: elements.root,
+      canvas: elements.canvas,
+      overlay: elements.overlay,
+      getView: camera.getView,
+      setView: camera.setView,
+      getViewport: camera.getViewport,
+      requestFrame: loop.requestRender,
+    },
+    resolvedOptions.controls,
+    (isInteracting) => {
+      store.update({ isInteracting });
+    },
+  );
   const stopObservingSize = observeElementSize(elements.root, (size) => {
     camera.setViewport(size);
     loop.requestRender();
@@ -205,6 +222,7 @@ export const createViewer = (
     }
 
     isDestroyed = true;
+    input.dispose();
     session?.dispose();
     loop.dispose();
     stopObservingSize();
@@ -240,6 +258,7 @@ export const createViewer = (
 
       resolvedOptions = resolveViewerOptions(resolvedOptions, nextOptions);
       elements.setLabel(resolvedOptions.label);
+      input.update(resolvedOptions.controls);
       loop.requestRender();
     },
     on: (name, handler) => (isDestroyed ? () => undefined : emitter.on(name, handler)),

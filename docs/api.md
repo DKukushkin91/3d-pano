@@ -55,6 +55,24 @@ if (pin !== null && pin.isInView) {
 }
 ```
 
+## Controls
+
+| Input    | Behaviour                                                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drag     | Mouse, pen or one finger: the image follows the pointer. Horizontal movement changes `yaw`, vertical movement changes `pitch`, also when looking straight up or down.           |
+| Inertia  | A quick flick keeps rotating and slows down by itself; pressing again stops it at once.                                                                                         |
+| Wheel    | Zooms in (forward) and out (back) over the panorama; the page does not scroll while the wheel is enabled.                                                                       |
+| Pinch    | Two fingers zoom proportionally to the change of the distance between them.                                                                                                     |
+| Keyboard | While the viewer is focused: arrows turn, `+` and `−` zoom. A short tap nudges the view, holding a key turns smoothly. Shortcuts with Ctrl, Cmd or Alt are left to the browser. |
+
+Each input can be turned off with `controls` — at creation or on the fly with `update({ controls })`:
+
+```ts
+viewer.update({ controls: { wheel: false } });
+```
+
+With `drag` and `pinch` off, touch gestures over the viewer scroll and zoom the page as usual (`touch-action` follows the enabled inputs). `wheelSpeed`, `keyboardSpeed` and `inertiaFriction` multiply the defaults; `invertDrag` reverses dragging but not the keyboard. Elements you put into `viewer.overlay` keep their own clicks, wheel and keys — pressing them never starts a drag.
+
 ## Events
 
 ```ts

@@ -26,3 +26,7 @@ export * from './dom/drawing-buffer-size';
 export * from './viewer/camera-state';
 export * from './viewer/create-pano-viewer';
 export * from './viewer/viewer-options';
+export * from './controls/drag-gesture';
+export * from './controls/inertia';
+export * from './controls/keyboard-motion';
+export * from './controls/zoom-gestures';

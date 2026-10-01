@@ -7,7 +7,6 @@ export interface IViewerRoot {
   canvas: HTMLCanvasElement;
   overlay: HTMLDivElement;
   setLabel: (label: string) => void;
-  setTouchAction: (touchAction: string) => void;
   remove: () => void;
 }
 
@@ -32,13 +31,7 @@ export const createViewerRoot = (container: HTMLElement, label: string): IViewer
   root.setAttribute('role', 'application');
   root.setAttribute('aria-label', label);
   root.tabIndex = 0;
-  Object.assign(root.style, {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-    touchAction: 'none',
-  });
+  Object.assign(root.style, { position: 'relative', width: '100%', height: '100%', overflow: 'hidden' });
   Object.assign(canvas.style, { ...FILL_PARENT, display: 'block', width: '100%', height: '100%' });
   canvas.setAttribute('aria-hidden', 'true');
   Object.assign(overlay.style, FILL_PARENT);
@@ -51,9 +44,6 @@ export const createViewerRoot = (container: HTMLElement, label: string): IViewer
     overlay,
     setLabel: (nextLabel) => {
       root.setAttribute('aria-label', nextLabel);
-    },
-    setTouchAction: (touchAction) => {
-      root.style.touchAction = touchAction;
     },
     remove: () => {
       root.remove();
