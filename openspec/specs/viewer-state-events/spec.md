@@ -10,9 +10,10 @@
 ### Requirement: Снимок состояния
 
 `getSnapshot()` SHALL возвращать неизменяемый объект `{ sceneId, status, loadProgress, isInteracting,
-error }`. `status` — `loading` (ничего не показано), `preview` (видно превью, основное изображение
-грузится), `ready` или `error`. Пока состояние не изменилось, MUST возвращаться тот же объект. Вид
-камеры в снимок не входит. Проверка: контракт-тест.
+isTransitioning, error }`. `sceneId` — сцена последней принятой смены, даже если на экране ещё
+предыдущая. `status` и `loadProgress` описывают эту сцену: `loading` (она ещё не видна), `preview`
+(видно её превью, основное изображение грузится), `ready` или `error`. Пока состояние не изменилось,
+MUST возвращаться тот же объект. Вид камеры в снимок не входит. Проверка: контракт-тест.
 
 #### Scenario: Повторное чтение
 
@@ -28,6 +29,11 @@ error }`. `status` — `loading` (ничего не показано), `preview`
 
 - **WHEN** превью сцены загрузилось раньше основного изображения
 - **THEN** `status` становится `preview`, а после загрузки основного изображения — `ready`
+
+#### Scenario: Полоса загрузки при смене комнаты
+
+- **WHEN** хост вызывает `showScene('bedroom')`, пока на экране `kitchen`
+- **THEN** снимок сразу содержит `sceneId: 'bedroom'`, `status: 'loading'` и растущий `loadProgress`, а на экране до готовности остаётся `kitchen`
 
 ### Requirement: Флаг взаимодействия
 
@@ -53,13 +59,20 @@ error }`. `status` — `loading` (ничего не показано), `preview`
 ### Requirement: Типизированные события
 
 `on(name, handler)` SHALL подписывать обработчик на событие и возвращать функцию отписки. События:
-`sceneLoadStart` и `sceneReady` с `{ sceneId }`, `viewChange` с `{ view }`, `error` с `{ error }`.
-Проверка: контракт-тест эмиттера и проверка типов.
+`sceneLoadStart` и `sceneReady` с `{ sceneId }`, `sceneChange` с `{ sceneId, previousSceneId }`,
+`viewChange` с `{ view }`, `error` с `{ error }`. `sceneLoadStart` и `sceneReady` MUST приходить на
+каждую принятую смену сцены, в том числе из кэша. Проверка: контракт-тест эмиттера и навигатора,
+проверка типов.
 
 #### Scenario: Подписка и отписка
 
 - **WHEN** хост подписался на `sceneReady`, а затем вызвал функцию отписки
 - **THEN** обработчик больше не вызывается
+
+#### Scenario: Сцена из кэша
+
+- **WHEN** хост показывает предзагруженную сцену
+- **THEN** `sceneLoadStart` и сразу за ним `sceneReady` всё равно приходят
 
 ### Requirement: События не теряются при создании
 
@@ -76,7 +89,7 @@ error }`. `status` — `loading` (ничего не показано), `preview`
 
 Ошибка SHALL быть объектом `{ category, code, message, url?, httpStatus?, issues?, cause? }`. Категория
 задаёт действие хоста: `webgl` — заглушка, `tour` — ошибка данных, `resource` — можно повторить,
-`image` — ошибка ассетов. Коды: `webgl-unavailable` (webgl), `invalid-tour` (tour),
+`image` — ошибка ассетов. Коды: `webgl-unavailable` (webgl), `invalid-tour` и `unknown-scene` (tour),
 `network-failed`, `http-status`, `decode-failed`, `loader-failed` (resource), `invalid-image` (image).
 Проверка: контракт-тест классификации и проверка типов.
 
@@ -89,6 +102,11 @@ error }`. `status` — `loading` (ничего не показано), `preview`
 
 - **WHEN** функция `loader` хоста отклоняет промис
 - **THEN** ошибка содержит категорию `resource`, код `loader-failed` и исходную ошибку в `cause`
+
+#### Scenario: Неизвестная сцена
+
+- **WHEN** хост вызывает `showScene` с `id`, которого нет в туре
+- **THEN** ошибка в поле `details` исключения содержит категорию `tour` и код `unknown-scene`
 
 ### Requirement: Словари категорий, кодов и статусов
 
@@ -110,3 +128,15 @@ error }`. `status` — `loading` (ничего не показано), `preview`
 
 - **WHEN** один из двух обработчиков `sceneReady` бросает исключение
 - **THEN** второй обработчик всё равно вызывается, а исключение попадает в `reportError`
+
+### Requirement: Событие смены сцены
+
+Событие `sceneChange` с `{ sceneId, previousSceneId }` SHALL приходить каждый раз, когда меняется
+`snapshot.sceneId`: при принятой смене (до загрузки новой сцены) и для стартовой сцены с
+`previousSceneId: null`. Замена тура с той же `id` сцены MUST NOT слать это событие. Проверка:
+контракт-тест навигатора.
+
+#### Scenario: Подсветка комнаты в списке хоста
+
+- **WHEN** сцена сменилась вызовом `showScene` через `ref`, а не через состояние хоста
+- **THEN** хост получает `sceneChange` и подсвечивает новую комнату в своём списке
