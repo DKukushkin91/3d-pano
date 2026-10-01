@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "react", "jsx-a11y", "import", "unicorn", "oxc"],
+  "jsPlugins": ["eslint-plugin-sonarjs"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -33,7 +34,41 @@
       {
         "allow": ["**/*.css"]
       }
-    ]
+    ],
+    "max-lines": [
+      "error",
+      {
+        "max": 300,
+        "skipBlankLines": false,
+        "skipComments": false
+      }
+    ],
+    "max-depth": ["error", 4],
+    "sonarjs/cognitive-complexity": ["error", 15],
+    "sonarjs/nested-control-flow": "error",
+    "sonarjs/expression-complexity": "error",
+    "sonarjs/no-collapsible-if": "error",
+    "sonarjs/no-nested-conditional": "error",
+    "sonarjs/no-nested-switch": "error",
+    "sonarjs/no-nested-functions": "error",
+    "sonarjs/no-nested-template-literals": "error",
+    "sonarjs/no-nested-assignment": "error",
+    "sonarjs/no-nested-incdec": "error",
+    "sonarjs/no-identical-functions": "error",
+    "sonarjs/no-duplicated-branches": "error",
+    "sonarjs/no-all-duplicated-branches": "error",
+    "sonarjs/no-identical-conditions": "error",
+    "sonarjs/no-identical-expressions": "error",
+    "sonarjs/no-duplicate-string": "error",
+    "sonarjs/prefer-single-boolean-return": "error",
+    "sonarjs/no-redundant-boolean": "error",
+    "sonarjs/no-redundant-jump": "error",
+    "sonarjs/no-redundant-assignments": "error",
+    "sonarjs/no-gratuitous-expressions": "error",
+    "sonarjs/max-switch-cases": "error",
+    "sonarjs/too-many-break-or-continue-in-loop": "error",
+    "sonarjs/no-inverted-boolean-check": "error",
+    "sonarjs/no-useless-catch": "error"
   },
   "ignorePatterns": ["dist", "examples/**/dist", ".agents", ".cursor", ".claude"]
 }
