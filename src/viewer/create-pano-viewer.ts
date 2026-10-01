@@ -2,6 +2,7 @@ import { createInputController } from '../controls/input-controller';
 import { drawingBufferSize } from '../dom/drawing-buffer-size';
 import { observeElementSize, readElementSize } from '../dom/size-observer';
 import { createViewerRoot } from '../dom/viewer-root';
+import type { ISceneSessionState } from '../navigation/navigator-types';
 import { createGlContext, releaseGlContext } from '../render/gl-context';
 import { createRenderLoop } from '../render/render-loop';
 import { type IRenderer, createRenderer } from '../render/renderer';
@@ -21,7 +22,7 @@ import {
 import type { IScene } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
 import { createCameraState } from './camera-state';
-import { type ISceneSession, type ISceneSessionState, createSceneSession } from './scene-session';
+import { type ISceneSession, createSceneSession } from './scene-session';
 import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
 import type { IPanoViewer, IPanoViewerEventMap, IPanoViewerOptions } from './viewer-types';
 
@@ -68,6 +69,7 @@ export const createViewer = (
   const glContext = createGlContext(elements.canvas, debug.maxTextureSize ?? null);
   const renderer: IRenderer | null = glContext === null ? null : createRenderer(glContext);
   let session: ISceneSession | null = null;
+  let lastSessionStatus: ISceneSessionState['status'] = EnumViewerStatus.Loading;
   let isDestroyed = false;
 
   const renderFrame = (timeMs: number): boolean => {
@@ -98,7 +100,7 @@ export const createViewer = (
       elements.canvas.height = bufferSize.height;
     }
 
-    renderer.drawFrame(frameCamera, session?.drawings() ?? [], bufferSize.width, bufferSize.height);
+    renderer.drawFrame(frameCamera, session?.drawings() ?? [], bufferSize.width, bufferSize.height, null);
 
     return isAnimating;
   };
@@ -133,6 +135,8 @@ export const createViewer = (
     if (isDestroyed) {
       return;
     }
+
+    lastSessionStatus = state.status;
 
     const previousStatus = store.getSnapshot().status;
     const wasReady = previousStatus === EnumViewerStatus.Ready;
@@ -169,6 +173,7 @@ export const createViewer = (
     emitter.emit('sceneLoadStart', { sceneId: scene.id });
     session = createSceneSession({
       scene,
+      withPreview: true,
       glContext,
       loadImage: (url, signal) =>
         loadImage(url, { loader: resolvedOptions.loader, retry: resolvedOptions.retry, signal }),
@@ -210,7 +215,7 @@ export const createViewer = (
     }
 
     store.update({
-      status: session.hasVisiblePreview() ? EnumViewerStatus.Preview : EnumViewerStatus.Loading,
+      status: lastSessionStatus,
       error: null,
     });
     await loadSession(session, sceneId);

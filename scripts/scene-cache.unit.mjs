@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { createPreloadQueue, createSceneCache, sceneKeyOf } from '../dist/internal.js';
+import {
+  createPreloadQueue,
+  createSceneCache,
+  planTextureSplit,
+  sceneKeyOf,
+  textureArrayByteSize,
+} from '../dist/internal.js';
 
 const MEGABYTE = 2 ** 20;
 const KITCHEN = { id: 'kitchen', source: { type: 'equirect', url: 'https://cdn.example.com/kitchen.jpg' } };
@@ -209,5 +215,26 @@ describe('scene-navigation · Предзагрузка в фоне', () => {
     );
     assert.deepEqual(started, [HALL_JOB, BEDROOM_JOB]);
     assert.equal(queue.find(BEDROOM_KEY), BEDROOM_JOB);
+  });
+});
+
+describe('scene-navigation · Оценка видеопамяти сцены', () => {
+  it('эквиректангулярная 8K: около 171 МБ с MIP, одним тайлом или двумя по 4096', () => {
+    const whole = textureArrayByteSize({ layerWidth: 8192, layerHeight: 4096, layerCount: 1 });
+    const plan = planTextureSplit(8192, 4096, 4096);
+    const split = textureArrayByteSize({
+      layerWidth: plan.tileWidth,
+      layerHeight: plan.tileHeight,
+      layerCount: plan.tiles.length,
+    });
+
+    assert.ok(Math.abs(whole / MEGABYTE - 170.67) < 0.01, `got ${String(whole / MEGABYTE)} MB`);
+    assert.ok(Math.abs(split - whole) / whole < 0.001);
+  });
+
+  it('грани куба по 2048: около 128 МБ с MIP', () => {
+    const bytes = textureArrayByteSize({ layerWidth: 2048, layerHeight: 2048, layerCount: 6 });
+
+    assert.ok(Math.abs(bytes / MEGABYTE - 128) < 0.01, `got ${String(bytes / MEGABYTE)} MB`);
   });
 });

@@ -16,12 +16,16 @@ export interface IFrameCamera {
   halfTangents: IHalfTangents;
 }
 
+/**
+ * `target` — framebuffer текстуры кадра во время смешивания, `null` — сам canvas.
+ */
 export interface IRenderer {
   drawFrame: (
     camera: IFrameCamera,
     drawings: readonly TLayerDrawing[],
     bufferWidth: number,
     bufferHeight: number,
+    target: WebGLFramebuffer | null,
   ) => void;
   dispose: () => void;
 }
@@ -100,7 +104,8 @@ export const createRenderer = ({ gl }: IGlContext): IRenderer => {
     gl.uniform1ui(cubeProgram.uniform('readyFaces'), drawing.readyFaces);
   };
 
-  const drawFrame: IRenderer['drawFrame'] = (camera, drawings, bufferWidth, bufferHeight) => {
+  const drawFrame: IRenderer['drawFrame'] = (camera, drawings, bufferWidth, bufferHeight, target) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target);
     gl.viewport(0, 0, bufferWidth, bufferHeight);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);

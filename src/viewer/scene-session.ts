@@ -1,3 +1,4 @@
+import type { INavigatorSession, ISceneSessionState } from '../navigation/navigator-types';
 import type { IGlContext } from '../render/gl-context';
 import type { TLayerDrawing } from '../render/layer-drawing';
 import { type IPanoramaLayer, createPanoramaLayer } from '../render/panorama-layer';
@@ -7,16 +8,12 @@ import { EnumErrorCode, EnumViewerStatus, type TViewerStatus } from '../state/vi
 import type { IScene } from '../tour/tour-types';
 
 /**
- * Состояние загрузки сцены, которое просмотрщик переносит в снимок и камеру.
+ * `withPreview: false` — превью не загружается: при смене сцены на экране остаётся старая, пока основное
+ * изображение новой не готово, и превью показывать некуда.
  */
-export interface ISceneSessionState {
-  status: TViewerStatus;
-  loadProgress: number;
-  pixelsPerRadian: number | null;
-}
-
 export interface ISceneSessionOptions {
   scene: IScene;
+  withPreview: boolean;
   glContext: IGlContext;
   loadImage: (url: string, signal: AbortSignal) => Promise<ImageBitmap>;
   onChange: (state: ISceneSessionState) => void;
@@ -26,11 +23,8 @@ export interface ISceneSessionOptions {
  * Сцена в работе: её загрузчик и слои в видеопамяти. `load()` догружает недостающее и разрешается, когда
  * основное изображение целиком в текстурах; повторный вызов после ошибки — это `viewer.retry()`.
  */
-export interface ISceneSession {
-  load: () => Promise<void>;
+export interface ISceneSession extends INavigatorSession {
   drawings: () => TLayerDrawing[];
-  hasVisiblePreview: () => boolean;
-  dispose: () => void;
 }
 
 const statusOf = (previewLayer: IPanoramaLayer | null, mainLayer: IPanoramaLayer): TViewerStatus => {
@@ -56,7 +50,7 @@ const densityOf = (previewLayer: IPanoramaLayer | null, mainLayer: IPanoramaLaye
  */
 export const createSceneSession = (options: ISceneSessionOptions): ISceneSession => {
   const { gl, maxTextureSize } = options.glContext;
-  const { scene } = options;
+  const scene: IScene = options.withPreview ? options.scene : { ...options.scene, preview: undefined };
   const previewLayer =
     scene.preview === undefined ? null : createPanoramaLayer(gl, scene.preview.type, maxTextureSize);
   const mainLayer = createPanoramaLayer(gl, scene.source.type, maxTextureSize);
@@ -127,7 +121,7 @@ export const createSceneSession = (options: ISceneSessionOptions): ISceneSession
         (drawing): drawing is TLayerDrawing => drawing !== null && drawing !== undefined,
       );
     },
-    hasVisiblePreview: () => previewLayer?.isComplete() === true,
+    byteSize: () => (previewLayer?.byteSize() ?? 0) + mainLayer.byteSize(),
     dispose: () => {
       loader.abort();
       previewLayer?.dispose();

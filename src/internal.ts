@@ -22,6 +22,7 @@ export * from './resources/load-progress';
 export * from './resources/retry';
 export * from './resources/scene-loader';
 export * from './resources/texture-split-plan';
+export * from './resources/texture-memory';
 export * from './resources/image-decoder';
 export * from './dom/drawing-buffer-size';
 export * from './viewer/camera-state';

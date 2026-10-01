@@ -1,4 +1,5 @@
 import { cropImage } from '../resources/image-decoder';
+import { textureArrayByteSize } from '../resources/texture-memory';
 import { type ITextureTile, planTextureSplit } from '../resources/texture-split-plan';
 import { CUBE_FACES, EnumSourceType, type TSourceType } from '../tour/tour-dictionaries';
 import { pixelsPerRadianForCube, pixelsPerRadianForEquirect } from '../view/view-limits';
@@ -20,6 +21,7 @@ export interface IPanoramaLayer {
   drawing: () => TLayerDrawing | null;
   isComplete: () => boolean;
   pixelsPerRadian: () => number | null;
+  byteSize: () => number;
   dispose: () => void;
 }
 
@@ -92,6 +94,7 @@ const createEquirectLayer = (gl: WebGL2RenderingContext, maxTextureSize: number)
     isComplete: () => current !== null,
     pixelsPerRadian: () =>
       current?.type === EnumSourceType.Equirect ? pixelsPerRadianForEquirect(current.imageWidth) : null,
+    byteSize: () => (current === null ? 0 : textureArrayByteSize(current.textureArray)),
     dispose: () => {
       isDisposed = true;
 
@@ -153,6 +156,7 @@ const createCubeLayer = (gl: WebGL2RenderingContext, maxTextureSize: number): IP
         : { type: EnumSourceType.Cube, textureArray, faceSize, tilesPerSide, readyFaces },
     isComplete: () => readyFaces === ALL_FACES_MASK,
     pixelsPerRadian: () => (readyFaces === 0 ? null : pixelsPerRadianForCube(faceSize)),
+    byteSize: () => (textureArray === null ? 0 : textureArrayByteSize(textureArray)),
     dispose: () => {
       isDisposed = true;
 

@@ -38,10 +38,10 @@
 
 ## 5. Композитинг кадра (scene-transitions)
 
-- [ ] 5.1 `viewer/scene-session.ts`: `byteSize()` по текстурам с MIP и режим без превью. Контракт-тест оценки байтов (эквиректангулярная 8K и грани 2048) через чистую функцию размера
-- [ ] 5.2 `render/framebuffer.ts`: RGBA8-текстура с framebuffer, пересоздание при смене размера, освобождение. `render/shaders/composite-fragment.ts` и `render/composite-pass.ts`: `mix(A, B, weight)`. `renderer.drawFrame` рисует в переданный framebuffer или в canvas
-- [ ] 5.3 `render/frame-composer.ts`: прямой кадр вне смешивания; в смешивании — старая сцена в A (живая при `keep`, иначе замершая камера и перерисовка только при смене размера), новая в B, проход смешивания; освобождение текстур после конца (D63). Проверка в группе 6 сценарием «Невидимая смена ремонта»
-- [ ] 5.4 Закоммитить `feat(render): добавить композитинг смешивания сцен через framebuffer`
+- [x] 5.1 `viewer/scene-session.ts`: `byteSize()` по текстурам с MIP и режим без превью. Контракт-тест оценки байтов (эквиректангулярная 8K и грани 2048) через чистую функцию размера
+- [x] 5.2 `render/framebuffer.ts`: RGBA8-текстура с framebuffer, пересоздание при смене размера, освобождение. `render/shaders/composite-fragment.ts` и `render/composite-pass.ts`: `mix(A, B, weight)`. `renderer.drawFrame` рисует в переданный framebuffer или в canvas
+- [x] 5.3 `render/frame-composer.ts`: прямой кадр вне смешивания; в смешивании — старая сцена в A (живая при `keep`, иначе замершая камера и перерисовка только при смене размера), новая в B, проход смешивания; освобождение текстур после конца (D63). Проверка в группе 6 сценарием «Невидимая смена ремонта»
+- [x] 5.4 Закоммитить `feat(render): добавить композитинг смешивания сцен через framebuffer`
 
 ## 6. Сборка просмотрщика и песочница vanilla (scene-navigation, scene-transitions, viewer-lifecycle)
 

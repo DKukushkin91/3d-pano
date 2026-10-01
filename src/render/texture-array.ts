@@ -1,3 +1,5 @@
+import { mipLevelCount } from '../resources/texture-memory';
+
 /**
  * Текстура-массив: все тайлы одного изображения (или шести граней куба) — слои одного размера в одной
  * текстуре, поэтому слой рисуется одним проходом шейдера при любом числе тайлов.
@@ -15,9 +17,6 @@ export interface ITextureArrayLayout {
   layerCount: number;
   isHorizontallyRepeated: boolean;
 }
-
-const mipLevelCount = (width: number, height: number): number =>
-  Math.floor(Math.log2(Math.max(width, height))) + 1;
 
 /**
  * Повтор по горизонтали включается для эквиректангулярного изображения из одного тайла: тогда фильтрация на
