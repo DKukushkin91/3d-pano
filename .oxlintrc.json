@@ -11,7 +11,8 @@
       "error",
       {
         "min": 2,
-        "properties": "never"
+        "properties": "never",
+        "exceptions": ["x", "y", "z", "w"]
       }
     ],
     "no-console": "error",
@@ -34,5 +35,5 @@
       }
     ]
   },
-  "ignorePatterns": ["dist", "examples/**/dist"]
+  "ignorePatterns": ["dist", "examples/**/dist", ".agents", ".cursor", ".claude"]
 }

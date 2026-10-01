@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(commit)",
+      "Skill(clarify)",
+      "Skill(learn)",
+      "Skill(add-feature)",
+      "Skill(check)",
+      "Bash(pnpm check)",
+      "Bash(pnpm check:*)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm build)",
+      "Bash(pnpm test:unit)",
+      "Bash(pnpm format)",
+      "Bash(pnpm exec openspec list *)",
+      "Bash(pnpm exec openspec show *)",
+      "Bash(pnpm exec openspec status *)",
+      "Bash(pnpm exec openspec validate *)",
+      "Bash(pnpm exec openspec instructions *)",
+      "Bash(pnpm exec openspec context *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lint-format.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck-on-stop.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/inject-date.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
