@@ -1,5 +1,6 @@
 import type { TImageLoader } from '../resources/load-image';
 import { DEFAULT_RETRY_OPTIONS, type IResolvedRetryOptions, type IRetryOptions } from '../resources/retry';
+import { CONTROLS_OPTION_KEYS } from './controls-option-keys';
 import type { IControlsOptions, TPanoViewerUpdate, TResolvedControlsOptions } from './viewer-types';
 
 /**
@@ -115,4 +116,27 @@ export const resolveViewerOptions = (
       ? positiveNumber('renderScale', next.renderScale ?? DEFAULT_RENDER_SCALE)
       : (current?.renderScale ?? DEFAULT_RENDER_SCALE),
   };
+};
+
+const comparableValues = (options: IResolvedViewerOptions): readonly unknown[] => [
+  options.label,
+  options.loader,
+  options.maxPixelRatio,
+  options.renderScale,
+  options.retry.attempts,
+  options.retry.delayMs,
+  ...CONTROLS_OPTION_KEYS.map((key) => options.controls[key]),
+];
+
+/**
+ * Совпадают ли опции по значению. `update()` с теми же значениями ничего не делает — React-хук может
+ * передавать опции после каждого рендера, не заставляя просмотрщик перерисовывать кадр.
+ */
+export const areViewerOptionsEqual = (
+  first: IResolvedViewerOptions,
+  second: IResolvedViewerOptions,
+): boolean => {
+  const secondValues = comparableValues(second);
+
+  return comparableValues(first).every((value, index) => Object.is(value, secondValues[index]));
 };

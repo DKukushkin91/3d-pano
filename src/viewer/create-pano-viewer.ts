@@ -22,7 +22,7 @@ import type { IScene } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
 import { createCameraState } from './camera-state';
 import { type ISceneSession, type ISceneSessionState, createSceneSession } from './scene-session';
-import { resolveViewerOptions } from './viewer-options';
+import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
 import type { IPanoViewer, IPanoViewerEventMap, IPanoViewerOptions } from './viewer-types';
 
 /**
@@ -256,7 +256,13 @@ export const createViewer = (
         return;
       }
 
-      resolvedOptions = resolveViewerOptions(resolvedOptions, nextOptions);
+      const nextResolvedOptions = resolveViewerOptions(resolvedOptions, nextOptions);
+
+      if (areViewerOptionsEqual(resolvedOptions, nextResolvedOptions)) {
+        return;
+      }
+
+      resolvedOptions = nextResolvedOptions;
       elements.setLabel(resolvedOptions.label);
       input.update(resolvedOptions.controls);
       loop.requestRender();

@@ -42,6 +42,20 @@ viewer.on('sceneReady', ({ sceneId }) => {
 
 The container needs a size. A scene can also be six cube faces: `{ type: 'cube', url: '/tiles/room/{face}.jpg' }`.
 
+## React
+
+```tsx
+import { PanoViewer } from '@dkukushkin/3d-pano/react';
+
+export const Tour = () => (
+  <PanoViewer tour={tour} label="Apartment tour" className="absolute inset-0" onSceneReady={handleSceneReady}>
+    <YourOverlayUi />
+  </PanoViewer>
+);
+```
+
+`usePanoViewer` gives the same viewer for your own markup, and `usePanoSnapshot` reads its state. See [docs/react.md](docs/react.md).
+
 ## Documentation
 
 - [Tour format](docs/tour.md) — scenes, image sources, initial view and limits, coordinate conventions.
