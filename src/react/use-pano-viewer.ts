@@ -19,6 +19,15 @@ export interface IUsePanoViewerResult {
   snapshot: IPanoViewerSnapshot;
 }
 
+/**
+ * Результат общей части: без снимка — компоненту `<PanoViewer>` снимок не нужен, и подписка на него
+ * перерисовывала бы компонент при каждом нажатии и смене статуса.
+ */
+export interface IViewerInstance {
+  containerRef: RefCallback<HTMLElement>;
+  viewer: IPanoViewer | null;
+}
+
 const updatableOptions = (options: IPanoViewerOptions): TPanoViewerUpdate => ({
   label: options.label,
   loader: options.loader,
@@ -38,13 +47,12 @@ export const useViewerInstance = (
   options: IPanoViewerOptions,
   sceneProps: IPanoViewerSceneProps,
   eventHandlers: IPanoViewerEventProps,
-): IUsePanoViewerResult => {
+): IViewerInstance => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [viewer, setViewer] = useState<IPanoViewer | null>(null);
   const latestOptions = useRef(options);
   const latestScene = useRef(sceneProps.scene);
   const latestHandlers = useRef(eventHandlers);
-  const snapshot = usePanoSnapshot(viewer);
 
   useEffect(() => {
     latestOptions.current = options;
@@ -76,7 +84,7 @@ export const useViewerInstance = (
 
   useSceneSync(viewer, options.tour, sceneProps, () => latestHandlers.current.onError);
 
-  return { containerRef: setContainer, viewer, snapshot };
+  return { containerRef: setContainer, viewer };
 };
 
 /**
@@ -94,9 +102,13 @@ export const usePanoViewer = ({
   onViewChange,
   onError,
   ...options
-}: IUsePanoViewerOptions): IUsePanoViewerResult =>
-  useViewerInstance(
+}: IUsePanoViewerOptions): IUsePanoViewerResult => {
+  const instance = useViewerInstance(
     options,
     { scene, sceneOptions },
     { onSceneLoadStart, onSceneReady, onSceneChange, onViewChange, onError },
   );
+  const snapshot = usePanoSnapshot(instance.viewer);
+
+  return { ...instance, snapshot };
+};

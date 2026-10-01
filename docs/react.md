@@ -33,6 +33,7 @@ export const ApartmentTour = ({ tour }: { tour: ITour }) => {
 
 - **Props** are the [viewer options](api.md#creating-a-viewer) plus `className`, `children`, the [scene props](#the-current-scene) `scene` and `sceneOptions`, and the event handlers `onSceneLoadStart`, `onSceneReady`, `onSceneChange`, `onViewChange`, `onError`.
 - **Handlers** can be new functions on every render — the viewer is not recreated and the latest handler is called.
+- **Per-frame data**: `onViewChange` fires on every animation frame while the camera moves. Putting the view into React state there re-renders your component tree on every frame; write it to a DOM node through a ref or keep it in a ref instead. The component itself re-renders only when its props change — not on camera movement and not on snapshot changes; use `usePanoSnapshot` in the children that need the snapshot.
 - **`controls` and `retry`** can be written inline; they are compared by value. Memoise `loader` if it is not a stable function.
 - **`tour`** is compared by content: a tour built inline on every render changes nothing, while a tour with different data is applied with [`setTour`](api.md#replacing-the-tour) — the viewer is not recreated. To start from scratch (for example to reset the view and the cache), give the component a new `key`.
 - **`ref`** receives the viewer instance after mounting and `null` after unmounting. A state setter as `ref` (as above) re-renders your component when the viewer appears.

@@ -1,4 +1,4 @@
-import type { IPanoError, IShowSceneOptions, IView } from '@dkukushkin/3d-pano';
+import type { IPanoError, IShowSceneOptions } from '@dkukushkin/3d-pano';
 import { type IPanoViewer, PanoViewer } from '@dkukushkin/3d-pano/react';
 import { type ChangeEvent, type ReactElement, useEffect, useMemo, useState } from 'react';
 
@@ -7,10 +7,12 @@ import { LoadingBar } from './loading-bar';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { OwnMarkupDemo } from './own-markup-demo';
 import { ROOM_SWITCH, ScenePicker } from './scene-picker';
+import { ViewReadout } from './view-readout';
 
 interface IReactPlaygroundState {
   viewer: IPanoViewer | null;
   viewerInstances: number;
+  appCommits: number;
   sceneLoadStarts: number;
   viewChanges: number;
   sceneChanges: string[];
@@ -31,6 +33,7 @@ const STALE_SCENE = 'attic';
 const playgroundState: IReactPlaygroundState = {
   viewer: null,
   viewerInstances: 0,
+  appCommits: 0,
   sceneLoadStarts: 0,
   viewChanges: 0,
   sceneChanges: [],
@@ -47,10 +50,15 @@ const handleError = ({ error }: { error: IPanoError }): void => {
   playgroundState.errors.push(error.code);
 };
 
+const handleViewChange = (): void => {
+  playgroundState.viewChanges += 1;
+};
+
 /**
  * React-страница песочницы: сцена как проп с разными переходами для комнаты и ремонта, переход через
  * `ref`, тур, который пересобирается на каждом рендере, замена тура, монтирование и размонтирование.
- * Счётчики лежат в `window.reactPlayground` для проверки из консоли.
+ * Вращение камеры страницу не перерисовывает: вид показывает `ViewReadout` в обход состояния. Счётчики,
+ * включая число коммитов `App`, лежат в `window.reactPlayground` для проверки из консоли.
  */
 export const App = (): ReactElement => {
   const [viewer, setViewer] = useState<IPanoViewer | null>(null);
@@ -61,15 +69,9 @@ export const App = (): ReactElement => {
   const [sceneOptions, setSceneOptions] = useState<IShowSceneOptions>(ROOM_SWITCH);
   const [shownScene, setShownScene] = useState<string | null>(null);
   const [missingUrls, setMissingUrls] = useState<string[]>([]);
-  const [view, setView] = useState<IView | null>(null);
 
   const controls = useMemo(() => ({ keyboard: isKeyboardEnabled }), [isKeyboardEnabled]);
   const tour = { ...(isNarrowTour ? NARROW_FOV_TOUR : DEMO_TOUR) };
-
-  const handleViewChange = ({ view: changedView }: { view: IView }): void => {
-    playgroundState.viewChanges += 1;
-    setView(changedView);
-  };
 
   const handleSceneChange = ({ sceneId }: { sceneId: string }): void => {
     playgroundState.sceneChanges.push(sceneId);
@@ -118,6 +120,10 @@ export const App = (): ReactElement => {
       isCancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    playgroundState.appCommits += 1;
+  });
 
   useEffect(() => {
     playgroundState.viewer = viewer;
@@ -175,9 +181,7 @@ export const App = (): ReactElement => {
       )}
       <p className="readout" data-react-readout>
         {`scene prop ${scene} · on screen ${shownScene ?? '—'} · `}
-        {view === null
-          ? 'view —'
-          : `view yaw ${view.yaw.toFixed(1)} · pitch ${view.pitch.toFixed(1)} · fov ${view.fov.toFixed(1)}`}
+        <ViewReadout viewer={viewer} />
       </p>
       <OwnMarkupDemo tour={DEMO_TOUR} />
     </main>
