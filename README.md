@@ -3,6 +3,8 @@
 A framework-agnostic WebGL2 viewer for 360° panoramas and virtual tours.
 
 - Show a scene from a single equirectangular image or from six cube faces, with a low-resolution preview while the full image loads.
+- Switch scenes of a tour with a cut or a blend and 31 easing curves; keep the view and the inertia when only the renovation changes.
+- Preload neighbouring scenes into video memory, within a budget, and replace the whole tour without recreating the viewer.
 - Drag, inertia, wheel, pinch and keyboard controls with configurable limits.
 - No runtime dependencies in the core; an optional React adapter lives in `@dkukushkin/3d-pano/react`.
 - Safe to import on the server: nothing touches the DOM until a viewer is created.
@@ -42,6 +44,18 @@ viewer.on('sceneReady', ({ sceneId }) => {
 
 The container needs a size. A scene can also be six cube faces: `{ type: 'cube', url: '/tiles/room/{face}.jpg' }`.
 
+## Scenes
+
+```ts
+void viewer.preloadScene('bedroom');
+
+await viewer.showScene('bedroom', {
+  transition: { type: 'blend', durationMs: 800, easing: 'sine-in-out' },
+});
+```
+
+The current scene stays on screen until the next one has loaded; the promise resolves `true` when the switch is complete and `false` when a newer call superseded it. See [Scenes and transitions](docs/api.md#scenes-and-transitions).
+
 ## React
 
 ```tsx
@@ -59,8 +73,8 @@ export const Tour = () => (
 ## Documentation
 
 - [Tour format](docs/tour.md) — scenes, image sources, initial view and limits, coordinate conventions.
-- [Viewer API](docs/api.md) — creating a viewer, methods, events, state snapshot, errors, image loading.
-- [React](docs/react.md) — `<PanoViewer>` and hooks.
+- [Viewer API](docs/api.md) — creating a viewer, methods, scene switching and transitions, preloading, events, state snapshot, errors, image loading.
+- [React](docs/react.md) — `<PanoViewer>`, the `scene` prop and hooks.
 
 ## Development
 
