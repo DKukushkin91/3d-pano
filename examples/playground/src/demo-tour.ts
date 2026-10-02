@@ -1,7 +1,7 @@
 import { EnumSourceType, type ITour } from '@dkukushkin/3d-pano';
 
 import { balconyHotspots, roomHotspots } from './demo-hotspots';
-import { GENERATED_ASSETS, LOCAL_ASSETS } from './local-assets';
+import { DEMO_TILE_PYRAMID, GENERATED_ASSETS, LOCAL_ASSETS } from './local-assets';
 
 /**
  * Имена граней, которые использует neometria, — проверяют `faceNames`.
@@ -16,10 +16,11 @@ export const NEOMETRIA_FACE_NAMES = {
 } as const;
 
 /**
- * Тур из локальных панорам владельца: балкон и номер — каждый одним файлом и гранями куба. Пара «файл ↔
- * грани» одного снимка — это «смена ремонта»: при смешивании с `view: 'keep'` смена должна быть
- * незаметной. Точки на полу ведут из балкона в номер и обратно внутри одного варианта. Источники нарочно записаны по-разному — константой словаря и строкой: проверка типов
- * песочницы подтверждает, что обе формы равнозначны.
+ * Тур из локальных панорам владельца: балкон и номер — каждый одним файлом, гранями куба и тайловым кубом.
+ * Варианты одного снимка — это «смена ремонта»: при смешивании с `view: 'keep'` смена должна быть
+ * незаметной. Точки на полу ведут из балкона в номер и обратно внутри одного варианта. Источники нарочно
+ * записаны по-разному — константой словаря и строкой: проверка типов песочницы подтверждает, что обе формы
+ * равнозначны.
  */
 export const DEMO_TOUR: ITour = {
   startScene: 'balcony',
@@ -58,6 +59,29 @@ export const DEMO_TOUR: ITour = {
       },
       preview: { type: 'equirect', url: GENERATED_ASSETS.hotelRoomPreview },
       hotspots: roomHotspots('balcony-cube'),
+    },
+    {
+      id: 'balcony-tiles',
+      title: 'Balcony — multiresolution cube',
+      source: {
+        type: 'cube',
+        url: GENERATED_ASSETS.balconyTiles,
+        faceNames: NEOMETRIA_FACE_NAMES,
+        ...DEMO_TILE_PYRAMID,
+      },
+      hotspots: balconyHotspots('hotel-room-tiles'),
+    },
+    {
+      id: 'hotel-room-tiles',
+      title: 'Hotel room — multiresolution cube',
+      source: {
+        type: EnumSourceType.Cube,
+        url: GENERATED_ASSETS.hotelRoomTiles,
+        faceNames: NEOMETRIA_FACE_NAMES,
+        ...DEMO_TILE_PYRAMID,
+      },
+      preview: { type: 'equirect', url: GENERATED_ASSETS.hotelRoomPreview },
+      hotspots: roomHotspots('balcony-tiles'),
     },
   ],
 };

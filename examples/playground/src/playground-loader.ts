@@ -2,11 +2,12 @@ import type { TImageLoader } from '@dkukushkin/3d-pano';
 
 /**
  * Переключатели загрузчика песочницы: медленная сеть и «пропавшая» грань — для сценариев превью, ошибки
- * загрузки и кнопки «Повторить».
+ * загрузки и кнопки «Повторить». `onRequest` видит каждый запрос — так песочница считает запросы тайлов.
  */
 export interface IPlaygroundNetwork {
   isSlow: boolean;
   failingSuffix: string | null;
+  onRequest?: (url: string) => void;
 }
 
 const SLOW_NETWORK_DELAY_MS = 2000;
@@ -32,6 +33,8 @@ const delay = (durationMs: number, signal: AbortSignal): Promise<void> =>
 export const createPlaygroundLoader =
   (network: IPlaygroundNetwork): TImageLoader =>
   async ({ url, signal }) => {
+    network.onRequest?.(url);
+
     if (network.isSlow && !url.includes('-preview')) {
       await delay(SLOW_NETWORK_DELAY_MS, signal);
     }

@@ -62,7 +62,8 @@ const handleViewChange = (): void => {
  * React-страница песочницы: сцена как проп с разными переходами для комнаты и ремонта, переход через
  * `ref`, тур, который пересобирается на каждом рендере, замена тура, монтирование и размонтирование.
  * Поворот к «пину» идёт из эффекта с `AbortController` в очистке (`PinFocus`). Точки тура рисует свой
- * компонент через `renderHotspot`, пины товаров — `<Hotspot>` с переключателем видимости. Вращение камеры страницу не
+ * компонент через `renderHotspot`, пины товаров — `<Hotspot>` с переключателем видимости; тайловые сцены
+ * тура — с переключателем проявления `tileFadeMs`. Вращение камеры страницу не
  * перерисовывает: вид показывает `ViewReadout` в обход состояния. Счётчики,
  * включая число коммитов `App`, лежат в `window.reactPlayground` для проверки из консоли.
  */
@@ -73,6 +74,7 @@ export const App = (): ReactElement => {
   const [isPinsVisible, setIsPinsVisible] = useState(true);
   const [isRoutedByApp, setIsRoutedByApp] = useState(false);
   const [isNarrowTour, setIsNarrowTour] = useState(false);
+  const [isInstantTiles, setIsInstantTiles] = useState(false);
   const [scene, setScene] = useState(START_SCENE);
   const [sceneOptions, setSceneOptions] = useState<IShowSceneOptions>(ROOM_SWITCH);
   const [shownScene, setShownScene] = useState<string | null>(null);
@@ -139,6 +141,10 @@ export const App = (): ReactElement => {
     setIsKeyboardEnabled(event.target.checked);
   };
 
+  const handleInstantTilesChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setIsInstantTiles(event.target.checked);
+  };
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -200,6 +206,15 @@ export const App = (): ReactElement => {
           <input type="checkbox" checked={isKeyboardEnabled} onChange={handleKeyboardChange} data-keyboard />{' '}
           keyboard
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={isInstantTiles}
+            onChange={handleInstantTilesChange}
+            data-instant-tiles
+          />{' '}
+          tiles without fade (tileFadeMs 0)
+        </label>
       </fieldset>
       <PinFocus viewer={viewer} />
       {isMounted && (
@@ -211,6 +226,7 @@ export const App = (): ReactElement => {
           label="Hotel tour"
           className="viewer"
           controls={controls}
+          tileFadeMs={isInstantTiles ? 0 : undefined}
           onSceneLoadStart={handleSceneLoadStart}
           onSceneChange={handleSceneChange}
           onViewChange={handleViewChange}

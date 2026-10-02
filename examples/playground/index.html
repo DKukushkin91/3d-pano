@@ -61,6 +61,22 @@
       </fieldset>
       <fieldset class="toolbar" data-preload-buttons>
         <legend>Preload</legend>
+        <label><input type="checkbox" data-preload-keep /> for the current view (keep)</label>
+      </fieldset>
+      <fieldset class="toolbar">
+        <legend>Tiles</legend>
+        <label
+          >tileCacheMegabytes
+          <select data-tile-cache>
+            <option value="128">128</option>
+            <option value="32">32</option>
+            <option value="8">8</option>
+            <option value="0">0</option>
+          </select></label
+        >
+        <label>tileFadeMs <input type="number" min="0" step="100" value="200" data-tile-fade /></label>
+        <span>tile requests <output data-tile-requests>0</output></span>
+        <button type="button" data-reset-tile-requests>Reset count</button>
       </fieldset>
       <fieldset class="toolbar">
         <label><input type="checkbox" data-slow /> slow network</label>

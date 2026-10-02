@@ -8,15 +8,22 @@ export const LOCAL_ASSETS = {
 } as const;
 
 /**
- * Файлы, которые делает `scripts/make-cube-faces.mjs` из локальных панорам: превью 1024×512 и грани куба с
- * именами граней neometria (`f`, `r`, `b`, `l`, `u`, `d`).
+ * Файлы, которые делает `scripts/make-cube-faces.mjs` из локальных панорам: превью 1024×512, грани куба с
+ * именами граней neometria (`f`, `r`, `b`, `l`, `u`, `d`) и, с флагом `--tiles`, тайловый куб.
  */
 export const GENERATED_ASSETS = {
   balconyPreview: '/local/balcony-preview.jpg',
   hotelRoomPreview: '/local/hotel-room-preview.jpg',
   balconyFaces: '/local/cube/balcony/{face}.jpg',
   hotelRoomFaces: '/local/cube/hotel-room/{face}.jpg',
+  balconyTiles: '/local/tiles/balcony/{level}/{face}/{row}_{col}.jpg',
+  hotelRoomTiles: '/local/tiles/hotel-room/{level}/{face}/{row}_{col}.jpg',
 } as const;
+
+/**
+ * Пирамида, которую режет `make-cube-faces.mjs --tiles`: тайлы 512, грань от 512 до 4096.
+ */
+export const DEMO_TILE_PYRAMID = { tileSize: 512, levels: [512, 1024, 2048, 4096] };
 
 const LOCAL_ASSETS_FOLDER = 'examples/playground/public/local/';
 

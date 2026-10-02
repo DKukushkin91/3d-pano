@@ -11,12 +11,13 @@ import {
 } from '@dkukushkin/3d-pano';
 
 import { BROKEN_TOUR_JSON, DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
-import { createEventLog } from './event-log';
+import { attachViewerLogging, createEventLog } from './event-log';
 import { addDemoPins } from './host-pins';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { createLookAtControls, createOverlayButton } from './look-at-controls';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
 import { createSceneControls } from './scene-controls';
+import { createTileControls } from './tile-controls';
 import { createPlaygroundViewer } from './viewer-factory';
 
 import './styles.css';
@@ -53,7 +54,21 @@ const readout = required(document.querySelector<HTMLPreElement>('[data-readout]'
 const logEvent = createEventLog(required(document.querySelector<HTMLOListElement>('[data-events]')));
 
 const FAILING_FACE_SUFFIX = '/l.jpg';
-const network: IPlaygroundNetwork = { isSlow: false, failingSuffix: null };
+const tileControls = createTileControls(
+  {
+    cacheBudget: required(document.querySelector<HTMLSelectElement>('[data-tile-cache]')),
+    fade: required(document.querySelector<HTMLInputElement>('[data-tile-fade]')),
+    preloadKeep: required(document.querySelector<HTMLInputElement>('[data-preload-keep]')),
+    requests: required(document.querySelector<HTMLOutputElement>('[data-tile-requests]')),
+    resetRequests: required(document.querySelector<HTMLButtonElement>('[data-reset-tile-requests]')),
+  },
+  (update) => viewer?.update(update),
+);
+const network: IPlaygroundNetwork = {
+  isSlow: false,
+  failingSuffix: null,
+  onRequest: tileControls.countRequest,
+};
 const loader = createPlaygroundLoader(network);
 let viewer: IPanoViewer | null = null;
 let pins: IHotspotHandle[] = [];
@@ -88,38 +103,17 @@ const renderReadout = (): void => {
 };
 
 const attachLogging = (target: IPanoViewer, name: string): void => {
-  target.on('sceneChange', ({ sceneId, previousSceneId }) => {
-    logEvent(`${name} sceneChange ${previousSceneId ?? '—'} → ${sceneId}`);
-  });
-  target.on('sceneLoadStart', ({ sceneId }) => {
-    logEvent(`${name} sceneLoadStart ${sceneId}`);
-  });
-  target.on('sceneReady', ({ sceneId }) => {
-    logEvent(`${name} sceneReady ${sceneId}`);
-  });
-  target.on('error', ({ error }) => {
-    logEvent(`${name} error ${error.category}/${error.code} ${error.url ?? ''}`);
-  });
-  target.on('hotspotClick', ({ sceneId, hotspot, preventDefault }) => {
-    if (preventNavigationToggle.checked) {
-      preventDefault();
-    }
-
-    logEvent(
-      `${name} hotspotClick ${sceneId}/${hotspot.id}${preventNavigationToggle.checked ? ' (prevented)' : ''}`,
-    );
-  });
-  target.on('hotspotEnter', ({ sceneId, hotspot }) => {
-    logEvent(`${name} hotspotEnter ${sceneId}/${hotspot.id}`);
-  });
-  target.on('hotspotLeave', ({ sceneId, hotspot }) => {
-    logEvent(`${name} hotspotLeave ${sceneId}/${hotspot.id}`);
-  });
+  attachViewerLogging(target, name, logEvent, () => preventNavigationToggle.checked);
 };
 
 const createMainViewer = (tour: ITour, view: IView | null): void => {
   viewer?.destroy();
-  viewer = createPlaygroundViewer(viewerContainer, { tour, label: 'Hotel tour', loader });
+  viewer = createPlaygroundViewer(viewerContainer, {
+    tour,
+    label: 'Hotel tour',
+    loader,
+    ...tileControls.options(),
+  });
   window.playgroundViewer = viewer;
   attachLogging(viewer, 'main');
   viewer.on('viewChange', ({ view: changedView }) => {
@@ -171,7 +165,7 @@ const handleLookAt = (label: string, target: TViewTarget, options: ILookAtOption
 
 const handlePreloadScene = (sceneId: string): void => {
   if (viewer !== null) {
-    describeOutcome(`preloadScene ${sceneId}`, viewer.preloadScene(sceneId));
+    describeOutcome(`preloadScene ${sceneId}`, viewer.preloadScene(sceneId, tileControls.preloadOptions()));
   }
 };
 
