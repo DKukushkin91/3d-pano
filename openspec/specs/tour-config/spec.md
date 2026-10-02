@@ -12,8 +12,8 @@
 Тур SHALL быть объектом `{ startScene?, defaults?, scenes }`, где `scenes` — непустой массив сцен
 `{ id, title?, source, preview?, view?, limits?, hotspots?, position?, heading?, cameraHeight? }`, а
 `defaults` может содержать `view`, `limits` и `cameraHeight`. Хотспот сцены — `{ id, position, title?,
-target?, data?, anchor?, plane? }`. Тур MUST быть сериализуемым в JSON: функций, элементов DOM и кода в нём
-нет. Проверка: контракт-тест `validateTour`.
+target?, data?, anchor?, plane?, surface? }`. Тур MUST быть сериализуемым в JSON: функций, элементов DOM и
+кода в нём нет. Проверка: контракт-тест `validateTour`.
 
 #### Scenario: Минимальный тур
 
@@ -34,6 +34,11 @@ target?, data?, anchor?, plane? }`. Тур MUST быть сериализуем�
 
 - **WHEN** сцены из ответа сервера содержат `position`, `heading`, а `defaults` — `cameraHeight`
 - **THEN** тур принимается без преобразований, и переходы «шаг» идут по этим данным
+
+#### Scenario: Метки с картинкой и видео
+
+- **WHEN** хотспоты сцены из ответа сервера содержат `plane` и `surface` с URL картинки или видео
+- **THEN** тур принимается без преобразований, и поверхности рисуются по этим данным
 
 ### Requirement: Стартовая сцена
 
