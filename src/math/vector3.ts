@@ -13,6 +13,9 @@ export const createVector3 = (x: number, y: number, z: number): IVector3 => ({ x
 export const addVectors = (first: IVector3, second: IVector3): IVector3 =>
   createVector3(first.x + second.x, first.y + second.y, first.z + second.z);
 
+export const subtractVectors = (first: IVector3, second: IVector3): IVector3 =>
+  createVector3(first.x - second.x, first.y - second.y, first.z - second.z);
+
 export const scaleVector = (vector: IVector3, factor: number): IVector3 =>
   createVector3(vector.x * factor, vector.y * factor, vector.z * factor);
 
