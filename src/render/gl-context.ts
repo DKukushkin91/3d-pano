@@ -10,7 +10,7 @@ export interface IGlContext {
 const CONTEXT_ATTRIBUTES: WebGLContextAttributes = {
   alpha: false,
   antialias: false,
-  depth: false,
+  depth: true,
   stencil: false,
   preserveDrawingBuffer: false,
 };

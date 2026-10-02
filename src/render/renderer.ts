@@ -2,6 +2,7 @@ import type { ICameraBasis } from '../math/camera-basis';
 import type { IHalfTangents } from '../math/field-of-view';
 import { type ISceneSpace, ZERO_OFFSET } from '../math/scene-space';
 import { EnumSourceType } from '../tour/tour-dictionaries';
+import { writeCameraMatrix } from './camera-matrix';
 import type { IGlContext } from './gl-context';
 import {
   type ICubeDrawing,
@@ -15,6 +16,7 @@ import { CUBE_FRAGMENT_SHADER } from './shaders/cube-fragment';
 import { EQUIRECT_FRAGMENT_SHADER } from './shaders/equirect-fragment';
 import { FULLSCREEN_VERTEX_SHADER } from './shaders/fullscreen-vertex';
 import { TILED_CUBE_FRAGMENT_SHADER } from './shaders/tiled-cube-fragment';
+import { type ISurfaceDrawing, createSurfacePass } from './surface-pass';
 
 /**
  * Камера кадра: оси камеры в мире, тангенсы половин углов обзора и пространство сцены — сдвиг камеры от
@@ -27,16 +29,25 @@ export interface IFrameCamera {
 }
 
 /**
- * `target` — framebuffer текстуры кадра во время смешивания, `null` — сам canvas.
+ * Сцена в кадре: камера, слои панорамы и поверхности хотспотов этой сцены, посчитанные для её камеры.
  */
+export interface ISceneFrame {
+  camera: IFrameCamera;
+  drawings: readonly TLayerDrawing[];
+  surfaces: readonly ISurfaceDrawing[];
+}
+
+/**
+ * Куда рисуется кадр: `target` — framebuffer текстуры кадра во время смешивания, `null` — сам canvas.
+ */
+export interface IFrameBuffer {
+  width: number;
+  height: number;
+  target: WebGLFramebuffer | null;
+}
+
 export interface IRenderer {
-  drawFrame: (
-    camera: IFrameCamera,
-    drawings: readonly TLayerDrawing[],
-    bufferWidth: number,
-    bufferHeight: number,
-    target: WebGLFramebuffer | null,
-  ) => void;
+  drawFrame: (scene: ISceneFrame, buffer: IFrameBuffer) => void;
   dispose: () => void;
 }
 
@@ -70,25 +81,10 @@ const TABLE_TEXTURE_UNIT = 2;
 
 type TCameraUniform = (typeof CAMERA_UNIFORMS)[number];
 
-const writeCameraMatrix = (target: Float32Array, basis: ICameraBasis): Float32Array => {
-  target.set([
-    basis.right.x,
-    basis.right.y,
-    basis.right.z,
-    basis.up.x,
-    basis.up.y,
-    basis.up.z,
-    basis.forward.x,
-    basis.forward.y,
-    basis.forward.z,
-  ]);
-
-  return target;
-};
-
 /**
  * Отрисовщик: три программы (эквиректангулярная, кубическая и тайлового куба), один полноэкранный проход
- * на слой. Слои рисуются по порядку — превью, затем основной источник поверх.
+ * на слой. Слои рисуются по порядку — превью, затем основной источник поверх, без проверки глубины; после
+ * них — поверхности хотспотов с глубиной.
  */
 export const createRenderer = ({ gl }: IGlContext): IRenderer => {
   const equirectProgram = createShaderProgram(
@@ -106,6 +102,7 @@ export const createRenderer = ({ gl }: IGlContext): IRenderer => {
     { vertex: FULLSCREEN_VERTEX_SHADER, fragment: TILED_CUBE_FRAGMENT_SHADER },
     TILED_CUBE_UNIFORMS,
   );
+  const surfacePass = createSurfacePass(gl);
   const emptyVertexArray = gl.createVertexArray();
   const cameraMatrix = new Float32Array(9);
 
@@ -187,17 +184,22 @@ export const createRenderer = ({ gl }: IGlContext): IRenderer => {
     }
   };
 
-  const drawFrame: IRenderer['drawFrame'] = (camera, drawings, bufferWidth, bufferHeight, target) => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, target);
-    gl.viewport(0, 0, bufferWidth, bufferHeight);
+  const drawFrame: IRenderer['drawFrame'] = ({ camera, drawings, surfaces }, buffer) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, buffer.target);
+    gl.viewport(0, 0, buffer.width, buffer.height);
     gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clearDepth(1);
+    gl.depthMask(true);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.DEPTH_TEST);
     gl.bindVertexArray(emptyVertexArray);
 
     for (const drawing of drawings) {
       drawLayer(drawing, camera);
       gl.drawArrays(gl.TRIANGLES, 0, TRIANGLE_VERTEX_COUNT);
     }
+
+    surfacePass.draw(camera, surfaces);
   };
 
   const dispose = (): void => {
@@ -205,6 +207,7 @@ export const createRenderer = ({ gl }: IGlContext): IRenderer => {
     gl.deleteProgram(cubeProgram.program);
     gl.deleteProgram(tiledCubeProgram.program);
     gl.deleteVertexArray(emptyVertexArray);
+    surfacePass.dispose();
   };
 
   return { drawFrame, dispose };

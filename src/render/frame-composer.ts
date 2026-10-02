@@ -2,6 +2,7 @@ import { type ICompositeBlur, createCompositePass } from './composite-pass';
 import { createFrameTextureSlot } from './framebuffer';
 import type { TLayerDrawing } from './layer-drawing';
 import type { IFrameCamera, IRenderer } from './renderer';
+import type { ISurfaceDrawing } from './surface-pass';
 
 /**
  * Предыдущая сцена во время смешивания или шага со своей камерой. `frozenKey` не `null`, когда камера
@@ -10,6 +11,7 @@ import type { IFrameCamera, IRenderer } from './renderer';
  */
 export interface IPreviousSceneFrame {
   drawings: readonly TLayerDrawing[];
+  surfaces: readonly ISurfaceDrawing[];
   camera: IFrameCamera;
   frozenKey: object | null;
 }
@@ -17,6 +19,7 @@ export interface IPreviousSceneFrame {
 export interface IComposedFrame {
   camera: IFrameCamera;
   current: readonly TLayerDrawing[];
+  surfaces: readonly ISurfaceDrawing[];
   previous: IPreviousSceneFrame | null;
   weight: number;
   blur: ICompositeBlur | null;
@@ -64,11 +67,14 @@ export const createFrameComposer = (gl: WebGL2RenderingContext, renderer: IRende
     const currentTexture = currentSlot.ensure(width, height);
 
     if (!isFrozenFrameReady(previous, width, height)) {
-      renderer.drawFrame(previous.camera, previous.drawings, width, height, previousTexture.framebuffer);
+      renderer.drawFrame(previous, { width, height, target: previousTexture.framebuffer });
       frozen = previous.frozenKey === null ? null : { key: previous.frozenKey, width, height };
     }
 
-    renderer.drawFrame(camera, frame.current, width, height, currentTexture.framebuffer);
+    renderer.drawFrame(
+      { camera, drawings: frame.current, surfaces: frame.surfaces },
+      { width, height, target: currentTexture.framebuffer },
+    );
     compositePass.draw(previousTexture.texture, currentTexture.texture, {
       weight: frame.weight,
       blur: frame.blur,
@@ -86,7 +92,10 @@ export const createFrameComposer = (gl: WebGL2RenderingContext, renderer: IRende
       }
 
       releaseTextures();
-      renderer.drawFrame(frame.camera, frame.current, frame.bufferWidth, frame.bufferHeight, null);
+      renderer.drawFrame(
+        { camera: frame.camera, drawings: frame.current, surfaces: frame.surfaces },
+        { width: frame.bufferWidth, height: frame.bufferHeight, target: null },
+      );
     },
     dispose: () => {
       releaseTextures();

@@ -1,9 +1,11 @@
 /**
- * Цветная RGBA8-текстура размером с буфер кадра и framebuffer, который в неё рисует.
+ * Цветная RGBA8-текстура размером с буфер кадра и framebuffer, который в неё рисует, с буфером глубины
+ * для поверхностей хотспотов.
  */
 export interface IFrameTexture {
   framebuffer: WebGLFramebuffer;
   texture: WebGLTexture;
+  depth: WebGLRenderbuffer;
   width: number;
   height: number;
 }
@@ -20,6 +22,7 @@ export interface IFrameTextureSlot {
 const createFrameTexture = (gl: WebGL2RenderingContext, width: number, height: number): IFrameTexture => {
   const texture = gl.createTexture();
   const framebuffer = gl.createFramebuffer();
+  const depth = gl.createRenderbuffer();
 
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, width, height);
@@ -27,11 +30,15 @@ const createFrameTexture = (gl: WebGL2RenderingContext, width: number, height: n
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, depth);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, width, height);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-  return { framebuffer, texture, width, height };
+  return { framebuffer, texture, depth, width, height };
 };
 
 export const createFrameTextureSlot = (gl: WebGL2RenderingContext): IFrameTextureSlot => {
@@ -44,6 +51,7 @@ export const createFrameTextureSlot = (gl: WebGL2RenderingContext): IFrameTextur
 
     gl.deleteFramebuffer(current.framebuffer);
     gl.deleteTexture(current.texture);
+    gl.deleteRenderbuffer(current.depth);
     current = null;
   };
 

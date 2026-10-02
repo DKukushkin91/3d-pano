@@ -82,6 +82,7 @@ const previousSceneOf = (
 
   return {
     drawings: frame.previous.drawings(),
+    surfaces: [],
     camera: previousCamera,
     frozenKey: frame.move === null ? frame.previousView : null,
   };
@@ -149,6 +150,7 @@ export const createViewerGraphics = (
       composer.draw({
         camera: currentCamera,
         current: frame.current?.drawings() ?? [],
+        surfaces: [],
         previous: previousSceneOf(frame, previousCamera),
         weight: frame.weight,
         blur: blurOf(frame, previousCamera),
