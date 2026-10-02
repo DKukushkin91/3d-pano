@@ -46,6 +46,6 @@ export interface IDemoPin {
 }
 
 export const DEMO_PINS: readonly IDemoPin[] = [
-  { id: 'loungers', name: 'Sun loungers', scene: 'balcony', position: { x: -5, y: -6, z: 8 } },
+  { id: 'loungers', name: 'Sun loungers', scene: 'balcony', position: { x: -5.7, y: -3.2, z: 12.4 } },
   { id: 'armchair', name: 'Armchair', scene: 'hotel-room', position: { x: 0.75, y: -0.9, z: -1.3 } },
 ];

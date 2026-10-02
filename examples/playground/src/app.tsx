@@ -58,10 +58,6 @@ const handleViewChange = (): void => {
   playgroundState.viewChanges += 1;
 };
 
-const handleHotspotClick = ({ hotspot }: { hotspot: IHotspot }): void => {
-  playgroundState.hotspotClicks.push(hotspot.id);
-};
-
 /**
  * React-страница песочницы: сцена как проп с разными переходами для комнаты и ремонта, переход через
  * `ref`, тур, который пересобирается на каждом рендере, замена тура, монтирование и размонтирование.
@@ -75,6 +71,7 @@ export const App = (): ReactElement => {
   const [isMounted, setIsMounted] = useState(true);
   const [isKeyboardEnabled, setIsKeyboardEnabled] = useState(true);
   const [isPinsVisible, setIsPinsVisible] = useState(true);
+  const [isRoutedByApp, setIsRoutedByApp] = useState(false);
   const [isNarrowTour, setIsNarrowTour] = useState(false);
   const [scene, setScene] = useState(START_SCENE);
   const [sceneOptions, setSceneOptions] = useState<IShowSceneOptions>(ROOM_SWITCH);
@@ -83,6 +80,26 @@ export const App = (): ReactElement => {
 
   const controls = useMemo(() => ({ keyboard: isKeyboardEnabled }), [isKeyboardEnabled]);
   const tour = { ...(isNarrowTour ? NARROW_FOV_TOUR : DEMO_TOUR) };
+
+  const handleHotspotClick = ({
+    hotspot,
+    preventDefault,
+  }: {
+    hotspot: IHotspot;
+    preventDefault: () => void;
+  }): void => {
+    playgroundState.hotspotClicks.push(hotspot.id);
+
+    if (isRoutedByApp && hotspot.target !== undefined) {
+      preventDefault();
+      setScene(hotspot.target.scene);
+      setSceneOptions(ROOM_SWITCH);
+    }
+  };
+
+  const handleRoutedChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setIsRoutedByApp(event.target.checked);
+  };
 
   const handleSceneChange = ({ sceneId }: { sceneId: string }): void => {
     playgroundState.sceneChanges.push(sceneId);
@@ -175,6 +192,10 @@ export const App = (): ReactElement => {
         <button type="button" onClick={handleMountToggle} data-toggle-mount>
           {isMounted ? 'Unmount' : 'Mount'}
         </button>
+        <label>
+          <input type="checkbox" checked={isRoutedByApp} onChange={handleRoutedChange} data-routed-by-app />{' '}
+          hotspots through app state (preventDefault)
+        </label>
         <label>
           <input type="checkbox" checked={isKeyboardEnabled} onChange={handleKeyboardChange} data-keyboard />{' '}
           keyboard
