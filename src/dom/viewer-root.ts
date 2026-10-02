@@ -20,7 +20,8 @@ const FILL_PARENT = {
 
 /**
  * Стили задаются через CSSOM, а не через `<style>`: это работает под строгим CSP без `unsafe-inline`.
- * Корень — `role="application"`, чтобы скринридер отдавал стрелки управлению панорамой.
+ * Корень — `role="application"`, чтобы скринридер отдавал стрелки управлению панорамой. `overflow: clip`, а
+ * не `hidden`: фокус на хотспоте за краем кадра не прокручивает корень и не сдвигает canvas.
  */
 export const createViewerRoot = (container: HTMLElement, label: string): IViewerRoot => {
   const { ownerDocument } = container;
@@ -31,7 +32,7 @@ export const createViewerRoot = (container: HTMLElement, label: string): IViewer
   root.setAttribute('role', 'application');
   root.setAttribute('aria-label', label);
   root.tabIndex = 0;
-  Object.assign(root.style, { position: 'relative', width: '100%', height: '100%', overflow: 'hidden' });
+  Object.assign(root.style, { position: 'relative', width: '100%', height: '100%', overflow: 'clip' });
   Object.assign(canvas.style, { ...FILL_PARENT, display: 'block', width: '100%', height: '100%' });
   canvas.setAttribute('aria-hidden', 'true');
   Object.assign(overlay.style, FILL_PARENT);

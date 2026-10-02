@@ -76,6 +76,7 @@ export const createScenePresentation = <TSession extends INavigatorSession>({
 
   const presentCamera = ({ tour, scene, options, record }: ISceneSwitch<TSession>): void => {
     host.present({
+      tour,
       scene,
       view: resolveViewAfterSwitch(options.view, host.getView(), resolveSceneView(tour, scene)),
       limits: resolveSceneLimits(tour, scene),

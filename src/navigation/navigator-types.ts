@@ -1,7 +1,7 @@
 import type { IEventEmitter } from '../state/event-emitter';
 import type { ISnapshotStore } from '../state/snapshot-store';
 import type { TViewerStatus } from '../state/viewer-dictionaries';
-import type { IResolvedViewLimits, IScene, IView } from '../tour/tour-types';
+import type { IResolvedViewLimits, IScene, ITour, IView } from '../tour/tour-types';
 import type { IPanoViewerEventMap } from '../viewer/viewer-types';
 
 /**
@@ -34,9 +34,10 @@ export interface ISceneRecord<TSession extends INavigatorSession> {
 }
 
 /**
- * Сцена в момент появления на экране: объект сцены того тура, в котором она принята к показу, и камера.
+ * Сцена в момент появления на экране: тур, в котором она принята к показу, объект сцены из него и камера.
  */
 export interface ISceneAppearance {
+  tour: ITour;
   scene: IScene;
   view: IView;
   limits: IResolvedViewLimits;
@@ -45,10 +46,11 @@ export interface ISceneAppearance {
 }
 
 /**
- * Новый тур оставил на экране ту же сцену: её объект из нового тура (там могут измениться хотспоты) и
- * новые ограничения.
+ * Новый тур оставил на экране ту же сцену: новый тур, её объект из него (там могут измениться хотспоты)
+ * и новые ограничения.
  */
 export interface ISceneRefresh {
+  tour: ITour;
   scene: IScene;
   limits: IResolvedViewLimits;
 }

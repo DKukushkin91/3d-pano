@@ -10,9 +10,11 @@ declare global {
   const tour: ITour;
   const token: string;
   const marker: HTMLElement;
+  const productCard: HTMLElement;
   const viewer: IPanoViewer;
   const analytics: { track: (event: string, properties: Record<string, unknown>) => void };
   const handleSceneReady: (payload: { sceneId: string }) => void;
+  const openPaywall: () => void;
   const LoadingBar: (props: { viewer: IPanoViewer | null }) => ReactElement | null;
   const YourOverlayUi: () => ReactElement;
 }

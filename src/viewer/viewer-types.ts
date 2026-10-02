@@ -1,3 +1,4 @@
+import type { IAddHotspotOptions, IHotspot, IHotspotHandle, TRenderHotspot } from '../hotspots/hotspot-types';
 import type { TEasing } from '../math/easing';
 import type { ISetTourOptions, IShowSceneOptions } from '../navigation/navigation-types';
 import type { TImageLoader } from '../resources/load-image';
@@ -34,6 +35,7 @@ export interface IPanoViewerOptions {
   maxPixelRatio?: number;
   renderScale?: number;
   sceneCacheMegabytes?: number;
+  renderHotspot?: TRenderHotspot;
 }
 
 /**
@@ -86,7 +88,8 @@ export interface IProjectedPoint {
 
 /**
  * События просмотрщика. `sceneChange` приходит, когда меняется `snapshot.sceneId`: в момент принятой
- * смены (до загрузки новой сцены) и для стартовой сцены с `previousSceneId: null`.
+ * смены (до загрузки новой сцены) и для стартовой сцены с `previousSceneId: null`. События хотспотов — только
+ * для хотспотов тура: `preventDefault()` у клика отменяет переход по `target`.
  */
 export interface IPanoViewerEventMap {
   sceneLoadStart: { sceneId: string };
@@ -94,6 +97,9 @@ export interface IPanoViewerEventMap {
   sceneChange: { sceneId: string; previousSceneId: string | null };
   viewChange: { view: IView };
   error: { error: IPanoError };
+  hotspotClick: { sceneId: string; hotspot: IHotspot; preventDefault: () => void };
+  hotspotEnter: { sceneId: string; hotspot: IHotspot };
+  hotspotLeave: { sceneId: string; hotspot: IHotspot };
 }
 
 /**
@@ -109,6 +115,7 @@ export interface IPanoViewer {
   project: (point: TViewTarget) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
   lookAt: (target: TViewTarget, options?: ILookAtOptions) => Promise<boolean>;
+  addHotspot: (options: IAddHotspotOptions) => IHotspotHandle;
   showScene: (sceneId: string, options?: IShowSceneOptions) => Promise<boolean>;
   preloadScene: (sceneId: string) => Promise<boolean>;
   setTour: (tour: ITour, options?: ISetTourOptions) => Promise<boolean>;

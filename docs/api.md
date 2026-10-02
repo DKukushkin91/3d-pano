@@ -25,6 +25,7 @@ The container must be an element with a size (for example `position: absolute; i
 | `maxPixelRatio`       | `2`                             | Upper limit of the device pixel ratio used for rendering — saves battery on 3× screens.                                                              |
 | `renderScale`         | `1`                             | Extra multiplier of the drawing buffer size, for example `0.75` on weak devices.                                                                     |
 | `sceneCacheMegabytes` | `256`                           | Video memory budget for prepared scenes, see [Preloading and the scene cache](#preloading-and-the-scene-cache).                                      |
+| `renderHotspot`       | —                               | Your own element for the hotspots of the tour instead of the default button, see [Hotspots](#hotspots).                                              |
 
 Invalid options are programmer errors and throw synchronously: a non-element container or an empty `label` throws `TypeError`, invalid numbers throw `RangeError`. Messages start with `3d-pano:` and name the option. Problems with the tour data or the images never throw — they arrive as [errors](#errors).
 
@@ -32,23 +33,24 @@ Invalid options are programmer errors and throw synchronously: a non-element con
 
 All methods are plain functions without `this`, so they can be passed around as callbacks.
 
-| Method                     | Meaning                                                                                                                                                                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getView()`                | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                        |
-| `setView(view)`            | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                                  |
-| `project(point)`           | Screen position of a target (`TViewTarget`) — a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera. |
-| `unproject(x, y)`          | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                     |
-| `lookAt(target, options?)` | Turns the camera smoothly to a sphere point or a direction, see [Camera animation](#camera-animation).                                                                                                                                   |
-| `showScene(id, options?)`  | Switches to a scene of the tour, see [Scenes and transitions](#scenes-and-transitions).                                                                                                                                                  |
-| `preloadScene(id)`         | Prepares a scene in video memory without showing it, see [Preloading](#preloading-and-the-scene-cache).                                                                                                                                  |
-| `setTour(tour, options?)`  | Replaces the tour without recreating the viewer, see [Replacing the tour](#replacing-the-tour).                                                                                                                                          |
-| `retry()`                  | Requests again the images of the current scene that failed (including a scene switch that failed) and finishes the switch; resolves when the scene is ready. Does nothing unless the error category is `resource`.                       |
-| `update(options)`          | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio`, `renderScale` and `sceneCacheMegabytes` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole.    |
-| `on(name, handler)`        | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                                                     |
-| `getSnapshot()`            | The current [state snapshot](#state-snapshot).                                                                                                                                                                                           |
-| `subscribe(listener)`      | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                                          |
-| `destroy()`                | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                                                     |
-| `overlay`                  | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                                            |
+| Method                     | Meaning                                                                                                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `getView()`                | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                                      |
+| `setView(view)`            | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                                                |
+| `project(point)`           | Screen position of a target (`TViewTarget`) — a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera.               |
+| `unproject(x, y)`          | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                                   |
+| `lookAt(target, options?)` | Turns the camera smoothly to a sphere point or a direction, see [Camera animation](#camera-animation).                                                                                                                                                 |
+| `addHotspot(options)`      | Places your own element over a point of the panorama or the world, see [Hotspots](#hotspots).                                                                                                                                                          |
+| `showScene(id, options?)`  | Switches to a scene of the tour, see [Scenes and transitions](#scenes-and-transitions).                                                                                                                                                                |
+| `preloadScene(id)`         | Prepares a scene in video memory without showing it, see [Preloading](#preloading-and-the-scene-cache).                                                                                                                                                |
+| `setTour(tour, options?)`  | Replaces the tour without recreating the viewer, see [Replacing the tour](#replacing-the-tour).                                                                                                                                                        |
+| `retry()`                  | Requests again the images of the current scene that failed (including a scene switch that failed) and finishes the switch; resolves when the scene is ready. Does nothing unless the error category is `resource`.                                     |
+| `update(options)`          | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio`, `renderScale`, `sceneCacheMegabytes` and `renderHotspot` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole. |
+| `on(name, handler)`        | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                                                                   |
+| `getSnapshot()`            | The current [state snapshot](#state-snapshot).                                                                                                                                                                                                         |
+| `subscribe(listener)`      | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                                                        |
+| `destroy()`                | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                                                                   |
+| `overlay`                  | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                                                          |
 
 `project` is what you need to place your own markers over the panorama:
 
@@ -166,6 +168,85 @@ await viewer.showScene('bedroom');
 await viewer.lookAt({ yaw: 120, pitch: -15 });
 ```
 
+## Hotspots
+
+Hotspots are elements over the panorama that the viewer keeps at their points while the camera moves — without re-rendering your framework. There are two kinds:
+
+- **Hotspots of the tour** are data in `scene.hotspots` (see [Hotspots in the tour format](tour.md#hotspots)). The viewer draws them, navigates to their `target` and reports events.
+- **Your own hotspots** are elements you add with `addHotspot`, for example product cards.
+
+```ts
+import { EnumHotspotAnchor } from '@dkukushkin/3d-pano';
+
+const card = document.createElement('a');
+card.href = '/products/chair';
+card.textContent = 'Chair — 12 900 ₽';
+
+const pin = viewer.addHotspot({
+  element: card,
+  position: { x: 1.5, y: -0.4, z: 2 },
+  scene: 'kitchen-v2',
+  anchor: EnumHotspotAnchor.BottomLeft,
+});
+
+pin.setPosition({ x: 1.4, y: -0.4, z: 2.1 });
+pin.remove();
+```
+
+`addHotspot({ element, position, scene?, anchor?, plane? })` returns `{ setPosition, setScene, setAnchor, setPlane, remove }`; a setter called with `undefined` returns the field to its default. A hotspot with `scene` is shown only while that scene is on screen, without it — in every scene. After `remove()` or `destroy()` the methods do nothing. Invalid arguments throw synchronously: an `element` that is not an `HTMLElement` throws `TypeError`, other fields `RangeError` naming the field; a `scene` that is not in the tour is not an error.
+
+**The element of a tour hotspot** is a `<button type="button">` with the hotspot's `title` (set as text, never as markup; without a title the button gets an `aria-label` from the target scene). The library adds no styles of its own — style it with CSS. To draw your own element instead, pass `renderHotspot`:
+
+```ts
+import { createPanoViewer } from '@dkukushkin/3d-pano';
+
+const tourViewer = createPanoViewer(container, {
+  tour,
+  label: 'Apartment tour',
+  renderHotspot: (hotspot, { signal }) => {
+    const spot = document.createElement('button');
+
+    spot.type = 'button';
+    spot.className = 'floor-spot';
+    spot.setAttribute('aria-label', hotspot.title ?? hotspot.id);
+    window.addEventListener('resize', () => spot.blur(), { signal });
+
+    return spot;
+  },
+});
+```
+
+`renderHotspot(hotspot, { sceneId, signal })` is called when the hotspot appears; `signal` aborts when its element is removed, so you can release whatever you attached. Clicks, hovering, focus, navigation and events work the same for your element and the default button. `update({ renderHotspot })` re-renders the visible hotspots.
+
+**Placement.** `position` is a sphere point `{ yaw, pitch }` or a world point `{ x, y, z }` relative to the centre of the panorama. `anchor` chooses which point of the element lies there: `center` by default, or `top`, `bottom`, `left`, `right` and the four corners. Without `plane` the element keeps its size in pixels. With `plane: { width, facing?, spin? }` it lies in a plane of the world in perspective (CSS `matrix3d`) and grows when the camera zooms in — a mark on the floor, a sign on a wall; see [the tour format](tour.md#hotspots) for the fields.
+
+**Visibility.** Hotspots of a scene are shown while that scene is on screen: while the next scene loads they stay and work, and when it appears (the start of a blend) they leave and the new ones come. A hotspot behind the camera is invisible and cannot be pressed, but stays in the Tab order. Nearer hotspots lie above farther ones. The elements you pass are never restyled: the viewer moves its own containers around them.
+
+**Navigation.** Clicking a tour hotspot with `target` sends `hotspotClick` and then calls `showScene(target.scene, …target options)`; call `preventDefault()` in the handler to navigate your own way, for example through your router. Hovering or focusing such a hotspot preloads its scene, so the switch usually starts without network requests. A failed switch is reported by the `error` event, as when you call `showScene` yourself.
+
+```ts
+viewer.on('hotspotClick', ({ hotspot, preventDefault }) => {
+  if (hotspot.target?.scene === 'paid-room') {
+    preventDefault();
+    openPaywall();
+  }
+});
+```
+
+**Keyboard.** Hotspots are reachable with Tab. When the keyboard focus lands on a hotspot outside the frame or behind the camera, the camera turns to it with [`lookAt`](#camera-animation); focus by mouse or touch never turns the camera.
+
+**CSS hooks.** Each hotspot sits in a container with `data-pano-hotspot` (the hotspot id for tour hotspots, empty for yours) and `data-pano-visible="true"` or `"false"`; the default button has `data-pano-hotspot-button`. For example, to fade hotspots in:
+
+```css
+[data-pano-hotspot] [data-pano-hotspot-button] {
+  transition: opacity 0.2s;
+}
+
+[data-pano-visible='false'] [data-pano-hotspot-button] {
+  opacity: 0;
+}
+```
+
 ## Controls
 
 | Input    | Behaviour                                                                                                                                                                       |
@@ -192,13 +273,16 @@ const unsubscribe = viewer.on('sceneReady', ({ sceneId }) => {
 });
 ```
 
-| Event            | Payload                        | When                                                                                             |
-| ---------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `sceneChange`    | `{ sceneId, previousSceneId }` | `snapshot.sceneId` changed: a switch was accepted, or the start scene (`previousSceneId: null`). |
-| `sceneLoadStart` | `{ sceneId }`                  | A scene starts loading — on every accepted switch, also for a scene from the cache.              |
-| `sceneReady`     | `{ sceneId }`                  | The full image of the scene is ready; for a cached scene right after `sceneLoadStart`.           |
-| `viewChange`     | `{ view }`                     | The view changed; at most once per animation frame.                                              |
-| `error`          | `{ error }`                    | See [Errors](#errors).                                                                           |
+| Event            | Payload                                | When                                                                                                                           |
+| ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `sceneChange`    | `{ sceneId, previousSceneId }`         | `snapshot.sceneId` changed: a switch was accepted, or the start scene (`previousSceneId: null`).                               |
+| `sceneLoadStart` | `{ sceneId }`                          | A scene starts loading — on every accepted switch, also for a scene from the cache.                                            |
+| `sceneReady`     | `{ sceneId }`                          | The full image of the scene is ready; for a cached scene right after `sceneLoadStart`.                                         |
+| `viewChange`     | `{ view }`                             | The view changed; at most once per animation frame.                                                                            |
+| `error`          | `{ error }`                            | See [Errors](#errors).                                                                                                         |
+| `hotspotClick`   | `{ sceneId, hotspot, preventDefault }` | A hotspot of the tour was clicked (or pressed with Enter or Space). `preventDefault()` cancels the navigation to its `target`. |
+| `hotspotEnter`   | `{ sceneId, hotspot }`                 | The pointer entered a hotspot of the tour or it got focus — once for both.                                                     |
+| `hotspotLeave`   | `{ sceneId, hotspot }`                 | Neither the pointer nor the focus is on the hotspot any more, or it disappeared with its scene.                                |
 
 Events of the start scene are delivered from the next microtask, so handlers attached right after `createPanoViewer` receive all of them, including tour and WebGL errors. An exception thrown by a handler does not stop the viewer or other handlers — it is reported with `reportError`, like any uncaught error.
 
@@ -219,7 +303,7 @@ Status values have constants: `EnumViewerStatus.Loading`, `EnumViewerStatus.Prev
 
 ## Accessibility
 
-The viewer root is focusable (`tabindex="0"`), has `role="application"` and the accessible name from `label`. Keyboard controls work only while it is focused.
+The viewer root is focusable (`tabindex="0"`), has `role="application"` and the accessible name from `label`. Keyboard controls work only while it is focused. Hotspots of the tour are real buttons with accessible names, reachable with Tab; focusing one outside the frame turns the camera to it.
 
 ## Loading images
 

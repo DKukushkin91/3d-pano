@@ -23,6 +23,7 @@ import { createCameraState } from './camera-state';
 import { resolveLookAtRequest } from './look-at-options';
 import type { ISceneSession } from './scene-session';
 import { createViewerGraphics } from './viewer-graphics';
+import { createViewerHotspots } from './viewer-hotspots';
 import { createViewerNavigator } from './viewer-navigation';
 import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
 import type { IPanoViewer, IPanoViewerEventMap, IPanoViewerOptions } from './viewer-types';
@@ -83,6 +84,8 @@ export const createViewer = (
       emitter.emit('viewChange', { view: changedView });
     }
 
+    hotspots.layout(changedView !== null);
+
     if (graphics !== null && frame !== null) {
       graphics.draw(frame, camera, {
         devicePixelRatio: container.ownerDocument.defaultView?.devicePixelRatio ?? 1,
@@ -125,6 +128,20 @@ export const createViewer = (
     stopInertia: input.stopInertia,
     requestFrame: loop.requestRender,
   });
+  const hotspots = createViewerHotspots({
+    overlay: elements.overlay,
+    camera,
+    requestFrame: loop.requestRender,
+    emitter,
+    showScene: (sceneId, showOptions) => navigator?.showScene(sceneId, showOptions) ?? Promise.resolve(false),
+    preloadScene: (sceneId) => navigator?.preloadScene(sceneId) ?? Promise.resolve(false),
+    lookAt: (position) => {
+      void motion.start(resolveLookAtRequest(position, undefined));
+    },
+  });
+
+  hotspots.setRenderer(resolvedOptions.renderHotspot);
+
   const stopObservingSize = observeElementSize(elements.root, (size) => {
     camera.setViewport(size);
     loop.requestRender();
@@ -137,7 +154,7 @@ export const createViewer = (
       input.handleSceneChange(keepMotion);
       motion.handleSceneChange(keepMotion);
     },
-    onSceneShown: () => undefined,
+    onSceneShown: hotspots.showScene,
     requestFrame: loop.requestRender,
     readLoading: () => ({ loader: resolvedOptions.loader, retry: resolvedOptions.retry }),
     store,
@@ -174,6 +191,7 @@ export const createViewer = (
     }
 
     isDestroyed = true;
+    hotspots.dispose();
     motion.dispose();
     input.dispose();
     navigator?.destroy();
@@ -203,6 +221,7 @@ export const createViewer = (
       }
     },
     lookAt: (target, lookAtOptions) => motion.start(resolveLookAtRequest(target, lookAtOptions)),
+    addHotspot: hotspots.addHotspot,
     project: (point) => (isDestroyed ? null : camera.project(point)),
     unproject: (x, y) => (isDestroyed ? null : camera.unproject(x, y)),
     showScene: (sceneId, showOptions) => navigator?.showScene(sceneId, showOptions) ?? Promise.resolve(false),
@@ -224,6 +243,7 @@ export const createViewer = (
       elements.setLabel(resolvedOptions.label);
       input.update(resolvedOptions.controls);
       navigator?.setCacheBudget(resolvedOptions.sceneCacheMegabytes);
+      hotspots.setRenderer(resolvedOptions.renderHotspot);
       loop.requestRender();
     },
     on: (name, handler) => (isDestroyed ? () => undefined : emitter.on(name, handler)),

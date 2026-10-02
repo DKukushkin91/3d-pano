@@ -66,3 +66,8 @@ export interface IHotspotRenderContext {
   sceneId: string;
   signal: AbortSignal;
 }
+
+/**
+ * Своя отрисовка хотспота тура вместо кнопки по умолчанию; вызывается, когда хотспот появляется.
+ */
+export type TRenderHotspot = (hotspot: IHotspot, context: IHotspotRenderContext) => HTMLElement;

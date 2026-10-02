@@ -12,6 +12,8 @@ import {
 
 const LABEL = 'Apartment tour';
 
+const renderHotspot = () => null;
+
 const createOptions = (fields = {}) => resolveViewerOptions(null, { label: LABEL, ...fields });
 
 describe('viewer-lifecycle · Безопасный импорт без DOM', () => {
@@ -43,7 +45,17 @@ describe('viewer-lifecycle · Проверка опций', () => {
       maxPixelRatio: 2,
       renderScale: 1,
       sceneCacheMegabytes: 256,
+      renderHotspot: null,
     });
+  });
+
+  it('renderHotspot: не функция — TypeError, undefined в update возвращает кнопку по умолчанию', () => {
+    const withRenderer = createOptions({ renderHotspot });
+
+    assert.throws(() => createOptions({ renderHotspot: 'button' }), TypeError);
+    assert.equal(withRenderer.renderHotspot, renderHotspot);
+    assert.equal(resolveViewerOptions(withRenderer, { renderHotspot: undefined }).renderHotspot, null);
+    assert.equal(resolveViewerOptions(withRenderer, { label: 'Other' }).renderHotspot, renderHotspot);
   });
 
   it('Отрицательная плотность пикселей: RangeError с префиксом 3d-pano: и именем опции', () => {

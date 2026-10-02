@@ -4,7 +4,7 @@ import { type TImageLoader, loadImage } from '../resources/load-image';
 import type { IResolvedRetryOptions } from '../resources/retry';
 import type { IEventEmitter } from '../state/event-emitter';
 import type { ISnapshotStore } from '../state/snapshot-store';
-import type { IScene } from '../tour/tour-types';
+import type { IScene, ITour } from '../tour/tour-types';
 import type { ICameraState } from './camera-state';
 import { type ISceneSession, createSceneSession } from './scene-session';
 import type { IPanoViewerEventMap } from './viewer-types';
@@ -17,7 +17,7 @@ export interface IViewerNavigationParts {
   glContext: IGlContext | null;
   camera: ICameraState;
   handleSceneChange: (keepMotion: boolean) => void;
-  onSceneShown: (scene: IScene) => void;
+  onSceneShown: (scene: IScene, tour: ITour) => void;
   requestFrame: () => void;
   readLoading: () => { loader: TImageLoader | null; retry: IResolvedRetryOptions };
   store: ISnapshotStore;
@@ -49,16 +49,16 @@ export const createViewerNavigator = (
           onChange,
         }),
       getView: camera.getView,
-      present: ({ scene, view, limits, pixelsPerRadian, keepMotion }) => {
+      present: ({ tour, scene, view, limits, pixelsPerRadian, keepMotion }) => {
         camera.resetScene(view, limits);
         camera.setSourceDensity(pixelsPerRadian);
         parts.handleSceneChange(keepMotion);
-        parts.onSceneShown(scene);
+        parts.onSceneShown(scene, tour);
         requestFrame();
       },
-      refreshScene: ({ scene, limits }) => {
+      refreshScene: ({ tour, scene, limits }) => {
         camera.setLimits(limits);
-        parts.onSceneShown(scene);
+        parts.onSceneShown(scene, tour);
         requestFrame();
       },
       setSourceDensity: camera.setSourceDensity,

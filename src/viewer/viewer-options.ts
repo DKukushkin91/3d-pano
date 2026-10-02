@@ -1,3 +1,4 @@
+import type { TRenderHotspot } from '../hotspots/hotspot-types';
 import type { TImageLoader } from '../resources/load-image';
 import { DEFAULT_RETRY_OPTIONS, type IResolvedRetryOptions, type IRetryOptions } from '../resources/retry';
 import { CONTROLS_OPTION_KEYS } from './controls-option-keys';
@@ -14,6 +15,7 @@ export interface IResolvedViewerOptions {
   maxPixelRatio: number;
   renderScale: number;
   sceneCacheMegabytes: number;
+  renderHotspot: TRenderHotspot | null;
 }
 
 export const DEFAULT_CONTROLS_OPTIONS: Readonly<TResolvedControlsOptions> = {
@@ -59,6 +61,18 @@ const resolveLoader = (value: TImageLoader | undefined): TImageLoader | null => 
 
   if (typeof value !== 'function') {
     throw new TypeError('3d-pano: option "loader" must be a function');
+  }
+
+  return value;
+};
+
+const resolveRenderHotspot = (value: TRenderHotspot | undefined): TRenderHotspot | null => {
+  if (value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== 'function') {
+    throw new TypeError('3d-pano: option "renderHotspot" must be a function');
   }
 
   return value;
@@ -123,6 +137,9 @@ export const resolveViewerOptions = (
     sceneCacheMegabytes: has('sceneCacheMegabytes')
       ? nonNegativeNumber('sceneCacheMegabytes', next.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES)
       : (current?.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES),
+    renderHotspot: has('renderHotspot')
+      ? resolveRenderHotspot(next.renderHotspot)
+      : (current?.renderHotspot ?? null),
   };
 };
 
@@ -132,6 +149,7 @@ const comparableValues = (options: IResolvedViewerOptions): readonly unknown[] =
   options.maxPixelRatio,
   options.renderScale,
   options.sceneCacheMegabytes,
+  options.renderHotspot,
   options.retry.attempts,
   options.retry.delayMs,
   ...CONTROLS_OPTION_KEYS.map((key) => options.controls[key]),
