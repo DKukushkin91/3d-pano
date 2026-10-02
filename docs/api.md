@@ -264,7 +264,7 @@ const tourViewer = createPanoViewer(container, {
 
 **Placement.** `position` is a sphere point `{ yaw, pitch }` or a world point `{ x, y, z }` relative to the centre of the panorama. `anchor` chooses which point of the element lies there: `center` by default, or `top`, `bottom`, `left`, `right` and the four corners. Without `plane` the element keeps its size in pixels. With `plane: { width, facing?, spin? }` it lies in a plane of the world in perspective (CSS `matrix3d`) and grows when the camera zooms in — a mark on the floor, a sign on a wall; see [the tour format](tour.md#hotspots) for the fields.
 
-**Surfaces.** A hotspot with a `plane` can show a picture or a video drawn by WebGL together with the scene, while its element stays the hit area and the focus target (see [Hotspot surfaces](tour.md#hotspot-surfaces) for the behaviour). Tour hotspots take URLs; your own hotspots also take ready sources:
+**Surfaces.** A hotspot with a `plane` can show a picture or a video drawn by WebGL together with the scene, while its element stays the hit area and the focus target (see [Hotspot surfaces](tour.md#hotspot-surfaces) for the behaviour). Tour hotspots take URLs (`THotspotSurface`); your own hotspots also take ready sources (`TAddHotspotSurface`):
 
 | `surface` field | Accepts                                                                  |
 | --------------- | ------------------------------------------------------------------------ |

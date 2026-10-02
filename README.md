@@ -82,13 +82,14 @@ The camera turns in 900 ms with `cubic-out` by default and stays within the scen
       "position": { "x": 1.2, "y": -1.5, "z": 2.4 },
       "title": "Bedroom",
       "target": { "scene": "bedroom", "transition": { "type": "blend", "durationMs": 800 } },
-      "plane": { "width": 0.5, "facing": { "yaw": 0, "pitch": 90 } }
+      "plane": { "width": 0.5, "facing": { "yaw": 0, "pitch": 90 } },
+      "surface": { "image": "/surfaces/floor-spot.png", "width": 0.125 }
     }
   ]
 }
 ```
 
-A hotspot of the tour is a button over its point; clicking it switches to `target`, hovering preloads that scene. Your own elements go through `addHotspot`:
+A hotspot of the tour is a button over its point; clicking it switches to `target`, hovering preloads that scene. With `surface` a hotspot in a plane also shows a picture or a video drawn by WebGL together with the scene — a mark on the floor, a screen on a wall — that covers other surfaces by depth and fades with its scene, while the button stays the hit area. Your own elements go through `addHotspot`:
 
 ```ts
 const pin = viewer.addHotspot({
@@ -98,7 +99,7 @@ const pin = viewer.addHotspot({
 });
 ```
 
-See [Hotspots](docs/api.md#hotspots) and [the tour format](docs/tour.md#hotspots).
+See [Hotspots](docs/api.md#hotspots), [the tour format](docs/tour.md#hotspots) and [hotspot surfaces](docs/tour.md#hotspot-surfaces).
 
 ## React
 
