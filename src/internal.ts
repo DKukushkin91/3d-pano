@@ -9,6 +9,7 @@ export * from './math/vector3';
 export * from './math/view-interpolation';
 export * from './math/hotspot-placement';
 export * from './math/scene-space';
+export * from './math/surface-geometry';
 export * from './tour/tour-dictionaries';
 export * from './hotspots/add-hotspot-options';
 export * from './hotspots/hotspot-dictionaries';
