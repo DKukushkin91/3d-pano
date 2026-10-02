@@ -139,7 +139,7 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     preloader.dropMissing(new Set(nextTour.scenes.map(sceneKeyOf)));
 
     if (switcher.isOnScreen(scene)) {
-      host.applyLimits(resolveSceneLimits(nextTour, scene));
+      host.refreshScene({ scene, limits: resolveSceneLimits(nextTour, scene) });
 
       return switcher.stayOnScreen(scene.id);
     }

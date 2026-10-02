@@ -165,6 +165,10 @@ describe('scene-navigation · Замена тура', () => {
     assert.equal(harness.sessions.length, 1);
     assert.equal(harness.appearances.length, appearancesBefore);
     assert.deepEqual(harness.appliedLimits.at(-1).fov, [50, 100]);
+    assert.equal(
+      harness.refreshes.at(-1).scene,
+      SECOND_TOUR.scenes.find((scene) => scene.id === 'kitchen'),
+    );
     assert.deepEqual(harness.events, []);
   });
 

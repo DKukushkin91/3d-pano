@@ -30,6 +30,7 @@ describe('scene-navigation · Переключение сцены', () => {
     assert.equal(harness.navigator.frame(0).current, kitchen);
     assert.equal(harness.appearances[0].view.yaw, 10);
     assert.deepEqual(harness.appearances[0].limits.fov, [40, 110]);
+    assert.equal(harness.appearances[0].scene, TOUR.scenes[0]);
     assert.equal(harness.snapshot().isTransitioning, false);
 
     await harness.complete('kitchen');

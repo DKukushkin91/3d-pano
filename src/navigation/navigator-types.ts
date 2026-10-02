@@ -34,13 +34,23 @@ export interface ISceneRecord<TSession extends INavigatorSession> {
 }
 
 /**
- * Камера в момент появления сцены на экране.
+ * Сцена в момент появления на экране: объект сцены того тура, в котором она принята к показу, и камера.
  */
 export interface ISceneAppearance {
+  scene: IScene;
   view: IView;
   limits: IResolvedViewLimits;
   pixelsPerRadian: number | null;
   keepMotion: boolean;
+}
+
+/**
+ * Новый тур оставил на экране ту же сцену: её объект из нового тура (там могут измениться хотспоты) и
+ * новые ограничения.
+ */
+export interface ISceneRefresh {
+  scene: IScene;
+  limits: IResolvedViewLimits;
 }
 
 /**
@@ -66,7 +76,7 @@ export interface ISceneNavigatorHost<TSession extends INavigatorSession> {
   ) => TSession;
   getView: () => IView;
   present: (appearance: ISceneAppearance) => void;
-  applyLimits: (limits: IResolvedViewLimits) => void;
+  refreshScene: (refresh: ISceneRefresh) => void;
   setSourceDensity: (pixelsPerRadian: number | null) => void;
   requestFrame: () => void;
   store: ISnapshotStore;

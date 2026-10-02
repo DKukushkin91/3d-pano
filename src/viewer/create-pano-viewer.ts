@@ -1,11 +1,10 @@
 import { createInputController } from '../controls/input-controller';
 import { observeElementSize, readElementSize } from '../dom/size-observer';
 import { createViewerRoot } from '../dom/viewer-root';
-import { type ISceneNavigator, createSceneNavigator } from '../navigation/scene-navigator';
+import type { ISceneNavigator } from '../navigation/scene-navigator';
 import { createGlContext, releaseGlContext } from '../render/gl-context';
 import { createRenderLoop } from '../render/render-loop';
 import { createPanoError } from '../resources/load-errors';
-import { loadImage } from '../resources/load-image';
 import { createEventEmitter } from '../state/event-emitter';
 import { createSnapshotStore } from '../state/snapshot-store';
 import { EnumErrorCode, EnumViewerStatus } from '../state/viewer-dictionaries';
@@ -22,8 +21,9 @@ import { validateTour } from '../tour/validate-tour';
 import { createCameraMotion } from './camera-motion';
 import { createCameraState } from './camera-state';
 import { resolveLookAtRequest } from './look-at-options';
-import { type ISceneSession, createSceneSession } from './scene-session';
+import type { ISceneSession } from './scene-session';
 import { createViewerGraphics } from './viewer-graphics';
+import { createViewerNavigator } from './viewer-navigation';
 import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
 import type { IPanoViewer, IPanoViewerEventMap, IPanoViewerOptions } from './viewer-types';
 
@@ -130,38 +130,20 @@ export const createViewer = (
     loop.requestRender();
   });
 
-  if (glContext !== null) {
-    navigator = createSceneNavigator<ISceneSession>(
-      {
-        createSession: (scene, withPreview, onChange) =>
-          createSceneSession({
-            scene,
-            withPreview,
-            glContext,
-            loadImage: (url, signal) =>
-              loadImage(url, { loader: resolvedOptions.loader, retry: resolvedOptions.retry, signal }),
-            onChange,
-          }),
-        getView: camera.getView,
-        present: ({ view, limits, pixelsPerRadian, keepMotion }) => {
-          camera.resetScene(view, limits);
-          camera.setSourceDensity(pixelsPerRadian);
-          input.handleSceneChange(keepMotion);
-          motion.handleSceneChange(keepMotion);
-          loop.requestRender();
-        },
-        applyLimits: (limits) => {
-          camera.setLimits(limits);
-          loop.requestRender();
-        },
-        setSourceDensity: camera.setSourceDensity,
-        requestFrame: loop.requestRender,
-        store,
-        emitter,
-      },
-      resolvedOptions.sceneCacheMegabytes,
-    );
-  }
+  navigator = createViewerNavigator({
+    glContext,
+    camera,
+    handleSceneChange: (keepMotion) => {
+      input.handleSceneChange(keepMotion);
+      motion.handleSceneChange(keepMotion);
+    },
+    onSceneShown: () => undefined,
+    requestFrame: loop.requestRender,
+    readLoading: () => ({ loader: resolvedOptions.loader, retry: resolvedOptions.retry }),
+    store,
+    emitter,
+    cacheMegabytes: resolvedOptions.sceneCacheMegabytes,
+  });
 
   const reportError = (error: IPanoError): void => {
     store.update({ status: EnumViewerStatus.Error, error });

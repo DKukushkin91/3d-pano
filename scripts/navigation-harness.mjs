@@ -79,6 +79,7 @@ export const createHarness = ({ cacheMegabytes = 256 } = {}) => {
   const events = [];
   const appearances = [];
   const appliedLimits = [];
+  const refreshes = [];
   const densities = [];
   const camera = { view: { yaw: 0, pitch: 0, roll: 0, fov: 90, fovMode: 'max' } };
 
@@ -101,8 +102,9 @@ export const createHarness = ({ cacheMegabytes = 256 } = {}) => {
       appearances.push(appearance);
       camera.view = appearance.view;
     },
-    applyLimits: (limits) => {
-      appliedLimits.push(limits);
+    refreshScene: (refresh) => {
+      refreshes.push(refresh);
+      appliedLimits.push(refresh.limits);
     },
     setSourceDensity: (pixelsPerRadian) => {
       densities.push(pixelsPerRadian);
@@ -142,6 +144,7 @@ export const createHarness = ({ cacheMegabytes = 256 } = {}) => {
     events,
     appearances,
     appliedLimits,
+    refreshes,
     densities,
     sessionsOf,
     latestSession,
