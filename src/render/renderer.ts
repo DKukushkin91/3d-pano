@@ -1,5 +1,6 @@
 import type { ICameraBasis } from '../math/camera-basis';
 import type { IHalfTangents } from '../math/field-of-view';
+import { type ISceneSpace, ZERO_OFFSET } from '../math/scene-space';
 import { EnumSourceType } from '../tour/tour-dictionaries';
 import type { IGlContext } from './gl-context';
 import {
@@ -16,11 +17,13 @@ import { FULLSCREEN_VERTEX_SHADER } from './shaders/fullscreen-vertex';
 import { TILED_CUBE_FRAGMENT_SHADER } from './shaders/tiled-cube-fragment';
 
 /**
- * Камера кадра: оси камеры в мире и тангенсы половин углов обзора.
+ * Камера кадра: оси камеры в мире, тангенсы половин углов обзора и пространство сцены — сдвиг камеры от
+ * центра и модель «пол + сфера». Без `space` камера в центре сцены.
  */
 export interface IFrameCamera {
   basis: ICameraBasis;
   halfTangents: IHalfTangents;
+  space?: ISceneSpace;
 }
 
 /**
@@ -37,7 +40,13 @@ export interface IRenderer {
   dispose: () => void;
 }
 
-const CAMERA_UNIFORMS = ['cameraToWorld', 'halfTangents'] as const;
+const CAMERA_UNIFORMS = [
+  'cameraToWorld',
+  'halfTangents',
+  'cameraOffset',
+  'floorDepth',
+  'modelRadius',
+] as const;
 const EQUIRECT_UNIFORMS = [...CAMERA_UNIFORMS, 'tiles', 'imageSize', 'tileSize', 'tileGrid'] as const;
 const CUBE_UNIFORMS = [...CAMERA_UNIFORMS, 'tiles', 'faceSize', 'tilesPerSide', 'readyFaces'] as const;
 const TILED_CUBE_UNIFORMS = [
@@ -111,6 +120,13 @@ export const createRenderer = ({ gl }: IGlContext): IRenderer => {
       writeCameraMatrix(cameraMatrix, camera.basis),
     );
     gl.uniform2f(program.uniform('halfTangents'), camera.halfTangents.width, camera.halfTangents.height);
+
+    const offset = camera.space?.offset ?? ZERO_OFFSET;
+    const model = camera.space?.model;
+
+    gl.uniform3f(program.uniform('cameraOffset'), offset.x, offset.y, offset.z);
+    gl.uniform1f(program.uniform('floorDepth'), model?.floorDepth ?? 0);
+    gl.uniform1f(program.uniform('modelRadius'), model?.radius ?? 1);
   };
 
   const bindTexture = (unit: number, target: number, texture: WebGLTexture): void => {

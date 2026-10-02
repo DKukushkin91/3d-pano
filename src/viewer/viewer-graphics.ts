@@ -1,8 +1,11 @@
 import { drawingBufferSize } from '../dom/drawing-buffer-size';
+import { screenFromDirection } from '../math/rectilinear';
+import { subtractVectors } from '../math/vector3';
 import type { INavigatorFrame } from '../navigation/navigator-types';
+import type { ICompositeBlur } from '../render/composite-pass';
 import { type IFrameComposer, type IPreviousSceneFrame, createFrameComposer } from '../render/frame-composer';
 import type { IGlContext } from '../render/gl-context';
-import { type IRenderer, createRenderer } from '../render/renderer';
+import { type IFrameCamera, type IRenderer, createRenderer } from '../render/renderer';
 import type { ITileFrame } from '../tiles/visible-tiles';
 import type { ICameraState } from './camera-state';
 import type { ISceneSession } from './scene-session';
@@ -30,31 +33,69 @@ export interface IViewerGraphics {
   dispose: () => void;
 }
 
-const previousSceneOf = (
+const UNIT_VIEWPORT = { width: 1, height: 1 };
+const FRAME_CENTER = { x: 0.5, y: 0.5 };
+
+const previousCameraOf = (
   frame: INavigatorFrame<ISceneSession>,
   camera: ICameraState,
-): IPreviousSceneFrame | null => {
+): IFrameCamera | null => {
   if (frame.previous === null) {
+    return null;
+  }
+
+  const liveView = camera.getView();
+  const view = frame.previousView ?? { ...liveView, yaw: liveView.yaw + frame.previousYawShift };
+  const previousCamera = camera.frameCameraOf(view);
+
+  return previousCamera === null || frame.move === null
+    ? previousCamera
+    : { ...previousCamera, space: frame.move.previous };
+};
+
+const blurOf = (
+  frame: INavigatorFrame<ISceneSession>,
+  previousCamera: IFrameCamera | null,
+): ICompositeBlur | null => {
+  const { move } = frame;
+
+  if (move === null || move.blurStrength <= 0 || previousCamera === null) {
+    return null;
+  }
+
+  const toward = subtractVectors(move.target, move.previous.offset);
+  const point = screenFromDirection(toward, UNIT_VIEWPORT, previousCamera.basis, previousCamera.halfTangents);
+
+  return {
+    strength: move.blurStrength,
+    center: point === null || !point.isInView ? FRAME_CENTER : { x: point.x, y: 1 - point.y },
+  };
+};
+
+const previousSceneOf = (
+  frame: INavigatorFrame<ISceneSession>,
+  previousCamera: IFrameCamera | null,
+): IPreviousSceneFrame | null => {
+  if (frame.previous === null || previousCamera === null) {
     return null;
   }
 
   return {
     drawings: frame.previous.drawings(),
-    frozenCamera: frame.previousView === null ? null : camera.frameCameraOf(frame.previousView),
-    frozenKey: frame.previousView,
+    camera: previousCamera,
+    frozenKey: frame.move === null ? frame.previousView : null,
   };
 };
 
 const prepareScenes = (
   frame: INavigatorFrame<ISceneSession>,
-  camera: ICameraState,
-  tileFrame: ITileFrame,
+  cameras: { current: IFrameCamera; previous: IFrameCamera | null },
+  buffer: ITileFrame['buffer'],
   timeMs: number,
 ): boolean => {
-  const isCurrentAnimating = frame.current?.prepareFrame(tileFrame, timeMs) ?? false;
-  const previousCamera = frame.previousView === null ? null : camera.frameCameraOf(frame.previousView);
-  const previousFrame = previousCamera === null ? tileFrame : { ...previousCamera, buffer: tileFrame.buffer };
-  const isPreviousAnimating = frame.previous?.prepareFrame(previousFrame, timeMs) ?? false;
+  const isCurrentAnimating = frame.current?.prepareFrame({ ...cameras.current, buffer }, timeMs) ?? false;
+  const previousCamera = cameras.previous ?? cameras.current;
+  const isPreviousAnimating = frame.previous?.prepareFrame({ ...previousCamera, buffer }, timeMs) ?? false;
 
   return isCurrentAnimating || isPreviousAnimating;
 };
@@ -92,16 +133,25 @@ export const createViewerGraphics = (
         canvas.height = bufferSize.height;
       }
 
+      const currentCamera = frame.move === null ? frameCamera : { ...frameCamera, space: frame.move.current };
+      const previousCamera = previousCameraOf(frame, camera);
+
       tiles.startFrame();
 
-      const isAnimating = prepareScenes(frame, camera, { ...frameCamera, buffer: bufferSize }, timeMs);
+      const isAnimating = prepareScenes(
+        frame,
+        { current: currentCamera, previous: previousCamera },
+        bufferSize,
+        timeMs,
+      );
 
       tiles.finishFrame();
       composer.draw({
-        camera: frameCamera,
+        camera: currentCamera,
         current: frame.current?.drawings() ?? [],
-        previous: previousSceneOf(frame, camera),
+        previous: previousSceneOf(frame, previousCamera),
         weight: frame.weight,
+        blur: blurOf(frame, previousCamera),
         bufferWidth: bufferSize.width,
         bufferHeight: bufferSize.height,
       });

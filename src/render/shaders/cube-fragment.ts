@@ -1,4 +1,5 @@
 import { CUBE_FUNCTIONS } from './cube-functions';
+import { SPACE_FUNCTIONS } from './space-functions';
 
 /**
  * Кубический слой. Грань выбирается по наибольшей компоненте направления (`cubeFaceFromDirection`, та же
@@ -18,12 +19,13 @@ uniform float faceSize;
 uniform float tilesPerSide;
 uniform uint readyFaces;
 
+${SPACE_FUNCTIONS}
 in vec2 normalizedPoint;
 out vec4 fragmentColor;
 
 ${CUBE_FUNCTIONS}
 void main() {
-  vec3 direction = normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents));
+  vec3 direction = sceneDirection(normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents)));
   float pixelAngle = pixelAngleOf(direction);
   vec3 facePoint = cubeFaceFromDirection(direction);
   uint faceBit = 1u << uint(facePoint.z);

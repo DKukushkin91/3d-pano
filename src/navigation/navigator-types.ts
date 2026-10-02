@@ -1,4 +1,4 @@
-import type { ISceneModel } from '../math/scene-space';
+import type { ISceneSpace } from '../math/scene-space';
 import type { IVector3 } from '../math/vector3';
 import type { IEventEmitter } from '../state/event-emitter';
 import type { ISnapshotStore } from '../state/snapshot-store';
@@ -67,14 +67,6 @@ export interface ISceneRefresh {
   tour: ITour;
   scene: IScene;
   limits: IResolvedViewLimits;
-}
-
-/**
- * Пространство сцены в кадре шага: сдвиг камеры от центра сцены и модель «пол + сфера».
- */
-export interface ISceneSpace {
-  offset: IVector3;
-  model: ISceneModel;
 }
 
 /**

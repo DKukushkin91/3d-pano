@@ -1,16 +1,16 @@
-import { createCompositePass } from './composite-pass';
+import { type ICompositeBlur, createCompositePass } from './composite-pass';
 import { createFrameTextureSlot } from './framebuffer';
 import type { TLayerDrawing } from './layer-drawing';
 import type { IFrameCamera, IRenderer } from './renderer';
 
 /**
- * Предыдущая сцена во время смешивания. `frozenCamera: null` — она движется вместе с живой камерой;
- * иначе это замершая камера, а `frozenKey` меняется только с новым смешиванием, поэтому замерший кадр
- * рисуется один раз и заново лишь при смене размера буфера.
+ * Предыдущая сцена во время смешивания или шага со своей камерой. `frozenKey` не `null`, когда камера
+ * замерла: он меняется только с новым смешиванием, поэтому замерший кадр рисуется один раз и заново лишь
+ * при смене размера буфера.
  */
 export interface IPreviousSceneFrame {
   drawings: readonly TLayerDrawing[];
-  frozenCamera: IFrameCamera | null;
+  camera: IFrameCamera;
   frozenKey: object | null;
 }
 
@@ -19,6 +19,7 @@ export interface IComposedFrame {
   current: readonly TLayerDrawing[];
   previous: IPreviousSceneFrame | null;
   weight: number;
+  blur: ICompositeBlur | null;
   bufferWidth: number;
   bufferHeight: number;
 }
@@ -63,18 +64,17 @@ export const createFrameComposer = (gl: WebGL2RenderingContext, renderer: IRende
     const currentTexture = currentSlot.ensure(width, height);
 
     if (!isFrozenFrameReady(previous, width, height)) {
-      renderer.drawFrame(
-        previous.frozenCamera ?? camera,
-        previous.drawings,
-        width,
-        height,
-        previousTexture.framebuffer,
-      );
+      renderer.drawFrame(previous.camera, previous.drawings, width, height, previousTexture.framebuffer);
       frozen = previous.frozenKey === null ? null : { key: previous.frozenKey, width, height };
     }
 
     renderer.drawFrame(camera, frame.current, width, height, currentTexture.framebuffer);
-    compositePass.draw(previousTexture.texture, currentTexture.texture, frame.weight, width, height);
+    compositePass.draw(previousTexture.texture, currentTexture.texture, {
+      weight: frame.weight,
+      blur: frame.blur,
+      width,
+      height,
+    });
   };
 
   return {

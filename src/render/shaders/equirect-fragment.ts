@@ -1,10 +1,12 @@
+import { SPACE_FUNCTIONS } from './space-functions';
+
 /**
  * Эквиректангулярный слой. Для каждого пикселя: луч прямолинейной проекции (`rectilinearRay`, как в
  * `math/rectilinear.ts`) → направление в мире → координаты изображения (`equirectFromDirection`, как в
  * `math/equirect.ts`) → тайл текстуры-массива. Уровень MIP считается из угла, который занимает пиксель,
  * поэтому на шве ±180 не появляется полоса, которую дал бы обычный `texture()`.
  */
-export const EQUIRECT_FRAGMENT_SHADER = `#version 300 es
+export const EQUIRECT_FRAGMENT_SHADER: string = `#version 300 es
 precision highp float;
 precision highp sampler2DArray;
 
@@ -17,6 +19,7 @@ uniform vec2 imageSize;
 uniform vec2 tileSize;
 uniform vec2 tileGrid;
 
+${SPACE_FUNCTIONS}
 in vec2 normalizedPoint;
 out vec4 fragmentColor;
 
@@ -40,7 +43,7 @@ float mipLevel(float pixelAngle, float texelAngle) {
 }
 
 void main() {
-  vec3 direction = normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents));
+  vec3 direction = sceneDirection(normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents)));
   float pixelAngle = pixelAngleOf(direction);
   vec2 imagePoint = equirectFromDirection(direction) * imageSize;
   vec2 tile = min(floor(imagePoint / tileSize), tileGrid - 1.0);

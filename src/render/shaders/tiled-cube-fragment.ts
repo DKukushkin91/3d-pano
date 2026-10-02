@@ -1,5 +1,6 @@
 import { MAX_TILE_LEVELS } from '../../tour/tile-pyramid';
 import { CUBE_FUNCTIONS } from './cube-functions';
+import { SPACE_FUNCTIONS } from './space-functions';
 
 /**
  * Тайловый куб. Для пикселя считается нужный уровень (`neededLevelOf`, как `neededLevelAt` в
@@ -33,6 +34,7 @@ uniform float levelTilesPerSide[MAX_LEVELS];
 uniform int levelOffsets[MAX_LEVELS];
 uniform float levelTileScales[MAX_LEVELS];
 
+${SPACE_FUNCTIONS}
 in vec2 normalizedPoint;
 out vec4 fragmentColor;
 
@@ -56,7 +58,7 @@ uvec2 tableEntry(int index) {
 }
 
 void main() {
-  vec3 direction = normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents));
+  vec3 direction = sceneDirection(normalize(cameraToWorld * rectilinearRay(normalizedPoint, halfTangents)));
   float pixelAngle = pixelAngleOf(direction);
   vec3 facePoint = cubeFaceFromDirection(direction);
   uint faceBit = 1u << uint(facePoint.z);
