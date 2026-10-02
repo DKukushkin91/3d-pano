@@ -65,6 +65,7 @@ describe('tour-config · Наложение значений по умолчан
       roll: 0,
       fov: 80,
       fovMode: EnumFovMode.Max,
+      position: { x: 0, y: 0, z: 0 },
     });
   });
 
@@ -92,7 +93,14 @@ describe('tour-config · Умолчания библиотеки', () => {
     const scene = createScene('room');
     const tour = { scenes: [scene] };
 
-    assert.deepEqual(resolveSceneView(tour, scene), { yaw: 0, pitch: 0, roll: 0, fov: 90, fovMode: 'max' });
+    assert.deepEqual(resolveSceneView(tour, scene), {
+      yaw: 0,
+      pitch: 0,
+      roll: 0,
+      fov: 90,
+      fovMode: 'max',
+      position: { x: 0, y: 0, z: 0 },
+    });
     assert.deepEqual(resolveSceneLimits(tour, scene), { fov: [30, 120], maxPixelZoom: 2, bounds: 'auto' });
     assert.deepEqual(resolveSceneView(tour, scene), LIBRARY_DEFAULT_VIEW);
     assert.deepEqual(resolveSceneLimits(tour, scene), LIBRARY_DEFAULT_LIMITS);

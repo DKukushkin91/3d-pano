@@ -11,6 +11,7 @@ export const LIBRARY_DEFAULT_VIEW: Readonly<IView> = {
   roll: 0,
   fov: 90,
   fovMode: EnumFovMode.Max,
+  position: Object.freeze({ x: 0, y: 0, z: 0 }),
 };
 
 export const LIBRARY_DEFAULT_LIMITS: Readonly<IResolvedViewLimits> = {
@@ -43,6 +44,7 @@ export const resolveSceneView = (tour: ITour, scene: IScene): IView => {
     roll: firstDefined(LIBRARY_DEFAULT_VIEW.roll, sceneView?.roll, tourView?.roll),
     fov: firstDefined(LIBRARY_DEFAULT_VIEW.fov, sceneView?.fov, tourView?.fov),
     fovMode: firstDefined(LIBRARY_DEFAULT_VIEW.fovMode, sceneView?.fovMode, tourView?.fovMode),
+    position: { x: 0, y: 0, z: 0 },
   };
 };
 

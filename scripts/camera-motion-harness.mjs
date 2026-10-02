@@ -19,6 +19,7 @@ export const createView = (fields = {}) => ({
   roll: 0,
   fov: 90,
   fovMode: EnumFovMode.Max,
+  position: { x: 0, y: 0, z: 0 },
   ...fields,
 });
 

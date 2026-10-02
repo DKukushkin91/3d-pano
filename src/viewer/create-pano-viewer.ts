@@ -100,6 +100,9 @@ export const createViewer = (
     const isInputMoving = input.step(timeMs);
     const isCameraMoving = motion.step(timeMs);
     const frame = navigator?.frame(timeMs) ?? null;
+
+    camera.setSpace(frame?.move?.current ?? null);
+
     const changedView = camera.takeViewChange();
 
     if (changedView !== null) {

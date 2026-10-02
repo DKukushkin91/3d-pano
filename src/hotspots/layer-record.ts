@@ -3,7 +3,7 @@ import {
   type IProjectionCamera,
   hotspotDistance,
   hotspotPoint,
-  placePlane,
+  placeHotspotPlane,
   placePoint,
   planeBasis,
 } from '../math/hotspot-placement';
@@ -98,8 +98,8 @@ const placementOf = (
   }
 
   const anchor = HOTSPOT_ANCHOR_FRACTIONS[record.hotspot.anchor];
-  const matrix = placePlane(
-    record.point,
+  const matrix = placeHotspotPlane(
+    record.hotspot.position,
     record.basis,
     { ...record.size, anchorX: anchor.x, anchorY: anchor.y, worldPerPixel: plane.width / record.size.width },
     camera,

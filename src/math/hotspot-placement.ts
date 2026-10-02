@@ -3,6 +3,7 @@ import { toRadians } from './angles';
 import { type ICameraBasis, directionFromAngles } from './camera-basis';
 import type { IHalfTangents } from './field-of-view';
 import { type IViewportSize, screenFromDirection } from './rectilinear';
+import { type ISceneSpace, modelPointInDirection } from './scene-space';
 import {
   type IVector3,
   addVectors,
@@ -11,15 +12,18 @@ import {
   dotProduct,
   normalizeVector,
   scaleVector,
+  subtractVectors,
   vectorLength,
 } from './vector3';
 
 /**
- * Камера кадра в том виде, в каком её знает проекция: оси и половины углов обзора.
+ * Камера кадра в том виде, в каком её знает проекция: оси, половины углов обзора и пространство сцены,
+ * если камера сдвинута от центра.
  */
 export interface IProjectionCamera {
   basis: ICameraBasis;
   halfTangents: IHalfTangents;
+  space?: ISceneSpace;
 }
 
 /**
@@ -107,6 +111,30 @@ export const planeBasis = (
 };
 
 /**
+ * Точка хотспота относительно камеры и масштаб его плоскости. Без сдвига камеры — как раньше. При сдвиге
+ * точка мира видна из камеры, а точка сферы лежит на модели сцены в своём направлении, и её плоскость
+ * растягивается на то же расстояние: из центра картинка не меняется, а при шаге хотспот едет вместе с
+ * изображением.
+ */
+export const anchorFromCamera = (
+  position: TViewTarget,
+  space: ISceneSpace | undefined,
+): { point: IVector3; scale: number } => {
+  const point = hotspotPoint(position);
+
+  if (space === undefined) {
+    return { point, scale: 1 };
+  }
+
+  const scenePoint = isSpherePoint(position) ? modelPointInDirection(space.model, point) : point;
+
+  return {
+    point: subtractVectors(scenePoint, space.offset),
+    scale: isSpherePoint(position) ? vectorLength(scenePoint) : 1,
+  };
+};
+
+/**
  * Экранная точка хотспота без плоскости в CSS-пикселях контейнера; `null` — точка позади камеры.
  */
 export const placePoint = (
@@ -114,7 +142,12 @@ export const placePoint = (
   camera: IProjectionCamera,
   viewport: IViewportSize,
 ): { x: number; y: number; isInView: boolean } | null =>
-  screenFromDirection(hotspotPoint(position), viewport, camera.basis, camera.halfTangents);
+  screenFromDirection(
+    anchorFromCamera(position, camera.space).point,
+    viewport,
+    camera.basis,
+    camera.halfTangents,
+  );
 
 interface ILinearForm {
   along: number;
@@ -214,4 +247,26 @@ export const placePlane = (
     0,
     zForm.offset,
   ];
+};
+
+/**
+ * `placePlane` для хотспота с учётом сдвига камеры: точка — относительно камеры, а у точки сферы плоскость
+ * растянута на расстояние до модели.
+ */
+export const placeHotspotPlane = (
+  position: TViewTarget,
+  basis: IPlaneBasis,
+  element: IPlaneElement,
+  camera: IProjectionCamera,
+  viewport: IViewportSize,
+): number[] | null => {
+  const anchor = anchorFromCamera(position, camera.space);
+
+  return placePlane(
+    anchor.point,
+    basis,
+    { ...element, worldPerPixel: element.worldPerPixel * anchor.scale },
+    camera,
+    viewport,
+  );
 };

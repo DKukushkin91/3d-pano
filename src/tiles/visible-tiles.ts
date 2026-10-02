@@ -1,7 +1,9 @@
 import { type ICameraBasis, cameraToWorld } from '../math/camera-basis';
 import { cubeFaceFromDirection } from '../math/cube-faces';
 import type { IHalfTangents } from '../math/field-of-view';
-import { rectilinearRay } from '../math/rectilinear';
+import { type INormalizedPoint, rectilinearRay } from '../math/rectilinear';
+import { type ISceneSpace, sceneDirection } from '../math/scene-space';
+import { type IVector3, subtractVectors, vectorLength } from '../math/vector3';
 import type { ITileAddress, ITileLevel } from '../tour/tile-pyramid';
 import { CUBE_FACES } from '../tour/tour-dictionaries';
 import { type IBufferSize, type IFacePlanePoint, neededLevelAt, pixelAngleAt, tileAt } from './tile-math';
@@ -13,12 +15,14 @@ import { type IBufferSize, type IFacePlanePoint, neededLevelAt, pixelAngleAt, ti
 export const SAMPLE_STEP_PIXELS = 32;
 
 /**
- * Кадр, для которого ищутся тайлы: камера и размер буфера отрисовки.
+ * Кадр, для которого ищутся тайлы: камера, размер буфера отрисовки и пространство сцены, если камера
+ * сдвинута (во время шага).
  */
 export interface ITileFrame {
   basis: ICameraBasis;
   halfTangents: IHalfTangents;
   buffer: IBufferSize;
+  space?: ISceneSpace;
 }
 
 /**
@@ -54,19 +58,44 @@ const gridPositions = (size: number, step: number): number[] => {
   return positions;
 };
 
+const directionOf = (frame: ITileFrame, cameraRay: IVector3): IVector3 => {
+  const worldRay = cameraToWorld(frame.basis, cameraRay);
+
+  return frame.space === undefined
+    ? worldRay
+    : sceneDirection(frame.space.model, frame.space.offset, worldRay);
+};
+
+const neighbourAngle = (frame: ITileFrame, from: IVector3, point: INormalizedPoint): number =>
+  vectorLength(subtractVectors(directionOf(frame, rectilinearRay(point, frame.halfTangents)), from));
+
+const pixelAngleOf = (frame: ITileFrame, point: INormalizedPoint): number => {
+  if (frame.space === undefined) {
+    return pixelAngleAt(point, frame.halfTangents, frame.buffer);
+  }
+
+  const here = directionOf(frame, rectilinearRay(point, frame.halfTangents));
+
+  return Math.max(
+    neighbourAngle(frame, here, { x: point.x + 2 / frame.buffer.width, y: point.y }),
+    neighbourAngle(frame, here, { x: point.x, y: point.y + 2 / frame.buffer.height }),
+  );
+};
+
 const sampleStepFor = (tileSize: number): number =>
   Math.max(1, Math.min(SAMPLE_STEP_PIXELS, Math.floor(tileSize / 2)));
 
 /**
  * Выборка лучей по сетке буфера и по его краям. Для каждой точки — та же цепочка, что в шейдере: луч,
- * грань, размер пикселя и нужный уровень. Пустой буфер даёт пустую выборку.
+ * сдвиг камеры (`sceneDirection`, если камера не в центре), грань, размер пикселя по направлениям соседних
+ * пикселей (как `dFdx`/`dFdy`) и нужный уровень. Пустой буфер даёт пустую выборку.
  */
 export const sampleTileFrame = (
   frame: ITileFrame,
   levels: readonly ITileLevel[],
   tileSize: number,
 ): IFrameSample[] => {
-  const { buffer, basis, halfTangents } = frame;
+  const { buffer, halfTangents } = frame;
   const samples: IFrameSample[] = [];
 
   if (buffer.width <= 0 || buffer.height <= 0) {
@@ -81,12 +110,12 @@ export const sampleTileFrame = (
     for (const row of rows) {
       const point = { x: (2 * column) / buffer.width - 1, y: 1 - (2 * row) / buffer.height };
       const ray = rectilinearRay(point, halfTangents);
-      const facePoint = cubeFaceFromDirection(cameraToWorld(basis, ray));
+      const facePoint = cubeFaceFromDirection(directionOf(frame, ray));
 
       samples.push({
         face: CUBE_FACES.indexOf(facePoint.face),
         point: { s: facePoint.s, t: facePoint.t },
-        neededLevel: neededLevelAt(pixelAngleAt(point, halfTangents, buffer), facePoint, faceSizes),
+        neededLevel: neededLevelAt(pixelAngleOf(frame, point), facePoint, faceSizes),
         distance: Math.acos(Math.min(1, ray.z)),
       });
     }

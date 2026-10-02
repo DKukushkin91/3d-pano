@@ -3,17 +3,20 @@ import { normalizeYaw, toDegrees, toRadians } from '../math/angles';
 import { anglesFromDirection, cameraBasisFromAngles, directionFromAngles } from '../math/camera-basis';
 import { halfTangentsFromFov } from '../math/field-of-view';
 import { directionFromScreen, screenFromDirection } from '../math/rectilinear';
-import type { IVector3 } from '../math/vector3';
+import { type ISceneSpace, modelPointInDirection, sceneDirection } from '../math/scene-space';
+import { type IVector3, subtractVectors } from '../math/vector3';
 import type { IFrameCamera } from '../render/renderer';
 import { EnumFovMode, type TFovMode } from '../tour/tour-dictionaries';
 import type { IResolvedViewLimits, IView, IViewSettings, TAngleRange } from '../tour/tour-types';
 import { constrainView } from '../view/view-limits';
-import type { IProjectedPoint, ISpherePoint, TViewTarget } from './viewer-types';
+import type { IDirection, IProjectedPoint, ISpherePoint, TViewTarget } from './viewer-types';
 
 /**
  * Камера просмотрщика: вид в градусах, ограничения сцены, CSS-размер кадра и плотность загруженного
  * источника. Любое изменение снова проводит вид через `constrainView`. `constrained` проводит через те же
- * ограничения произвольный вид, не меняя камеру: так поворот заранее знает, куда приедет.
+ * ограничения произвольный вид, не меняя камеру: так поворот заранее знает, куда приедет. Пространство
+ * сцены (`setSpace`, во время шага) сдвигает камеру от центра: его видят `getView().position`, `project`,
+ * `unproject` и кадр отрисовки.
  */
 export interface ICameraState {
   getView: () => IView;
@@ -25,6 +28,7 @@ export interface ICameraState {
   setViewport: (size: ICssSize) => void;
   getViewport: () => ICssSize;
   setSourceDensity: (pixelsPerRadian: number | null) => void;
+  setSpace: (space: ISceneSpace | null) => void;
   frameCamera: () => IFrameCamera | null;
   frameCameraOf: (view: IView) => IFrameCamera | null;
   project: (point: TViewTarget) => IProjectedPoint | null;
@@ -77,6 +81,7 @@ export const applyViewSettings = (current: IView, settings: IViewSettings): IVie
   roll: angleOrCurrent('roll', settings.roll, current.roll),
   fov: angleOrCurrent('fov', settings.fov, current.fov),
   fovMode: fovModeOrCurrent(settings.fovMode, current.fovMode),
+  position: current.position,
 });
 
 /**
@@ -92,7 +97,28 @@ export const createCameraState = (
   let viewport = initialViewport;
   let sourcePixelsPerRadian: number | null = null;
   let view = initialView;
+  let space: ISceneSpace | null = null;
   let isViewChanged = true;
+
+  const position = (): IDirection =>
+    space === null ? { x: 0, y: 0, z: 0 } : { x: space.offset.x, y: space.offset.y, z: space.offset.z };
+
+  const isSameOffset = (next: ISceneSpace | null): boolean => {
+    const current = position();
+    const offset = next?.offset ?? { x: 0, y: 0, z: 0 };
+
+    return current.x === offset.x && current.y === offset.y && current.z === offset.z;
+  };
+
+  const pointFromCamera = (point: TViewTarget): IVector3 => {
+    if (space === null) {
+      return directionOf(point);
+    }
+
+    const scenePoint = isSpherePoint(point) ? modelPointInDirection(space.model, directionOf(point)) : point;
+
+    return subtractVectors(scenePoint, space.offset);
+  };
 
   const constrainedView = (nextView: IView, previousFov: number | null): IView =>
     constrainView(nextView, {
@@ -121,7 +147,7 @@ export const createCameraState = (
     ),
   });
 
-  const currentCamera = (): IFrameCamera => cameraOf(view);
+  const currentCamera = (): IFrameCamera => (space === null ? cameraOf(view) : { ...cameraOf(view), space });
 
   const project = (point: TViewTarget): IProjectedPoint | null => {
     if (!hasArea(viewport)) {
@@ -130,7 +156,7 @@ export const createCameraState = (
 
     const { basis, halfTangents } = currentCamera();
 
-    return screenFromDirection(directionOf(point), viewport, basis, halfTangents);
+    return screenFromDirection(pointFromCamera(point), viewport, basis, halfTangents);
   };
 
   const unproject = (x: number, y: number): ISpherePoint | null => {
@@ -139,7 +165,8 @@ export const createCameraState = (
     }
 
     const { basis, halfTangents } = currentCamera();
-    const angles = anglesFromDirection(directionFromScreen(x, y, viewport, basis, halfTangents));
+    const ray = directionFromScreen(x, y, viewport, basis, halfTangents);
+    const angles = anglesFromDirection(space === null ? ray : sceneDirection(space.model, space.offset, ray));
 
     return { yaw: normalizeYaw(toDegrees(angles.yaw)), pitch: toDegrees(angles.pitch) };
   };
@@ -151,13 +178,13 @@ export const createCameraState = (
 
     isViewChanged = false;
 
-    return { ...view };
+    return { ...view, position: position() };
   };
 
   constrain(initialView, null);
 
   return {
-    getView: () => ({ ...view }),
+    getView: () => ({ ...view, position: position() }),
     setView: (settings) => {
       constrain(applyViewSettings(view, settings), view.fov);
     },
@@ -180,6 +207,10 @@ export const createCameraState = (
     setSourceDensity: (pixelsPerRadian) => {
       sourcePixelsPerRadian = pixelsPerRadian;
       constrain(view, view.fov);
+    },
+    setSpace: (nextSpace) => {
+      isViewChanged ||= !isSameOffset(nextSpace);
+      space = nextSpace;
     },
     frameCamera: () => (hasArea(viewport) ? currentCamera() : null),
     frameCameraOf: (cameraView) => (hasArea(viewport) ? cameraOf(cameraView) : null),

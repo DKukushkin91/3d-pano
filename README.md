@@ -58,6 +58,8 @@ await viewer.showScene('bedroom', {
 
 The current scene stays on screen until the next one has loaded; the promise resolves `true` when the switch is complete and `false` when a newer call superseded it. See [Scenes and transitions](docs/api.md#scenes-and-transitions).
 
+With a [place in the world](docs/tour.md#scenes-in-the-world) for each scene, `{ type: 'move' }` walks the camera into the next room — the floor passes under the camera and the view keeps its direction. See [Moving between scenes](docs/api.md#moving-between-scenes).
+
 ## Camera animation
 
 ```ts

@@ -1,5 +1,6 @@
-import type { IPreloadSceneOptions } from '../navigation/navigation-types';
-import type { IHotspotTarget } from './hotspot-types';
+import { EnumSceneView, EnumTransitionType } from '../navigation/navigation-dictionaries';
+import type { IPreloadSceneOptions, IShowSceneOptions } from '../navigation/navigation-types';
+import type { IHotspot, IHotspotTarget } from './hotspot-types';
 
 /**
  * Хотспот в слое: сцена, в которой он показан (`null` — в любой), расстояние до камеры и порядок
@@ -55,13 +56,36 @@ export const enterTransition = (before: IEnterState, after: IEnterState): 'enter
   return isEntered(after) ? 'enter' : 'leave';
 };
 
+const isMoveTarget = (target: IHotspotTarget): boolean => target.transition?.type === EnumTransitionType.Move;
+
 /**
  * Предзагрузка цели хотспота: сцена и вид, с которым она появится после клика, — тайловая сцена готовит
- * кадр именно этого вида (например, текущего при `view: 'keep'`).
+ * кадр именно этого вида (например, текущего при `view: 'keep'`; у шага вид по умолчанию — `keep`).
  */
 export const hotspotPreloadOf = (
   target: IHotspotTarget,
 ): { sceneId: string; options: IPreloadSceneOptions } => ({
   sceneId: target.scene,
-  options: { view: target.view },
+  options: { view: target.view ?? (isMoveTarget(target) ? EnumSceneView.Keep : undefined) },
 });
+
+/**
+ * Переход по клику: сцена и опции `target`, а у шага без своей `point` камера идёт к `position` хотспота —
+ * к метке на полу, по которой кликнули.
+ */
+export const hotspotNavigationOf = (
+  hotspot: IHotspot,
+): { sceneId: string; options: IShowSceneOptions } | null => {
+  if (hotspot.target === undefined) {
+    return null;
+  }
+
+  const { scene, ...options } = hotspot.target;
+  const { transition } = options;
+
+  if (transition?.type !== EnumTransitionType.Move || transition.point !== undefined) {
+    return { sceneId: scene, options };
+  }
+
+  return { sceneId: scene, options: { ...options, transition: { ...transition, point: hotspot.position } } };
+};

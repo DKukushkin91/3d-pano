@@ -26,6 +26,7 @@ const createView = (fields = {}) => ({
   roll: 0,
   fov: 90,
   fovMode: EnumFovMode.Max,
+  position: { x: 0, y: 0, z: 0 },
   ...fields,
 });
 
@@ -89,7 +90,14 @@ describe('camera-motion · Плавный поворот к цели (аргум
     const current = createView({ yaw: -30, roll: 5, fovMode: EnumFovMode.Vertical });
     const view = lookAtView(resolveLookAtRequest(POINT, { fov: 60 }), current);
 
-    assert.deepEqual(view, { yaw: 40, pitch: -10, roll: 5, fov: 60, fovMode: EnumFovMode.Vertical });
+    assert.deepEqual(view, {
+      yaw: 40,
+      pitch: -10,
+      roll: 5,
+      fov: 60,
+      fovMode: EnumFovMode.Vertical,
+      position: { x: 0, y: 0, z: 0 },
+    });
   });
 
   it('направление строго вверх или вниз оставляет текущий yaw, точка сферы у полюса — свой yaw', () => {

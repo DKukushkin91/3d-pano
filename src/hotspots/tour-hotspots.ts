@@ -6,7 +6,13 @@ import { resolveHotspotPlane } from './add-hotspot-options';
 import { EnumHotspotAnchor } from './hotspot-dictionaries';
 import { hotspotLabel } from './hotspot-label';
 import type { IHotspotLayer, ILayerEntry } from './hotspot-layer';
-import { type IEnterState, NOT_ENTERED, enterTransition, hotspotPreloadOf } from './hotspot-presence';
+import {
+  type IEnterState,
+  NOT_ENTERED,
+  enterTransition,
+  hotspotNavigationOf,
+  hotspotPreloadOf,
+} from './hotspot-presence';
 import type { IHotspot, TRenderHotspot } from './hotspot-types';
 
 /**
@@ -107,10 +113,10 @@ export const createTourHotspots = (ownerDocument: Document, host: ITourHotspotsH
       },
     });
 
-    if (!isPrevented && entry.hotspot.target !== undefined) {
-      const { scene, ...options } = entry.hotspot.target;
+    const navigation = isPrevented ? null : hotspotNavigationOf(entry.hotspot);
 
-      host.showScene(scene, options).catch(ignore);
+    if (navigation !== null) {
+      host.showScene(navigation.sceneId, navigation.options).catch(ignore);
     }
   };
 

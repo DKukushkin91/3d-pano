@@ -133,7 +133,7 @@ export const createViewerGraphics = (
         canvas.height = bufferSize.height;
       }
 
-      const currentCamera = frame.move === null ? frameCamera : { ...frameCamera, space: frame.move.current };
+      const currentCamera = frameCamera;
       const previousCamera = previousCameraOf(frame, camera);
 
       tiles.startFrame();

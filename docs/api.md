@@ -37,7 +37,7 @@ All methods are plain functions without `this`, so they can be passed around as 
 
 | Method                      | Meaning                                                                                                                                                                                                                                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `getView()`                 | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                                                                          |
+| `getView()`                 | The current view `{ yaw, pitch, roll, fov, fovMode, position }`: angles in degrees and, during a [move](#moving-between-scenes), the camera's offset from the scene centre.                                                                                                                |
 | `setView(view)`             | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                                                                                    |
 | `project(point)`            | Screen position of a target (`TViewTarget`) — a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera.                                                   |
 | `unproject(x, y)`           | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                                                                       |
@@ -80,11 +80,11 @@ const isShown = await viewer.showScene('kitchen-v2', {
 
 While the new scene loads, the current one stays on screen and under the user's control; the switch happens when the full image of the new scene is ready. Its preview is not loaded — there is nothing to show it on. The promise resolves `true` when the switch is complete, including the transition.
 
-| Option       | Default           | Meaning                                                                                                                                                                                                   |
-| ------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transition` | `{ type: 'cut' }` | `{ type: 'cut' }` replaces the scene in one frame. `{ type: 'blend', durationMs?, easing? }` dissolves the old scene into the new one, by default in 500 ms with `sine-in-out`; `durationMs: 0` is a cut. |
-| `view`       | `'scene'`         | `'scene'` — the start view of the new scene from the tour. `'keep'` — the current view, within the limits of the new scene. A view object — its fields over the start view of the new scene.              |
-| `keepMotion` | `false`           | `true` keeps the inertia of the camera and a running [`lookAt`](#camera-animation) across the switch. Dragging and held keys always continue — they are the user's input.                                 |
+| Option       | Default                        | Meaning                                                                                                                                                                                                                                                                                                           |
+| ------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transition` | `{ type: 'cut' }`              | `{ type: 'cut' }` replaces the scene in one frame. `{ type: 'blend', durationMs?, easing? }` dissolves the old scene into the new one, by default in 500 ms with `sine-in-out`; `durationMs: 0` is a cut. `{ type: 'move', … }` steps towards the new scene, see [Moving between scenes](#moving-between-scenes). |
+| `view`       | `'scene'`, for `move` `'keep'` | `'scene'` — the start view of the new scene from the tour. `'keep'` — the same direction in the world: the current view, turned by the difference of the scenes' `heading`, within the limits of the new scene. A view object — its fields over the start view of the new scene.                                  |
+| `keepMotion` | `false`                        | `true` keeps the inertia of the camera and a running [`lookAt`](#camera-animation) across the switch. Dragging and held keys always continue — they are the user's input.                                                                                                                                         |
 
 The view and limits of the new scene apply the moment it appears. During a blend both scenes are drawn every frame and the controls stay on: with `view: 'keep'` both move with the camera, so switching between two renovations of the same room is seamless; otherwise the old scene stays still while the camera turns the new one.
 
@@ -105,6 +105,28 @@ try {
 ```
 
 An unknown id rejects with `unknown-scene` and changes nothing. A loading failure rejects, sets `status: 'error'` for the new scene and emits `error`, while the old scene stays on screen; `viewer.retry()` loads the missing images and finishes the switch. Invalid options are programmer errors and throw `RangeError` synchronously.
+
+## Moving between scenes
+
+`{ type: 'move' }` walks the camera to the next scene the way a person steps through a flat: the floor and its marks pass under the camera, the next room fades in ahead and arrives turned so that the camera still looks the same way.
+
+```ts
+await viewer.showScene('bedroom', {
+  transition: { type: 'move', point: { x: 0.2, y: -1.5, z: -2.5 }, turn: -30, blur: 0.5 },
+});
+```
+
+| Field        | Default              | Meaning                                                                                                               |
+| ------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `durationMs` | `500`                | Length of the step; `0` is a cut.                                                                                     |
+| `easing`     | `'quad-out'`         | Curve of both the step and the fade, as for `blend`.                                                                  |
+| `point`      | see below            | Where the camera goes: a point `{ x, y, z }` of the current scene or a sphere point `{ yaw, pitch }`.                 |
+| `turn`       | `heading` difference | Degrees by which the next scene is turned: a direction with `yaw` `Y` here has `yaw` `Y + turn` there.                |
+| `blur`       | `0.5`                | Radial motion blur towards the point, `0…1`; strongest in the middle of the step, none at its ends. `0` turns it off. |
+
+Without `point` the step goes to the `position` of the clicked [hotspot](#hotspots), otherwise to the centre of the next scene when both scenes have a [`position` in the world](tour.md#scenes-in-the-world), otherwise forward to the point in the centre of the view. Except for the scene positions, the camera moves horizontally at the height of its centre: a floor mark at `y: -1.5` takes it to the spot above the mark. The next scene's centre is taken to be where the step ends, so the step always lands exactly in it.
+
+A panorama has no depth, so while the camera is off the centre the image lies on a model of the room — a floor `cameraHeight` below and a sphere around; set `cameraHeight` in the tour for a convincing step. During the step both scenes are drawn every frame and the controls stay on; `getView().position` and the `viewChange` event report the camera's offset from the centre of the scene on screen, and `project`, `unproject` and hotspots follow it, so marks on the floor ride along with the image. `isTransitioning` stays `true` until the step ends. A newer `showScene` resolves the step's promise `false`; the step plays on until the new scene appears. A hotspot of the tour that leads somewhere with a step preloads that scene for the view it will appear with.
 
 ## Preloading and the scene cache
 

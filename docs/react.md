@@ -54,7 +54,7 @@ const RENOVATION_SWITCH: IShowSceneOptions = {
   view: 'keep',
   keepMotion: true,
 };
-const ROOM_SWITCH: IShowSceneOptions = { transition: { type: 'blend', durationMs: 800 } };
+const ROOM_SWITCH: IShowSceneOptions = { transition: { type: 'move' } };
 
 export const Apartment = ({ tour }: { tour: ITour }) => {
   const [scene, setScene] = useState('kitchen');
@@ -86,6 +86,8 @@ export const Apartment = ({ tour }: { tour: ITour }) => {
   );
 };
 ```
+
+Here a renovation of the same room blends in place, and another room is reached with a [step](api.md#moving-between-scenes) — the camera walks into it and keeps looking the same way.
 
 - The prop is applied **when its value changes**, like a starting value that you can move later. A scene shown in another way — `ref.current.showScene()` now, a navigation hotspot later — is not reverted; `onSceneChange` tells you about it so you can update your state (as above).
 - When the component mounts with `scene`, that scene is shown first instead of the tour's `startScene`, without loading the start scene.

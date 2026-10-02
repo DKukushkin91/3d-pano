@@ -39,7 +39,8 @@ export interface IViewSettings {
 }
 
 /**
- * Вид со всеми полями — то, что возвращает `getView()` и получает событие `viewChange`.
+ * Вид со всеми полями — то, что возвращает `getView()` и получает событие `viewChange`. `position` — сдвиг
+ * камеры от центра сцены на экране в её осях: вне перехода «шаг» он нулевой, задать его нельзя.
  */
 export interface IView {
   yaw: number;
@@ -47,6 +48,7 @@ export interface IView {
   roll: number;
   fov: number;
   fovMode: TFovMode;
+  position: IDirection;
 }
 
 export type TAngleRange = readonly [min: number, max: number];
