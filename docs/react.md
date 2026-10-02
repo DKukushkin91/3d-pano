@@ -125,7 +125,7 @@ The effect runs again whenever `pin` is a new object, so keep pins in stable obj
 
 ## Hotspots
 
-**Your own hotspots** are `<Hotspot>` elements inside `<PanoViewer>`: the children are rendered through a portal into an element that the viewer keeps at `position`, so rotating the panorama never re-renders them. The props are those of [`addHotspot`](api.md#hotspots) without `element` — `position`, `scene`, `anchor`, `plane` — plus `className` for a wrapper of the children. They are compared by value, so a point built inline changes nothing; unmounting removes the hotspot.
+**Your own hotspots** are `<Hotspot>` elements inside `<PanoViewer>`: the children are rendered through a portal into an element that the viewer keeps at `position`, so rotating the panorama never re-renders them. The props are those of [`addHotspot`](api.md#hotspots) without `element` — `position`, `scene`, `anchor`, `plane`, `surface` — plus `className` for a wrapper of the children. They are compared by value, so a point built inline changes nothing; unmounting removes the hotspot. In `surface` the URL and `width` are compared by value and a source element by reference: a new `{ image: '/sign.png' }` object on every render is fine, and to show a redrawn `<canvas>` pass a new source, for example `createImageBitmap(canvas)`.
 
 ```tsx
 import { useState } from 'react';

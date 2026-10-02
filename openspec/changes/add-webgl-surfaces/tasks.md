@@ -40,8 +40,8 @@
 
 ## 6. React (react-adapter)
 
-- [ ] 6.1 Проп `surface` у `<Hotspot>`: вызов `setSurface` по сравнению из 1.3; `docs/react.md` — в том же коммите. Проверка: `pnpm check:examples`, сценарий «Табличка в React» (требование «Компонент Hotspot»)
-- [ ] 6.2 Закоммитить `feat(react): добавить проп surface у Hotspot`
+- [x] 6.1 Проп `surface` у `<Hotspot>`: вызов `setSurface` по сравнению из 1.3; `docs/react.md` — в том же коммите. Проверка: `pnpm check:examples`, сценарий «Табличка в React» (требование «Компонент Hotspot»)
+- [x] 6.2 Закоммитить `feat(react): добавить проп surface у Hotspot`
 
 ## 7. Песочница (D195)
 
