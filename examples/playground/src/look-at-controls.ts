@@ -18,16 +18,29 @@ export interface ILookAtHandlers {
 
 interface ILookAtPreset {
   label: string;
+  hint: string;
   target: (view: IView) => TViewTarget;
 }
 
 const LOOK_AT_PRESETS: readonly ILookAtPreset[] = [
-  { label: 'yaw 90', target: () => ({ yaw: 90, pitch: 0 }) },
-  { label: 'yaw −120, pitch 20', target: () => ({ yaw: -120, pitch: 20 }) },
-  { label: 'exactly behind', target: (view) => ({ yaw: view.yaw + 180, pitch: view.pitch }) },
-  { label: 'straight down', target: () => ({ x: 0, y: -1, z: 0 }) },
-  { label: 'world { 1.5, −1.2, 2 }', target: () => ({ x: 1.5, y: -1.2, z: 2 }) },
-  { label: 'world { −2, −1.2, −1 }', target: () => ({ x: -2, y: -1.2, z: -1 }) },
+  { label: '→ Направо', hint: 'yaw 90°', target: () => ({ yaw: 90, pitch: 0 }) },
+  { label: '↖ Влево и вверх', hint: 'yaw −120°, pitch 20°', target: () => ({ yaw: -120, pitch: 20 }) },
+  {
+    label: '↩ Назад',
+    hint: 'Ровно назад от текущего вида',
+    target: (view) => ({ yaw: view.yaw + 180, pitch: view.pitch }),
+  },
+  { label: '↓ Под ноги', hint: 'Направление { x: 0, y: −1, z: 0 }', target: () => ({ x: 0, y: -1, z: 0 }) },
+  {
+    label: '◎ Точка впереди справа',
+    hint: 'Точка мира { 1.5, −1.2, 2 } — как пин товара',
+    target: () => ({ x: 1.5, y: -1.2, z: 2 }),
+  },
+  {
+    label: '◎ Точка сзади слева',
+    hint: 'Точка мира { −2, −1.2, −1 }',
+    target: () => ({ x: -2, y: -1.2, z: -1 }),
+  },
 ];
 
 const DEFAULT_EASING = EnumEasing.CubicOut;
@@ -49,7 +62,7 @@ const readOptions = (elements: ILookAtControlElements, signal: AbortSignal): ILo
 
 /**
  * Кнопки целей `lookAt`, поля длительности, плавности и FOV и кнопка отмены: у каждого поворота свой
- * `AbortController`, «Cancel» отменяет последний. Цели — точки сферы, «ровно сзади» от текущего вида
+ * `AbortController`, «Остановить поворот» отменяет последний. Цели — точки сферы, «ровно сзади» от текущего вида
  * (проверка стороны поворота), направление строго вниз и точки мира относительно центра панорамы, как пины
  * товаров neometria.
  */
@@ -67,6 +80,7 @@ export const createLookAtControls = (elements: ILookAtControlElements, handlers:
 
     button.type = 'button';
     button.textContent = preset.label;
+    button.title = preset.hint;
     button.addEventListener('click', () => {
       const view = handlers.getView();
 
@@ -97,7 +111,7 @@ export const createOverlayButton = (onClick: () => void): HTMLButtonElement => {
 
   button.type = 'button';
   button.className = 'overlay-button';
-  button.textContent = 'Overlay button';
+  button.textContent = 'Кнопка хоста';
   button.dataset['overlayButton'] = '';
   button.addEventListener('click', onClick);
 

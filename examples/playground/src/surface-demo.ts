@@ -89,9 +89,9 @@ const zone = (className: string, label: string): HTMLButtonElement => {
 };
 
 const addHostVideo = (viewer: IPanoViewer): IHotspotHandle => {
-  const screen = animateScreen('Host');
+  const screen = animateScreen('Хост');
   const video = document.createElement('video');
-  const toggle = zone(`${ZONE_CLASS} ${ZONE_CLASS}--wide`, 'Play or pause the screen');
+  const toggle = zone(`${ZONE_CLASS} ${ZONE_CLASS}--wide`, 'Запустить или остановить экран');
 
   video.muted = true;
   video.playsInline = true;
@@ -130,21 +130,21 @@ const addHostVideo = (viewer: IPanoViewer): IHotspotHandle => {
  */
 export const addSurfaceDemo = (viewer: IPanoViewer): IHotspotHandle[] => [
   viewer.addHotspot({
-    element: zone(ZONE_CLASS, 'Spa'),
+    element: zone(ZONE_CLASS, 'Табличка «Спа»'),
     position: SIGNS_POINT,
     scene: ROOM_SCENE,
     plane: { width: 0.8, facing: { yaw: 183, pitch: 0 } },
-    surface: { image: drawSign('#c0392b', 'Spa') },
+    surface: { image: drawSign('#c0392b', 'Спа') },
   }),
   viewer.addHotspot({
-    element: zone(ZONE_CLASS, 'Gym'),
+    element: zone(ZONE_CLASS, 'Табличка «Зал»'),
     position: SIGNS_POINT,
     scene: ROOM_SCENE,
     plane: { width: 0.8, facing: { yaw: 273, pitch: 0 } },
-    surface: { image: drawSign('#2471a3', 'Gym') },
+    surface: { image: drawSign('#2471a3', 'Зал') },
   }),
   viewer.addHotspot({
-    element: zone(ZONE_CLASS, 'Rug'),
+    element: zone(ZONE_CLASS, 'Ковёр'),
     position: { x: 0, y: -1.5, z: 0.3 },
     scene: ROOM_SCENE,
     plane: { width: 2, facing: { yaw: 0, pitch: 90 } },
@@ -162,7 +162,7 @@ export const recordDemoClip = async (): Promise<string | null> => {
     return null;
   }
 
-  const screen = animateScreen('Tour');
+  const screen = animateScreen('Тур');
   const recorder = new MediaRecorder(screen.canvas.captureStream(SCREEN_FPS), { mimeType: CLIP_TYPE });
   const chunks: Blob[] = [];
   const stopped = new Promise((resolve) => {
@@ -197,7 +197,7 @@ export const withTourVideo = (tour: ITour, videoUrl: string): ITour => ({
             {
               id: 'tour-screen',
               position: { yaw: -100, pitch: 12 },
-              title: 'Tour video',
+              title: 'Видео тура',
               plane: { width: 0.6 },
               surface: { video: videoUrl },
             },

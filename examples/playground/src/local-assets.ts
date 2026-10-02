@@ -53,4 +53,4 @@ export const findMissingLocalAssets = async (): Promise<string[]> => {
  * Текст подсказки для разработчика без локальных панорам: какие файлы и в какую папку положить.
  */
 export const describeMissingLocalAssets = (missingUrls: readonly string[]): string =>
-  `Local panoramas are missing: ${missingUrls.join(', ')}. Put 2:1 equirectangular images into ${LOCAL_ASSETS_FOLDER} (the folder is ignored by git).`;
+  `Нет локальных панорам: ${missingUrls.join(', ')}. Положите эквиректангулярные изображения 2:1 в ${LOCAL_ASSETS_FOLDER} (папка не попадает в git).`;

@@ -20,11 +20,11 @@ const floorSpot = (id: string, x: number, z: number, scene: string, title: strin
  * гранями ведёт в номер гранями — так переход остаётся внутри одного «ремонта».
  */
 export const balconyHotspots = (roomScene: string): IHotspot[] => [
-  floorSpot('to-room', 0, -1.4, roomScene, 'Hotel room'),
+  floorSpot('to-room', 0, -1.4, roomScene, 'В номер'),
   {
     id: 'sea',
     position: { yaw: -60, pitch: 2 },
-    title: 'Sea view',
+    title: 'Вид на море',
     anchor: EnumHotspotAnchor.Bottom,
     data: { kind: 'info' },
   },
@@ -34,7 +34,7 @@ export const balconyHotspots = (roomScene: string): IHotspot[] => [
  * Хотспоты номера: точка на полу перед выходом на балкон (около `yaw` 175).
  */
 export const roomHotspots = (balconyScene: string): IHotspot[] => [
-  floorSpot('to-balcony', 0.2, -2.5, balconyScene, 'Balcony'),
+  floorSpot('to-balcony', 0.2, -2.5, balconyScene, 'На балкон'),
 ];
 
 /**
@@ -48,6 +48,6 @@ export interface IDemoPin {
 }
 
 export const DEMO_PINS: readonly IDemoPin[] = [
-  { id: 'loungers', name: 'Sun loungers', scene: 'balcony', position: { x: -5.7, y: -3.2, z: 12.4 } },
-  { id: 'armchair', name: 'Armchair', scene: 'hotel-room', position: { x: 0.75, y: -0.9, z: -1.3 } },
+  { id: 'loungers', name: 'Шезлонги', scene: 'balcony', position: { x: -5.7, y: -3.2, z: 12.4 } },
+  { id: 'armchair', name: 'Кресло', scene: 'hotel-room', position: { x: 0.75, y: -0.9, z: -1.3 } },
 ];

@@ -1,104 +1,171 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3d-pano · vanilla playground</title>
+    <title>3d-pano · песочница</title>
   </head>
   <body>
-    <main>
-      <nav><a href="/react.html">React playground</a></nav>
-      <h1>createPanoViewer</h1>
-      <p class="hint" data-local-hint hidden></p>
-      <p>
-        Drag, scroll or pinch to look around. Arrow keys and <kbd>+</kbd>/<kbd>−</kbd> work when the viewer is
-        focused. Add <code>?maxTextureSize=4096</code> to the URL to force splitting of large images.
-      </p>
-      <fieldset class="toolbar" data-scene-buttons>
-        <legend>Show scene</legend>
-      </fieldset>
-      <fieldset class="toolbar">
-        <legend>Transition</legend>
-        <label>
-          type
-          <select data-transition-type>
-            <option value="cut">cut</option>
-            <option value="blend" selected>blend</option>
-            <option value="move">move</option>
+    <header class="topbar">
+      <strong>3d-pano</strong>
+      <span class="topbar__hint"
+        >тяните панораму · колесо — приближение · клик по панораме — стрелки и +/−</span
+      >
+      <a href="/react.html">React-версия →</a>
+    </header>
+    <p class="hint" data-local-hint hidden></p>
+    <div class="layout">
+      <section class="stage">
+        <div class="viewer" data-viewer></div>
+        <div class="status" data-readout></div>
+        <details class="panel">
+          <summary>Второй просмотрщик на странице</summary>
+          <div class="viewer viewer--small" data-second-viewer></div>
+        </details>
+      </section>
+      <aside class="sidebar">
+        <details class="panel" open>
+          <summary>Сцена</summary>
+          <div class="rooms" data-scene-buttons></div>
+          <select data-scene-format title="Один тур, три формата панорамы" hidden>
+            <option value="">Панорама</option>
+            <option value="-cube">Куб</option>
+            <option value="-tiles">Тайлы</option>
           </select>
-        </label>
-        <label>duration, ms <input type="number" min="0" step="50" value="500" data-duration /></label>
-        <label
-          >easing
-          <select data-easing></select
-        ></label>
-        <label>
-          view
-          <select data-view>
-            <option value="" selected>default</option>
-            <option value="scene">scene</option>
-            <option value="keep">keep</option>
+        </details>
+
+        <details class="panel" open>
+          <summary>Переход</summary>
+          <select data-transition-type title="Как сменится сцена по кнопкам комнат" hidden>
+            <option value="cut">Сразу</option>
+            <option value="blend" selected>Растворение</option>
+            <option value="move">Шаг</option>
           </select>
-        </label>
-        <label><input type="checkbox" data-keep-motion /> keepMotion (keep inertia)</label>
-        <label>move turn <input type="number" step="15" placeholder="heading" data-move-turn /></label>
-        <label>blur <input type="number" min="0" max="1" step="0.1" value="0.5" data-move-blur /></label>
-      </fieldset>
-      <fieldset class="toolbar" data-look-at-buttons>
-        <legend>lookAt</legend>
-      </fieldset>
-      <fieldset class="toolbar">
-        <label>duration, ms <input type="number" min="0" step="100" value="900" data-look-duration /></label>
-        <label
-          >easing
-          <select data-look-easing></select
-        ></label>
-        <label>fov <input type="number" min="1" step="5" placeholder="keep" data-look-fov /></label>
-        <button type="button" data-look-cancel>Cancel lookAt</button>
-      </fieldset>
-      <fieldset class="toolbar">
-        <legend>Hotspots</legend>
-        <label><input type="checkbox" checked data-pins /> product pins (addHotspot)</label>
-        <label><input type="checkbox" checked data-surfaces /> surfaces (addHotspot)</label>
-        <label
-          ><input type="checkbox" data-prevent-navigation /> cancel hotspot navigation (preventDefault)</label
-        >
-      </fieldset>
-      <fieldset class="toolbar" data-preload-buttons>
-        <legend>Preload</legend>
-        <label><input type="checkbox" data-preload-keep /> for the current view (keep)</label>
-      </fieldset>
-      <fieldset class="toolbar">
-        <legend>Tiles</legend>
-        <label
-          >tileCacheMegabytes
-          <select data-tile-cache>
-            <option value="128">128</option>
-            <option value="32">32</option>
-            <option value="8">8</option>
-            <option value="0">0</option>
-          </select></label
-        >
-        <label>tileFadeMs <input type="number" min="0" step="100" value="200" data-tile-fade /></label>
-        <span>tile requests <output data-tile-requests>0</output></span>
-        <button type="button" data-reset-tile-requests>Reset count</button>
-      </fieldset>
-      <fieldset class="toolbar">
-        <label><input type="checkbox" data-slow /> slow network</label>
-        <label><input type="checkbox" data-fail-face /> fail face <code>l.jpg</code></label>
-        <button type="button" data-retry>Retry</button>
-        <button type="button" data-replace-tour>Replace tour (narrow FOV)</button>
-        <button type="button" data-broken-tour>Broken tour</button>
-        <button type="button" data-toggle-viewer>Destroy</button>
-        <button type="button" data-toggle-size>Toggle size</button>
-      </fieldset>
-      <div class="viewer" data-viewer></div>
-      <pre class="readout" data-readout></pre>
-      <h2>Events</h2>
-      <ol class="events" data-events></ol>
-      <h2>Second viewer</h2>
-      <div class="viewer viewer--small" data-second-viewer></div>
-    </main>
+          <label class="field" title="Сколько длится переход">
+            <span>Длительность <output data-duration-value></output></span>
+            <input type="range" min="0" max="3000" step="50" value="500" data-duration />
+          </label>
+          <details class="more">
+            <summary>Ещё</summary>
+            <label class="field">
+              <span>Плавность</span>
+              <select data-easing></select>
+            </label>
+            <label class="field" title="Вид новой сцены после перехода">
+              <span>Куда смотреть после</span>
+              <select data-view>
+                <option value="" selected>как задано по умолчанию</option>
+                <option value="scene">как задано в сцене</option>
+                <option value="keep">туда же, куда сейчас</option>
+              </select>
+            </label>
+            <label class="switch" title="keepMotion: раскрученная панорама продолжит вращаться в новой сцене">
+              <input type="checkbox" data-keep-motion /> <span>Не гасить вращение</span>
+            </label>
+            <label
+              class="field"
+              title="Только для шага: на сколько градусов довернуть новую сцену"
+              data-move-only
+            >
+              <span>Доворот шага, °</span>
+              <input type="number" step="15" placeholder="по комнатам" data-move-turn />
+            </label>
+            <label class="field" title="Только для шага: сила размытия движения" data-move-only>
+              <span>Размытие шага <output data-move-blur-value></output></span>
+              <input type="range" min="0" max="1" step="0.1" value="0.5" data-move-blur />
+            </label>
+          </details>
+        </details>
+
+        <details class="panel" open>
+          <summary>Камера</summary>
+          <div class="presets" data-look-at-buttons></div>
+          <button type="button" class="button--quiet" data-look-cancel>Остановить поворот</button>
+          <details class="more">
+            <summary>Настройки поворота</summary>
+            <label class="field">
+              <span>Длительность <output data-look-duration-value></output></span>
+              <input type="range" min="0" max="3000" step="100" value="900" data-look-duration />
+            </label>
+            <label class="field">
+              <span>Плавность</span>
+              <select data-look-easing></select>
+            </label>
+            <label class="field" title="Угол обзора в конце поворота">
+              <span>Угол обзора, °</span>
+              <input type="number" min="1" step="5" placeholder="не менять" data-look-fov />
+            </label>
+          </details>
+        </details>
+
+        <details class="panel" open>
+          <summary>Метки и поверхности</summary>
+          <label class="switch" title="Карточки товаров, привязанные к точкам комнаты (addHotspot)">
+            <input type="checkbox" checked data-pins /> <span>Пины товаров</span>
+          </label>
+          <label class="switch" title="Картинки и видео прямо в сцене: таблички, ковёр и экран в номере">
+            <input type="checkbox" checked data-surfaces /> <span>Таблички, ковёр, экран</span>
+          </label>
+          <label
+            class="switch"
+            title="Клик по метке приходит в событие, а переход не начинается (preventDefault)"
+          >
+            <input type="checkbox" data-prevent-navigation /> <span>Метки не переходят</span>
+          </label>
+        </details>
+
+        <details class="panel">
+          <summary>Предзагрузка</summary>
+          <div class="rooms rooms--small" data-preload-buttons></div>
+          <label class="switch" title="Для тайловой сцены загрузить ровно то, что будет видно после перехода">
+            <input type="checkbox" data-preload-keep /> <span>Под текущий вид</span>
+          </label>
+        </details>
+
+        <details class="panel">
+          <summary>Тайлы</summary>
+          <label class="field" title="Сколько видеопамяти можно занять тайлами">
+            <span>Память под тайлы, МБ</span>
+            <select data-tile-cache>
+              <option value="128">128</option>
+              <option value="32">32</option>
+              <option value="8">8</option>
+              <option value="0">0</option>
+            </select>
+          </label>
+          <label class="field" title="За сколько проявляется загруженный тайл">
+            <span>Проявление тайла <output data-tile-fade-value></output></span>
+            <input type="range" min="0" max="1000" step="50" value="200" data-tile-fade />
+          </label>
+          <div class="row">
+            <span>Запросов: <output data-tile-requests>0</output></span>
+            <button type="button" class="button--quiet" data-reset-tile-requests>Сбросить</button>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>Сбои и жизненный цикл</summary>
+          <label class="switch" title="+2 секунды к каждому запросу">
+            <input type="checkbox" data-slow /> <span>Медленная сеть</span>
+          </label>
+          <label class="switch" title="Левая грань куба отвечает ошибкой — потом можно повторить">
+            <input type="checkbox" data-fail-face /> <span>Сломать грань куба</span>
+          </label>
+          <div class="buttons">
+            <button type="button" data-retry>Повторить загрузку</button>
+            <button type="button" data-replace-tour>Тур с узким обзором</button>
+            <button type="button" data-broken-tour>Сломанный тур</button>
+            <button type="button" data-toggle-viewer>Уничтожить</button>
+            <button type="button" data-toggle-size>Сменить размер</button>
+          </div>
+        </details>
+
+        <details class="panel">
+          <summary>Журнал событий</summary>
+          <ol class="events" data-events></ol>
+        </details>
+      </aside>
+    </div>
     <script type="module" src="/src/main-vanilla.ts"></script>
   </body>
 </html>

@@ -16,9 +16,11 @@ import { addDemoPins } from './host-pins';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { createLookAtControls, createOverlayButton } from './look-at-controls';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
+import { renderStatus } from './readout';
 import { createSceneControls } from './scene-controls';
 import { addSurfaceDemo, recordDemoClip, withTourVideo } from './surface-demo';
 import { createTileControls } from './tile-controls';
+import { enhancePlaygroundControls } from './ui-controls';
 import { createPlaygroundViewer } from './viewer-factory';
 
 import './styles.css';
@@ -52,7 +54,7 @@ const surfacesToggle = required(document.querySelector<HTMLInputElement>('[data-
 const preventNavigationToggle = required(
   document.querySelector<HTMLInputElement>('[data-prevent-navigation]'),
 );
-const readout = required(document.querySelector<HTMLPreElement>('[data-readout]'));
+const readout = required(document.querySelector<HTMLElement>('[data-readout]'));
 const logEvent = createEventLog(required(document.querySelector<HTMLOListElement>('[data-events]')));
 
 const FAILING_FACE_SUFFIX = '/l.jpg';
@@ -79,31 +81,18 @@ let demoTour = DEMO_TOUR;
 let lastView: IView | null = null;
 let isNarrowTour = false;
 
-const formatView = (view: IView | null): string =>
-  view === null
-    ? '—'
-    : `yaw ${view.yaw.toFixed(1)} · pitch ${view.pitch.toFixed(1)} · roll ${view.roll.toFixed(1)} · fov ${view.fov.toFixed(1)} (${view.fovMode})`;
-
 const renderReadout = (): void => {
-  if (viewer === null) {
-    readout.textContent = 'destroyed';
+  const snapshot = viewer?.getSnapshot() ?? null;
 
-    return;
-  }
-
-  const snapshot = viewer.getSnapshot();
-  const canRetry =
-    snapshot.status === EnumViewerStatus.Error && snapshot.error?.category === EnumErrorCategory.Resource;
-  const isReady = snapshot.status === 'ready';
-
-  retryButton.disabled = !canRetry;
-  readout.textContent = [
-    `scene ${snapshot.sceneId ?? '—'} · status ${snapshot.status}${isReady ? ' ✓' : ''} · progress ${(snapshot.loadProgress * 100).toFixed(0)}% · interacting ${String(snapshot.isInteracting)} · transitioning ${String(snapshot.isTransitioning)}`,
-    `view ${formatView(lastView)}`,
-    snapshot.error === null
-      ? 'error —'
-      : `error ${snapshot.error.category}/${snapshot.error.code}: ${snapshot.error.message}`,
-  ].join('\n');
+  retryButton.disabled = !(
+    snapshot?.status === EnumViewerStatus.Error && snapshot.error?.category === EnumErrorCategory.Resource
+  );
+  renderStatus(
+    readout,
+    snapshot,
+    lastView,
+    (sceneId) => demoTour.scenes.find(({ id }) => id === sceneId)?.title ?? sceneId,
+  );
 };
 
 const attachLogging = (target: IPanoViewer, name: string): void => {
@@ -114,12 +103,15 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
   viewer?.destroy();
   viewer = createPlaygroundViewer(viewerContainer, {
     tour,
-    label: 'Hotel tour',
+    label: 'Тур по отелю',
     loader,
     ...tileControls.options(),
   });
   window.playgroundViewer = viewer;
-  attachLogging(viewer, 'main');
+  attachLogging(viewer, 'основной');
+  viewer.on('sceneChange', ({ sceneId }) => {
+    sceneControls.markScene(sceneId);
+  });
   viewer.on('viewChange', ({ view: changedView }) => {
     lastView = changedView;
     renderReadout();
@@ -127,7 +119,7 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
   viewer.subscribe(renderReadout);
   viewer.overlay.append(
     createOverlayButton(() => {
-      logEvent('overlay button click');
+      logEvent('нажата кнопка хоста в оверлее');
     }),
   );
 
@@ -138,7 +130,7 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
     viewer.setView(view);
   }
 
-  toggleViewerButton.textContent = 'Destroy';
+  toggleViewerButton.textContent = 'Уничтожить';
   renderReadout();
 };
 
@@ -170,7 +162,7 @@ const handleReplaceTourClick = (): void => {
   }
 
   isNarrowTour = !isNarrowTour;
-  replaceTourButton.textContent = isNarrowTour ? 'Replace tour (wide FOV)' : 'Replace tour (narrow FOV)';
+  replaceTourButton.textContent = isNarrowTour ? 'Тур с обычным обзором' : 'Тур с узким обзором';
   describeOutcome(
     'setTour',
     viewer.setTour(isNarrowTour ? NARROW_FOV_TOUR : demoTour, {
@@ -213,7 +205,7 @@ const handleFailFaceChange = (): void => {
 
 const handleRetryClick = (): void => {
   viewer?.retry().catch((error: unknown) => {
-    logEvent(`retry failed: ${String(error)}`);
+    logEvent(`повтор не удался: ${String(error)}`);
   });
 };
 
@@ -233,9 +225,11 @@ const handleToggleViewerClick = (): void => {
   viewer.destroy();
   viewer = null;
   window.playgroundViewer = null;
-  toggleViewerButton.textContent = 'Create';
+  toggleViewerButton.textContent = 'Создать';
   renderReadout();
-  logEvent(`main destroyed, children left in the container: ${String(viewerContainer.childElementCount)}`);
+  logEvent(
+    `просмотрщик уничтожен, в контейнере осталось элементов: ${String(viewerContainer.childElementCount)}`,
+  );
 };
 
 const handleToggleSizeClick = (): void => {
@@ -253,11 +247,14 @@ const showLocalHint = async (): Promise<void> => {
   localHint.hidden = false;
 };
 
-createSceneControls(
+enhancePlaygroundControls(document);
+
+const sceneControls = createSceneControls(
   DEMO_TOUR,
   {
     sceneButtons: required(document.querySelector<HTMLElement>('[data-scene-buttons]')),
     preloadButtons: required(document.querySelector<HTMLElement>('[data-preload-buttons]')),
+    format: required(document.querySelector<HTMLSelectElement>('[data-scene-format]')),
     transitionType: required(document.querySelector<HTMLSelectElement>('[data-transition-type]')),
     duration: required(document.querySelector<HTMLInputElement>('[data-duration]')),
     easing: required(document.querySelector<HTMLSelectElement>('[data-easing]')),
@@ -290,5 +287,5 @@ toggleSizeButton.addEventListener('click', handleToggleSizeClick);
 
 createMainViewer(DEMO_TOUR, null);
 void recordDemoClip().then(handleDemoClip);
-attachLogging(createPlaygroundViewer(secondViewerContainer, { tour: DEMO_TOUR, label: 'Balcony' }), 'second');
+attachLogging(createPlaygroundViewer(secondViewerContainer, { tour: DEMO_TOUR, label: 'Балкон' }), 'второй');
 void showLocalHint();

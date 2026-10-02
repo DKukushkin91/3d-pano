@@ -9,11 +9,13 @@ import {
 } from '@dkukushkin/3d-pano';
 
 /**
- * Поля панели переходов песочницы.
+ * Поля панели сцен и переходов песочницы: кнопки комнат, формат сцены (суффикс `id`: `''`, `-cube`,
+ * `-tiles`) и опции перехода.
  */
 export interface ISceneControlElements {
   sceneButtons: HTMLElement;
   preloadButtons: HTMLElement;
+  format: HTMLSelectElement;
   transitionType: HTMLSelectElement;
   duration: HTMLInputElement;
   easing: HTMLSelectElement;
@@ -23,18 +25,29 @@ export interface ISceneControlElements {
   moveBlur: HTMLInputElement;
 }
 
+/**
+ * `markScene` отмечает комнату и формат сцены, которая сейчас на экране.
+ */
+export interface ISceneControls {
+  markScene: (sceneId: string | null) => void;
+}
+
 export interface ISceneControlHandlers {
   onShow: (sceneId: string, options: IShowSceneOptions) => void;
   onPreload: (sceneId: string) => void;
 }
 
-const appendButton = (parent: HTMLElement, text: string, onClick: () => void): void => {
+const FORMAT_SUFFIX = /-(cube|tiles)$/u;
+
+const appendButton = (parent: HTMLElement, text: string, onClick: () => void): HTMLButtonElement => {
   const button = document.createElement('button');
 
   button.type = 'button';
   button.textContent = text;
   button.addEventListener('click', onClick);
   parent.append(button);
+
+  return button;
 };
 
 const appendOption = (select: HTMLSelectElement, value: string, text = value): void => {
@@ -81,7 +94,7 @@ const transitionOf = (elements: ISceneControlElements): TSceneTransition => {
 
 /**
  * Опции `showScene` из панели. Значения select пишутся строками, как пришли бы из JSON или URL: так
- * песочница проверяет, что строки и константы словарей принимаются одинаково. «default» у вида и плавности
+ * песочница проверяет, что строки и константы словарей принимаются одинаково. «по умолчанию» у вида и плавности
  * не передаёт поле — так видны умолчания библиотеки (у шага — `keep` и `quad-out`).
  */
 export const readShowSceneOptions = (elements: ISceneControlElements): IShowSceneOptions => ({
@@ -91,14 +104,31 @@ export const readShowSceneOptions = (elements: ISceneControlElements): IShowScen
 });
 
 /**
- * Кнопки сцен и предзагрузки по сценам тура и список плавностей из словаря.
+ * Кнопки комнат (сцены тура без суффикса формата, подпись — `title`) для показа и предзагрузки, формат
+ * сцены и список плавностей из словаря. Комната показывается в выбранном формате, а смена формата сразу
+ * показывает текущую комнату в нём.
  */
 export const createSceneControls = (
   tour: ITour,
   elements: ISceneControlElements,
   handlers: ISceneControlHandlers,
-): void => {
-  appendOption(elements.easing, '', 'default');
+): ISceneControls => {
+  const rooms = tour.scenes.filter((scene) => !FORMAT_SUFFIX.test(scene.id));
+  const roomButtons = new Map<string, HTMLButtonElement>();
+  let currentRoom = rooms[0]?.id ?? null;
+
+  const sceneIdOf = (roomId: string): string => {
+    const sceneId = `${roomId}${elements.format.value}`;
+
+    return tour.scenes.some((scene) => scene.id === sceneId) ? sceneId : roomId;
+  };
+
+  const show = (roomId: string): void => {
+    currentRoom = roomId;
+    handlers.onShow(sceneIdOf(roomId), readShowSceneOptions(elements));
+  };
+
+  appendOption(elements.easing, '', 'по умолчанию');
 
   for (const name of Object.values(EnumEasing)) {
     appendOption(elements.easing, name);
@@ -106,12 +136,38 @@ export const createSceneControls = (
 
   elements.easing.value = '';
 
-  for (const scene of tour.scenes) {
-    appendButton(elements.sceneButtons, scene.id, () => {
-      handlers.onShow(scene.id, readShowSceneOptions(elements));
-    });
-    appendButton(elements.preloadButtons, scene.id, () => {
-      handlers.onPreload(scene.id);
+  for (const room of rooms) {
+    const label = room.title ?? room.id;
+
+    roomButtons.set(
+      room.id,
+      appendButton(elements.sceneButtons, label, () => show(room.id)),
+    );
+    appendButton(elements.preloadButtons, label, () => {
+      handlers.onPreload(sceneIdOf(room.id));
     });
   }
+
+  elements.format.addEventListener('input', () => {
+    if (currentRoom !== null) {
+      show(currentRoom);
+    }
+  });
+
+  return {
+    markScene: (sceneId) => {
+      const roomId = sceneId?.replace(FORMAT_SUFFIX, '') ?? null;
+
+      currentRoom = roomId ?? currentRoom;
+
+      for (const [id, button] of roomButtons) {
+        button.setAttribute('aria-pressed', String(id === roomId));
+      }
+
+      if (sceneId !== null && roomId !== null) {
+        elements.format.value = sceneId.slice(roomId.length);
+        elements.format.dispatchEvent(new Event('change'));
+      }
+    },
+  };
 };

@@ -36,7 +36,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'balcony',
       ...BALCONY_PLACE,
-      title: 'Balcony — one equirectangular file',
+      title: 'Балкон',
       source: { type: EnumSourceType.Equirect, url: LOCAL_ASSETS.balcony },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
       hotspots: balconyHotspots('hotel-room'),
@@ -44,7 +44,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'balcony-cube',
       ...BALCONY_PLACE,
-      title: 'Balcony — six cube faces',
+      title: 'Балкон · куб',
       source: { type: 'cube', url: GENERATED_ASSETS.balconyFaces, faceNames: NEOMETRIA_FACE_NAMES },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
       hotspots: balconyHotspots('hotel-room-cube'),
@@ -52,7 +52,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'hotel-room',
       ...ROOM_PLACE,
-      title: 'Hotel room — one equirectangular file',
+      title: 'Номер',
       source: { type: 'equirect', url: LOCAL_ASSETS.hotelRoom },
       preview: { type: EnumSourceType.Equirect, url: GENERATED_ASSETS.hotelRoomPreview },
       hotspots: roomHotspots('balcony'),
@@ -60,7 +60,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'hotel-room-cube',
       ...ROOM_PLACE,
-      title: 'Hotel room — six cube faces',
+      title: 'Номер · куб',
       source: {
         type: EnumSourceType.Cube,
         url: GENERATED_ASSETS.hotelRoomFaces,
@@ -72,7 +72,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'balcony-tiles',
       ...BALCONY_PLACE,
-      title: 'Balcony — multiresolution cube',
+      title: 'Балкон · тайлы',
       source: {
         type: 'cube',
         url: GENERATED_ASSETS.balconyTiles,
@@ -84,7 +84,7 @@ export const DEMO_TOUR: ITour = {
     {
       id: 'hotel-room-tiles',
       ...ROOM_PLACE,
-      title: 'Hotel room — multiresolution cube',
+      title: 'Номер · тайлы',
       source: {
         type: EnumSourceType.Cube,
         url: GENERATED_ASSETS.hotelRoomTiles,
