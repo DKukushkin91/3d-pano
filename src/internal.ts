@@ -7,6 +7,7 @@ export * from './math/field-of-view';
 export * from './math/rectilinear';
 export * from './math/vector3';
 export * from './math/view-interpolation';
+export * from './math/hotspot-placement';
 export * from './tour/tour-dictionaries';
 export * from './hotspots/hotspot-dictionaries';
 export * from './tour/tour-defaults';
