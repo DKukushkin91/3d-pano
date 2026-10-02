@@ -105,8 +105,9 @@ export const readShowSceneOptions = (elements: ISceneControlElements): IShowScen
 
 /**
  * Кнопки комнат (сцены тура без суффикса формата, подпись — `title`) для показа и предзагрузки, формат
- * сцены и список плавностей из словаря. Комната показывается в выбранном формате, а смена формата сразу
- * показывает текущую комнату в нём.
+ * сцены и список плавностей из словаря. Комната показывается в выбранном формате, смена формата сразу
+ * показывает текущую комнату в нём, а выбор вида перехода сразу проигрывает его — переходом в другую
+ * комнату.
  */
 export const createSceneControls = (
   tour: ITour,
@@ -151,6 +152,13 @@ export const createSceneControls = (
   elements.format.addEventListener('input', () => {
     if (currentRoom !== null) {
       show(currentRoom);
+    }
+  });
+  elements.transitionType.addEventListener('input', () => {
+    const otherRoom = rooms.find((room) => room.id !== currentRoom);
+
+    if (otherRoom !== undefined) {
+      show(otherRoom.id);
     }
   });
 
