@@ -2,6 +2,7 @@ import { EnumHotspotAnchor, type IHotspot } from '@dkukushkin/3d-pano';
 
 const FLOOR_Y = -1.5;
 const FLOOR_SPOT_WIDTH = 0.5;
+const FLOOR_SPOT_SURFACE = { image: '/surfaces/floor-spot.png', width: 0.125 };
 const ROOM_TRANSITION = { type: 'move' } as const;
 
 const floorSpot = (id: string, x: number, z: number, scene: string, title: string): IHotspot => ({
@@ -10,6 +11,7 @@ const floorSpot = (id: string, x: number, z: number, scene: string, title: strin
   title,
   target: { scene, transition: ROOM_TRANSITION },
   plane: { width: FLOOR_SPOT_WIDTH, facing: { yaw: 0, pitch: 90 } },
+  surface: FLOOR_SPOT_SURFACE,
   data: { kind: 'floor' },
 });
 

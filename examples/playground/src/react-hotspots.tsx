@@ -17,8 +17,13 @@ export const renderDemoHotspot = (hotspot: IHotspot): ReactNode =>
     <span className="info-spot">{hotspot.title}</span>
   );
 
+const FLOOR_Y = -1.5;
+const FLOOR_FACING = { yaw: 0, pitch: 90 };
+
 /**
  * Пины «товаров» через `<Hotspot>`: размонтирование убирает их, вращение панорамы их не перерисовывает.
+ * Под каждым пином на полу лежит диск — поверхность `<Hotspot surface>`; объект `surface` создаётся в
+ * каждом рендере, но источник не перезаливается, пока не сменился URL.
  */
 export const DemoPins = (): ReactElement => (
   <>
@@ -27,6 +32,17 @@ export const DemoPins = (): ReactElement => (
         <a className="pin-card" href={`#${pin.id}`} data-react-pin>
           {pin.name}
         </a>
+      </Hotspot>
+    ))}
+    {DEMO_PINS.map((pin) => (
+      <Hotspot
+        key={`${pin.id}-floor`}
+        position={{ ...pin.position, y: FLOOR_Y }}
+        scene={pin.scene}
+        plane={{ width: 0.4, facing: FLOOR_FACING }}
+        surface={{ image: '/surfaces/floor-spot.png' }}
+      >
+        <span className="surface-zone" data-react-surface />
       </Hotspot>
     ))}
   </>

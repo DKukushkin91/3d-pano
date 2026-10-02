@@ -11,12 +11,13 @@ import {
 } from '@dkukushkin/3d-pano';
 
 import { BROKEN_TOUR_JSON, DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
-import { attachViewerLogging, createEventLog } from './event-log';
+import { attachViewerLogging, createEventLog, logOutcome } from './event-log';
 import { addDemoPins } from './host-pins';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { createLookAtControls, createOverlayButton } from './look-at-controls';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
 import { createSceneControls } from './scene-controls';
+import { addSurfaceDemo, recordDemoClip, withTourVideo } from './surface-demo';
 import { createTileControls } from './tile-controls';
 import { createPlaygroundViewer } from './viewer-factory';
 
@@ -47,6 +48,7 @@ const brokenTourButton = required(document.querySelector<HTMLButtonElement>('[da
 const toggleViewerButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-viewer]'));
 const toggleSizeButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-size]'));
 const pinsToggle = required(document.querySelector<HTMLInputElement>('[data-pins]'));
+const surfacesToggle = required(document.querySelector<HTMLInputElement>('[data-surfaces]'));
 const preventNavigationToggle = required(
   document.querySelector<HTMLInputElement>('[data-prevent-navigation]'),
 );
@@ -72,6 +74,8 @@ const network: IPlaygroundNetwork = {
 const loader = createPlaygroundLoader(network);
 let viewer: IPanoViewer | null = null;
 let pins: IHotspotHandle[] = [];
+let surfaces: IHotspotHandle[] = [];
+let demoTour = DEMO_TOUR;
 let lastView: IView | null = null;
 let isNarrowTour = false;
 
@@ -128,6 +132,7 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
   );
 
   pins = pinsToggle.checked ? addDemoPins(viewer) : [];
+  surfaces = surfacesToggle.checked ? addSurfaceDemo(viewer) : [];
 
   if (view !== null) {
     viewer.setView(view);
@@ -138,17 +143,7 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
 };
 
 const describeOutcome = (action: string, promise: Promise<boolean>): void => {
-  promise.then(
-    (isDone) => {
-      logEvent(`${action} → ${String(isDone)}`);
-    },
-    (error: unknown) => {
-      const code =
-        error instanceof Error && 'details' in error ? JSON.stringify(error.details) : String(error);
-
-      logEvent(`${action} rejected ${code}`);
-    },
-  );
+  logOutcome(logEvent, action, promise);
 };
 
 const handleShowScene = (sceneId: string, options: IShowSceneOptions): void => {
@@ -178,7 +173,7 @@ const handleReplaceTourClick = (): void => {
   replaceTourButton.textContent = isNarrowTour ? 'Replace tour (wide FOV)' : 'Replace tour (narrow FOV)';
   describeOutcome(
     'setTour',
-    viewer.setTour(isNarrowTour ? NARROW_FOV_TOUR : DEMO_TOUR, {
+    viewer.setTour(isNarrowTour ? NARROW_FOV_TOUR : demoTour, {
       scene: viewer.getSnapshot().sceneId ?? undefined,
       view: 'keep',
     }),
@@ -186,11 +181,26 @@ const handleReplaceTourClick = (): void => {
 };
 
 const handlePinsChange = (): void => {
-  for (const pin of pins) {
-    pin.remove();
+  for (const handle of [...pins, ...surfaces]) {
+    handle.remove();
   }
 
   pins = pinsToggle.checked && viewer !== null ? addDemoPins(viewer) : [];
+  surfaces = surfacesToggle.checked && viewer !== null ? addSurfaceDemo(viewer) : [];
+};
+
+const handleDemoClip = (videoUrl: string | null): void => {
+  if (videoUrl === null) {
+    return;
+  }
+
+  demoTour = withTourVideo(DEMO_TOUR, videoUrl);
+
+  if (viewer !== null && !isNarrowTour) {
+    const scene = viewer.getSnapshot().sceneId ?? undefined;
+
+    describeOutcome('setTour with video', viewer.setTour(demoTour, { scene, view: 'keep' }));
+  }
 };
 
 const handleSlowChange = (): void => {
@@ -215,7 +225,7 @@ const handleBrokenTourClick = (): void => {
 
 const handleToggleViewerClick = (): void => {
   if (viewer === null) {
-    createMainViewer(DEMO_TOUR, null);
+    createMainViewer(demoTour, null);
 
     return;
   }
@@ -270,6 +280,7 @@ createLookAtControls(
 );
 slowToggle.addEventListener('change', handleSlowChange);
 pinsToggle.addEventListener('change', handlePinsChange);
+surfacesToggle.addEventListener('change', handlePinsChange);
 failFaceToggle.addEventListener('change', handleFailFaceChange);
 retryButton.addEventListener('click', handleRetryClick);
 replaceTourButton.addEventListener('click', handleReplaceTourClick);
@@ -278,5 +289,6 @@ toggleViewerButton.addEventListener('click', handleToggleViewerClick);
 toggleSizeButton.addEventListener('click', handleToggleSizeClick);
 
 createMainViewer(DEMO_TOUR, null);
+void recordDemoClip().then(handleDemoClip);
 attachLogging(createPlaygroundViewer(secondViewerContainer, { tour: DEMO_TOUR, label: 'Balcony' }), 'second');
 void showLocalHint();

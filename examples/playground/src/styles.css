@@ -117,6 +117,39 @@ nav a {
   background: rgb(255 255 255 / 60%);
 }
 
+[data-pano-surface] [data-pano-hotspot-button],
+[data-pano-surface] .floor-spot {
+  border-color: transparent;
+  color: transparent;
+  background: transparent;
+}
+
+[data-pano-surface] [data-pano-hotspot-button]:hover,
+[data-pano-surface] [data-pano-hotspot-button]:focus-visible,
+[data-pano-surface] .floor-spot:hover,
+[data-pano-surface] .floor-spot:focus-visible {
+  background: rgb(255 255 255 / 30%);
+}
+
+.surface-zone {
+  display: block;
+  width: 160px;
+  height: 80px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.surface-zone:hover,
+.surface-zone:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 70%);
+}
+
+.surface-zone--wide {
+  height: 90px;
+}
+
 .pin-card {
   display: block;
   padding: 0.5rem 0.75rem;

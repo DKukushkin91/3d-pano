@@ -56,3 +56,24 @@ export const attachViewerLogging = (
     logEvent(`${name} hotspotLeave ${sceneId}/${hotspot.id}`);
   });
 };
+
+/**
+ * Пишет в журнал, чем закончился вызов с промисом: `true`/`false` или отказ с `details` ошибки.
+ */
+export const logOutcome = (
+  logEvent: (text: string) => void,
+  action: string,
+  promise: Promise<boolean>,
+): void => {
+  promise.then(
+    (isDone) => {
+      logEvent(`${action} → ${String(isDone)}`);
+    },
+    (error: unknown) => {
+      const code =
+        error instanceof Error && 'details' in error ? JSON.stringify(error.details) : String(error);
+
+      logEvent(`${action} rejected ${code}`);
+    },
+  );
+};
