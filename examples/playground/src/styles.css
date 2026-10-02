@@ -218,9 +218,6 @@ nav a {
 .sidebar {
   display: grid;
   gap: 0.5rem;
-  max-height: calc(100vh - 2rem);
-  overflow: auto;
-  padding-right: 4px;
 }
 
 @media (width <= 960px) {
@@ -230,10 +227,6 @@ nav a {
 
   .stage {
     position: static;
-  }
-
-  .sidebar {
-    max-height: none;
   }
 
   .topbar__hint {
