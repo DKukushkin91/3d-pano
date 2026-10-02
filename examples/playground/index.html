@@ -40,6 +40,18 @@
         </label>
         <label><input type="checkbox" data-keep-motion /> keepMotion (keep inertia)</label>
       </fieldset>
+      <fieldset class="toolbar" data-look-at-buttons>
+        <legend>lookAt</legend>
+      </fieldset>
+      <fieldset class="toolbar">
+        <label>duration, ms <input type="number" min="0" step="100" value="900" data-look-duration /></label>
+        <label
+          >easing
+          <select data-look-easing></select
+        ></label>
+        <label>fov <input type="number" min="1" step="5" placeholder="keep" data-look-fov /></label>
+        <button type="button" data-look-cancel>Cancel lookAt</button>
+      </fieldset>
       <fieldset class="toolbar" data-preload-buttons>
         <legend>Preload</legend>
       </fieldset>

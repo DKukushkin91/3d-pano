@@ -6,6 +6,7 @@ import { DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
 import { LoadingBar } from './loading-bar';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { OwnMarkupDemo } from './own-markup-demo';
+import { PinFocus } from './pin-focus';
 import { ROOM_SWITCH, ScenePicker } from './scene-picker';
 import { ViewReadout } from './view-readout';
 
@@ -57,7 +58,8 @@ const handleViewChange = (): void => {
 /**
  * React-страница песочницы: сцена как проп с разными переходами для комнаты и ремонта, переход через
  * `ref`, тур, который пересобирается на каждом рендере, замена тура, монтирование и размонтирование.
- * Вращение камеры страницу не перерисовывает: вид показывает `ViewReadout` в обход состояния. Счётчики,
+ * Поворот к «пину» идёт из эффекта с `AbortController` в очистке (`PinFocus`). Вращение камеры страницу не
+ * перерисовывает: вид показывает `ViewReadout` в обход состояния. Счётчики,
  * включая число коммитов `App`, лежат в `window.reactPlayground` для проверки из консоли.
  */
 export const App = (): ReactElement => {
@@ -162,6 +164,7 @@ export const App = (): ReactElement => {
           keyboard
         </label>
       </fieldset>
+      <PinFocus viewer={viewer} />
       {isMounted && (
         <PanoViewer
           ref={setViewer}

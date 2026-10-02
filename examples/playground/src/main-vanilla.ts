@@ -1,15 +1,18 @@
 import {
   EnumErrorCategory,
   EnumViewerStatus,
+  type ILookAtOptions,
   type IPanoViewer,
   type IShowSceneOptions,
   type ITour,
   type IView,
+  type TViewTarget,
 } from '@dkukushkin/3d-pano';
 
 import { BROKEN_TOUR_JSON, DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
 import { createEventLog } from './event-log';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
+import { createLookAtControls, createOverlayButton } from './look-at-controls';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
 import { createSceneControls } from './scene-controls';
 import { createPlaygroundViewer } from './viewer-factory';
@@ -102,6 +105,11 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
     renderReadout();
   });
   viewer.subscribe(renderReadout);
+  viewer.overlay.append(
+    createOverlayButton(() => {
+      logEvent('overlay button click');
+    }),
+  );
 
   if (view !== null) {
     viewer.setView(view);
@@ -128,6 +136,12 @@ const describeOutcome = (action: string, promise: Promise<boolean>): void => {
 const handleShowScene = (sceneId: string, options: IShowSceneOptions): void => {
   if (viewer !== null) {
     describeOutcome(`showScene ${sceneId}`, viewer.showScene(sceneId, options));
+  }
+};
+
+const handleLookAt = (label: string, target: TViewTarget, options: ILookAtOptions): void => {
+  if (viewer !== null) {
+    describeOutcome(label, viewer.lookAt(target, options));
   }
 };
 
@@ -215,6 +229,16 @@ createSceneControls(
     keepMotion: required(document.querySelector<HTMLInputElement>('[data-keep-motion]')),
   },
   { onShow: handleShowScene, onPreload: handlePreloadScene },
+);
+createLookAtControls(
+  {
+    targetButtons: required(document.querySelector<HTMLElement>('[data-look-at-buttons]')),
+    duration: required(document.querySelector<HTMLInputElement>('[data-look-duration]')),
+    easing: required(document.querySelector<HTMLSelectElement>('[data-look-easing]')),
+    fov: required(document.querySelector<HTMLInputElement>('[data-look-fov]')),
+    cancel: required(document.querySelector<HTMLButtonElement>('[data-look-cancel]')),
+  },
+  { getView: () => viewer?.getView() ?? null, onLookAt: handleLookAt },
 );
 slowToggle.addEventListener('change', handleSlowChange);
 failFaceToggle.addEventListener('change', handleFailFaceChange);

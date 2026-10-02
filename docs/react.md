@@ -93,6 +93,34 @@ export const Apartment = ({ tour }: { tour: ITour }) => {
 - `sceneOptions` alone is read only when `scene` or `tour` changes; changing it does not switch anything.
 - There is no promise to catch in props: a `scene` missing from the tour (`unknown-scene`) or an invalid new `tour` (`invalid-tour`) is passed to `onError` (or to `reportError` when there is no `onError`); loading errors arrive through the `error` event as usual. A `scene` missing from the tour at mount time makes the tour invalid, so `onError` receives `invalid-tour`.
 
+## Turning the camera
+
+[`lookAt`](api.md#camera-animation) is a method of the viewer, so call it from an effect with the viewer from `ref` (or from `usePanoViewer`). Abort the turn in the cleanup: when the target changes or the component unmounts, the camera stops instead of finishing the old turn.
+
+```tsx
+import { useEffect } from 'react';
+import type { TViewTarget } from '@dkukushkin/3d-pano';
+import type { IPanoViewer } from '@dkukushkin/3d-pano/react';
+
+export const useFocusPin = (viewer: IPanoViewer | null, pin: TViewTarget | null): void => {
+  useEffect(() => {
+    if (viewer === null || pin === null) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    void viewer.lookAt(pin, { signal: controller.signal });
+
+    return () => {
+      controller.abort();
+    };
+  }, [viewer, pin]);
+};
+```
+
+The effect runs again whenever `pin` is a new object, so keep pins in stable objects (a constant, state or `useMemo`). To focus a pin in another scene, wait for the switch: `await viewer.showScene(id)`, then `lookAt` — or pass `keepMotion: true` when only the renovation changes and the turn should go on.
+
 ## `usePanoSnapshot(viewer)`
 
 Reads the [state snapshot](api.md#state-snapshot) and re-renders only when it changes — not while the panorama rotates. For `null` (before mounting, or on the server) it returns the initial snapshot with `status: 'loading'`.
