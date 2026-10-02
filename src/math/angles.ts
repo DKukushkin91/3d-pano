@@ -20,3 +20,10 @@ export const normalizeYaw = (yawDegrees: number): number => {
 
   return wrapped > DEGREES_PER_HALF_TURN ? wrapped - DEGREES_PER_TURN : wrapped;
 };
+
+/**
+ * Тот же `yaw`, сдвинутый на целое число оборотов к `reference`: так ограничения и путь поворота
+ * сравнивают углы около центра диапазона, а не около разрыва в ±180.
+ */
+export const unwrapYawNear = (yawDegrees: number, reference: number): number =>
+  yawDegrees + DEGREES_PER_TURN * Math.round((reference - yawDegrees) / DEGREES_PER_TURN);

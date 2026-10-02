@@ -6,6 +6,7 @@ export * from './math/equirect';
 export * from './math/field-of-view';
 export * from './math/rectilinear';
 export * from './math/vector3';
+export * from './math/view-interpolation';
 export * from './tour/tour-dictionaries';
 export * from './tour/tour-defaults';
 export * from './tour/url-template';

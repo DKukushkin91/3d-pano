@@ -1,10 +1,9 @@
-import { clamp, normalizeYaw, toDegrees, toRadians } from '../math/angles';
+import { clamp, normalizeYaw, toDegrees, toRadians, unwrapYawNear } from '../math/angles';
 import { type IHalfTangents, fovFromHalfTangents, halfTangentsFromFov } from '../math/field-of-view';
 import type { TFovMode } from '../tour/tour-dictionaries';
 import type { IBoundsRanges, IResolvedViewLimits, IView, TAngleRange } from '../tour/tour-types';
 
 const MAX_PITCH_DEGREES = 90;
-const DEGREES_PER_TURN = 360;
 
 /**
  * Всё, кроме самого вида, от чего зависят ограничения: размер кадра в CSS-пикселях, плотность
@@ -79,9 +78,6 @@ const fovFittingHalfAngle = (
 
   return toDegrees(fovFromHalfTangents(halfTangents, fovMode, aspect));
 };
-
-const unwrapYawNear = (yaw: number, reference: number): number =>
-  yaw + DEGREES_PER_TURN * Math.round((reference - yaw) / DEGREES_PER_TURN);
 
 const clampCenter = (center: number, range: TAngleRange, halfExtent: number): number =>
   clamp(center, range[0] + halfExtent, range[1] - halfExtent);
