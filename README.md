@@ -120,6 +120,7 @@ export const Tour = () => (
 - [Tour format](docs/tour.md) — scenes, image sources, initial view and limits, coordinate conventions.
 - [Viewer API](docs/api.md) — creating a viewer, methods, scene switching and transitions, preloading, camera animation, hotspots, events, state snapshot, errors, image loading.
 - [React](docs/react.md) — `<PanoViewer>`, the `scene` prop and hooks.
+- [Changelog](CHANGELOG.md) — what changed in each version.
 
 ## Development
 

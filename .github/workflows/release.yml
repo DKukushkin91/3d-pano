@@ -27,4 +27,13 @@ jobs:
             exit 1
           fi
       - run: pnpm check
-      - run: npm publish --access public
+      - name: Skip a version that is already on npm
+        id: published
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "@dkukushkin/3d-pano@$VERSION" version > /dev/null 2>&1; then
+            echo "@dkukushkin/3d-pano@$VERSION is already published" >&2
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.published.outputs.exists != 'true'
+        run: npm publish --access public
