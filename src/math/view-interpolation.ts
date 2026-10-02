@@ -80,3 +80,29 @@ export const areViewsClose = (first: IView, second: IView): boolean =>
   Math.abs(normalizeYaw(first.yaw - second.yaw)) <= VIEW_TOLERANCE_DEGREES &&
   Math.abs(first.pitch - second.pitch) <= VIEW_TOLERANCE_DEGREES &&
   Math.abs(first.fov - second.fov) <= VIEW_TOLERANCE_DEGREES;
+
+/**
+ * Разница между видами: `yaw` — по кратчайшей дуге, `pitch` и `fov` — как есть.
+ */
+export interface IViewOffset {
+  yaw: number;
+  pitch: number;
+  fov: number;
+}
+
+export const viewOffset = (from: IView, to: IView): IViewOffset => ({
+  yaw: normalizeYaw(to.yaw - from.yaw),
+  pitch: to.pitch - from.pitch,
+  fov: to.fov - from.fov,
+});
+
+/**
+ * Вид, сдвинутый на долю `factor` разницы `offset`. Так поворот, продолжающийся после смены сцены, гасит
+ * скачок вида к своему концу.
+ */
+export const shiftView = (view: IView, offset: IViewOffset, factor: number): IView => ({
+  ...view,
+  yaw: normalizeYaw(view.yaw + offset.yaw * factor),
+  pitch: view.pitch + offset.pitch * factor,
+  fov: view.fov + offset.fov * factor,
+});

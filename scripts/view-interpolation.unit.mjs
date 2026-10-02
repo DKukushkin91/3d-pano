@@ -5,8 +5,10 @@ import {
   EnumFovMode,
   areViewsClose,
   createViewPath,
+  shiftView,
   shortestYawDelta,
   viewAlongPath,
+  viewOffset,
 } from '../dist/internal.js';
 
 const TOLERANCE = 1e-9;
@@ -109,5 +111,18 @@ describe('camera-motion · Мгновенный поворот (совпаден
     assert.ok(areViewsClose(createView({ yaw: 180 }), createView({ yaw: -180 })));
     assert.ok(!areViewsClose(createView({ yaw: 40 }), createView({ yaw: 40.00001 })));
     assert.ok(!areViewsClose(createView({ fov: 90 }), createView({ fov: 89 })));
+  });
+});
+
+describe('scene-navigation · Инерция при смене (разница видов)', () => {
+  it('разница по yaw — по кратчайшей дуге, сдвиг на долю разницы возвращает вид к цели', () => {
+    const from = createView({ yaw: 170, pitch: 10, fov: 80 });
+    const to = createView({ yaw: -170, pitch: -5, fov: 90 });
+    const offset = viewOffset(from, to);
+
+    assert.deepEqual(offset, { yaw: 20, pitch: -15, fov: 10 });
+    assert.deepEqual(shiftView(from, offset, 1), { ...from, yaw: -170, pitch: -5, fov: 90 });
+    assert.deepEqual(shiftView(from, offset, 0), from);
+    assertClose(shiftView(from, offset, 0.5).yaw, 180);
   });
 });

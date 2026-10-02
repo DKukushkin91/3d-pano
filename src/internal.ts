@@ -26,6 +26,7 @@ export * from './resources/texture-split-plan';
 export * from './resources/texture-memory';
 export * from './resources/image-decoder';
 export * from './dom/drawing-buffer-size';
+export * from './viewer/camera-motion';
 export * from './viewer/camera-state';
 export * from './viewer/look-at-options';
 export * from './viewer/create-pano-viewer';
