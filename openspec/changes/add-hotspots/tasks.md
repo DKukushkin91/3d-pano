@@ -6,10 +6,10 @@
 
 ## 1. Хотспоты в формате тура (tour-config, hotspots)
 
-- [ ] 1.1 `hotspots/hotspot-types.ts` и `hotspots/hotspot-dictionaries.ts`: `IHotspot`, `IHotspotTarget`, `IHotspotPlane`, `EnumHotspotAnchor`/`THotspotAnchor` (D101); поле `hotspots` у `IScene`; экспорт из `src/index.ts` и `src/internal.ts`. Контракт-тест значений словаря; проверка типов: константа и строка `anchor` компилируются (требования «Структура тура», «Якорь»)
-- [ ] 1.2 `tour/validate-hotspots.ts` и вызов из `validateTour` со списком id сцен: массив, `id` непуст и уникален в сцене, `position` как у `lookAt`, `title` — строка, `target.scene` есть в туре, опции перехода как у `showScene`, `anchor` из словаря, `plane.width > 0`, конечные `facing` и `spin`. Контракт-тесты «Переход в несуществующую сцену», «Повторяющийся id хотспота», «Хотспоты в JSON» и каждая проблема с её путём (требование «Валидация хотспотов»)
-- [ ] 1.3 Раздел хотспотов в `docs/tour.md` (поля, `position`, `target`, `data`, `anchor`, `plane`, правила валидации) в том же коммите. Проверка: `pnpm check:docs`
-- [ ] 1.4 Закоммитить `feat(tour): добавить хотспоты сцены в формат тура`
+- [x] 1.1 `hotspots/hotspot-types.ts` и `hotspots/hotspot-dictionaries.ts`: `IHotspot`, `IHotspotTarget`, `IHotspotPlane`, `EnumHotspotAnchor`/`THotspotAnchor` (D101); поле `hotspots` у `IScene`; экспорт из `src/index.ts` и `src/internal.ts`. Контракт-тест значений словаря; проверка типов: константа и строка `anchor` компилируются (требования «Структура тура», «Якорь»)
+- [x] 1.2 `tour/validate-hotspots.ts` и вызов из `validateTour` со списком id сцен: массив, `id` непуст и уникален в сцене, `position` как у `lookAt`, `title` — строка, `target.scene` есть в туре, опции перехода как у `showScene`, `anchor` из словаря, `plane.width > 0`, конечные `facing` и `spin`. Контракт-тесты «Переход в несуществующую сцену», «Повторяющийся id хотспота», «Хотспоты в JSON» и каждая проблема с её путём (требование «Валидация хотспотов»)
+- [x] 1.3 Раздел хотспотов в `docs/tour.md` (поля, `position`, `target`, `data`, `anchor`, `plane`, правила валидации) в том же коммите. Проверка: `pnpm check:docs`
+- [x] 1.4 Закоммитить `feat(tour): добавить хотспоты сцены в формат тура`
 
 ## 2. Размещение хотспотов (hotspots)
 

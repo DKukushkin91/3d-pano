@@ -1,3 +1,4 @@
+import type { IHotspot } from '../hotspots/hotspot-types';
 import type { EnumSourceType, TBoundsMode, TCubeFace, TFovMode } from './tour-dictionaries';
 
 /**
@@ -76,6 +77,7 @@ export interface IScene {
   preview?: TPanoramaSource;
   view?: IViewSettings;
   limits?: IViewLimits;
+  hotspots?: IHotspot[];
 }
 
 export interface ITourDefaults {

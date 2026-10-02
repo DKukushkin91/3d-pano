@@ -37,14 +37,15 @@ A tour is plain JSON-compatible data: a list of scenes, the scene to start with 
 
 ## Scenes
 
-| Field     | Type   | Meaning                                                             |
-| --------- | ------ | ------------------------------------------------------------------- |
-| `id`      | string | Unique, non-empty.                                                  |
-| `title`   | string | Optional human-readable name.                                       |
-| `source`  | object | The panorama image, see [Sources](#sources).                        |
-| `preview` | object | Optional small image of the same kinds, shown while `source` loads. |
-| `view`    | object | Optional initial view, see [View](#view).                           |
-| `limits`  | object | Optional camera limits, see [Limits](#limits).                      |
+| Field      | Type   | Meaning                                                              |
+| ---------- | ------ | -------------------------------------------------------------------- |
+| `id`       | string | Unique, non-empty.                                                   |
+| `title`    | string | Optional human-readable name.                                        |
+| `source`   | object | The panorama image, see [Sources](#sources).                         |
+| `preview`  | object | Optional small image of the same kinds, shown while `source` loads.  |
+| `view`     | object | Optional initial view, see [View](#view).                            |
+| `limits`   | object | Optional camera limits, see [Limits](#limits).                       |
+| `hotspots` | array  | Optional interactive points of the scene, see [Hotspots](#hotspots). |
 
 ## Sources
 
@@ -101,6 +102,51 @@ How the limits behave:
 - **Field of view** is clamped to `fov` in the scene's `fovMode`.
 - **Pixel zoom** is measured against the image that is currently loaded — the preview first, then the full source. It stops zooming _in_ once one source pixel would cover more than `maxPixelZoom` CSS pixels at the centre of the frame, and it never zooms out on its own: while a small preview is on screen the current field of view stays, it just cannot get narrower. When the full image arrives, zooming in is available again down to the `fov` minimum. For cube faces the density at the centre of a face is used, which is the most conservative point.
 - **Bounds** `auto` and `none` behave the same for full spheres: `yaw` is free and the centre of the view stays within `pitch` −90…90. With ranges, the **whole frame** stays inside them: the view stops when its edge reaches the boundary, and if the frame is wider than a range, the field of view is reduced to fit. A `yaw` range may cross the back of the sphere, for example `[150, 210]`.
+
+## Hotspots
+
+A hotspot is a point of the scene with an element over the panorama: a door to the next room, a sign, a mark on the floor. In the tour it is plain data; the viewer draws a `<button>` with the `title` for it, or your own element (see [`renderHotspot`](api.md#hotspots)).
+
+```json
+{
+  "id": "kitchen",
+  "source": { "type": "equirect", "url": "/panoramas/kitchen.jpg" },
+  "hotspots": [
+    {
+      "id": "to-bedroom",
+      "position": { "x": 1.2, "y": -1.5, "z": 2.4 },
+      "title": "Bedroom",
+      "target": { "scene": "bedroom", "transition": { "type": "blend", "durationMs": 800 } },
+      "plane": { "width": 0.5, "facing": { "yaw": 0, "pitch": 90 } }
+    },
+    {
+      "id": "window",
+      "position": { "yaw": 40, "pitch": 5 },
+      "title": "Window",
+      "anchor": "bottom",
+      "data": { "icon": "info" }
+    }
+  ]
+}
+```
+
+| Field      | Type   | Meaning                                                                                                                                                                                        |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | string | Non-empty and unique within the scene; the same id may repeat in other scenes.                                                                                                                 |
+| `position` | object | A sphere point `{ yaw, pitch }` or a world point `{ x, y, z }` relative to the centre of the panorama, see [Coordinates](#coordinates).                                                        |
+| `title`    | string | Optional text of the default button and its accessible name. It is always shown as text, never as markup.                                                                                      |
+| `target`   | object | Optional navigation: `{ scene, transition?, view?, keepMotion? }` — a scene of the tour and the same options as [`showScene`](api.md#scenes-and-transitions). Clicking the hotspot goes there. |
+| `data`     | any    | Optional JSON of your own, passed as is to `renderHotspot` and to the hotspot events.                                                                                                          |
+| `anchor`   | string | Which point of the element lies at `position`: `center` (default), `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left` or `bottom-right` (`EnumHotspotAnchor`).           |
+| `plane`    | object | Optional `{ width, facing?, spin? }` to lay the element in the world in perspective, see below.                                                                                                |
+
+Without `plane` a hotspot keeps its size in pixels. With `plane` it lies in a plane of the world:
+
+- `width` is the width of the element in world units; its height follows the element's CSS proportions. A sphere point counts as lying at distance 1, so `width: 0.2` is a fifth of that.
+- `facing` is the direction its front side looks at, `{ yaw, pitch }` in degrees: `pitch` 90 lies on the floor facing up, `pitch` −90 hangs on the ceiling. Without `facing` the front side looks at the centre of the panorama, like a sign on a wall.
+- The top of the element points up along the plane; on a horizontal plane it points away from the centre of the panorama, so text on the floor reads from where the camera stands. `spin` rotates it further within the plane, in degrees.
+
+`validateTour` checks hotspots as strictly as the rest of the tour: a missing or repeated `id`, a non-finite or zero `position`, a `target.scene` that is not in the tour, invalid transition options, an unknown `anchor` or a `plane` without a positive `width` make the tour invalid, with the path of each problem (`scenes[2].hotspots[0].target.scene`).
 
 ## Coordinates
 

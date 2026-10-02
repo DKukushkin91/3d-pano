@@ -24,6 +24,8 @@ export type {
   TPanoramaSource,
 } from './tour/tour-types';
 export { validateTour } from './tour/validate-tour';
+export { EnumHotspotAnchor, type THotspotAnchor } from './hotspots/hotspot-dictionaries';
+export type { IHotspot, IHotspotPlane, IHotspotTarget } from './hotspots/hotspot-types';
 export { EnumEasing, type TEasing, type TEasingFunction, type TEasingName } from './math/easing';
 export {
   EnumErrorCategory,

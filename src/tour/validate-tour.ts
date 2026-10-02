@@ -1,4 +1,5 @@
 import type { ITourIssue } from './tour-types';
+import { validateHotspots } from './validate-hotspots';
 import { validateSource } from './validate-source';
 import { validateLimits, validateView } from './validate-view';
 import {
@@ -60,6 +61,18 @@ const validateScenes = (value: unknown, report: TReport): Set<string> => {
   return seenIds;
 };
 
+const validateSceneHotspots = (value: unknown, report: TReport, sceneIds: ReadonlySet<string>): void => {
+  if (!Array.isArray(value)) {
+    return;
+  }
+
+  value.forEach((scene: unknown, index) => {
+    if (isRecord(scene)) {
+      validateHotspots(scene.hotspots, childPath(itemPath('scenes', index), 'hotspots'), report, sceneIds);
+    }
+  });
+};
+
 const validateDefaults = (value: unknown, report: TReport): void => {
   if (value === undefined) {
     return;
@@ -78,7 +91,8 @@ const validateDefaults = (value: unknown, report: TReport): void => {
 /**
  * Проверяет тур как непроверенные данные (`unknown`): тур обычно приходит ответом сервера, и TypeScript
  * хоста за его содержимое не ручается. Возвращает все проблемы сразу, чтобы автор тура исправил их за один
- * проход; пустой массив — тур корректен.
+ * проход; пустой массив — тур корректен. Хотспоты проверяются вторым проходом: переход может вести в
+ * сцену, описанную ниже.
  */
 export const validateTour = (value: unknown): ITourIssue[] => {
   const issues: ITourIssue[] = [];
@@ -94,6 +108,8 @@ export const validateTour = (value: unknown): ITourIssue[] => {
 
   const sceneIds = validateScenes(value.scenes, report);
   const { startScene } = value;
+
+  validateSceneHotspots(value.scenes, report, sceneIds);
 
   if (startScene !== undefined && (typeof startScene !== 'string' || !sceneIds.has(startScene))) {
     report('startScene', 'must be the id of one of the scenes');
