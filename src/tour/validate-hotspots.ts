@@ -1,5 +1,6 @@
 import { EnumHotspotAnchor } from '../hotspots/hotspot-dictionaries';
 import { resolveShowSceneOptions } from '../navigation/show-scene-options';
+import { validateSurface } from './validate-surface';
 import {
   MUST_BE_NON_EMPTY_STRING,
   MUST_BE_OBJECT,
@@ -149,6 +150,7 @@ const validateHotspot = (
 
   validateTarget(value.target, childPath(path, 'target'), report, context.sceneIds);
   validatePlane(value.plane, childPath(path, 'plane'), report);
+  validateSurface(value.surface, childPath(path, 'surface'), report, value.plane !== undefined);
 };
 
 /**

@@ -32,6 +32,8 @@ export type {
   IHotspotPlane,
   IHotspotRenderContext,
   IHotspotTarget,
+  TAddHotspotSurface,
+  THotspotSurface,
 } from './hotspots/hotspot-types';
 export { EnumEasing, type TEasing, type TEasingFunction, type TEasingName } from './math/easing';
 export {

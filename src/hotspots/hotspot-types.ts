@@ -14,6 +14,24 @@ export interface IHotspotPlane {
 }
 
 /**
+ * Поверхность хотспота в туре: картинка или видео по URL, нарисованные в WebGL в его плоскости вместе со
+ * сценой. `width` — ширина в единицах мира (по умолчанию `plane.width`), высота — по пропорциям источника.
+ * Элемент хотспота остаётся зоной нажатия и фокуса.
+ */
+export type THotspotSurface =
+  | { image: string; video?: never; width?: number }
+  | { video: string; image?: never; width?: number };
+
+/**
+ * Поверхность хотспота хоста: кроме URL — готовый источник. Элемент снимается в момент вызова, поэтому
+ * перерисованный `<canvas>` хост передаёт ещё раз через `setSurface`; воспроизведением своего `<video>`
+ * хост управляет сам.
+ */
+export type TAddHotspotSurface =
+  | { image: string | HTMLImageElement | HTMLCanvasElement | ImageBitmap; video?: never; width?: number }
+  | { video: string | HTMLVideoElement; image?: never; width?: number };
+
+/**
  * Переход по хотспоту: сцена тура и те же опции, что у `showScene`.
  */
 export interface IHotspotTarget extends IShowSceneOptions {
@@ -32,6 +50,7 @@ export interface IHotspot {
   data?: unknown;
   anchor?: THotspotAnchor;
   plane?: IHotspotPlane;
+  surface?: THotspotSurface;
 }
 
 /**
@@ -44,6 +63,7 @@ export interface IAddHotspotOptions {
   scene?: string;
   anchor?: THotspotAnchor;
   plane?: IHotspotPlane;
+  surface?: TAddHotspotSurface;
 }
 
 /**

@@ -2,6 +2,7 @@ import { VIEW_TARGET_REQUIREMENT, parseViewTarget } from '../viewer/view-target'
 import type { ISpherePoint, TViewTarget } from '../viewer/viewer-types';
 import { EnumHotspotAnchor, type THotspotAnchor, isHotspotAnchor } from './hotspot-dictionaries';
 import type { IAddHotspotOptions } from './hotspot-types';
+import { type TResolvedSurface, resolveHotspotSurface } from './surface-options';
 
 /**
  * Плоскость с подставленными умолчаниями: без `facing` лицевая сторона смотрит в центр панорамы.
@@ -13,7 +14,8 @@ export interface IResolvedHotspotPlane {
 }
 
 /**
- * Хотспот хоста после проверки: `scene: null` — показан в любой сцене, `plane: null` — плоский на экране.
+ * Хотспот хоста после проверки: `scene: null` — показан в любой сцене, `plane: null` — плоский на экране,
+ * `surface: null` — без поверхности.
  */
 export interface IResolvedHostHotspot {
   element: HTMLElement;
@@ -21,6 +23,7 @@ export interface IResolvedHostHotspot {
   scene: string | null;
   anchor: THotspotAnchor;
   plane: IResolvedHotspotPlane | null;
+  surface: TResolvedSurface | null;
 }
 
 const failField = (name: string, requirement: string, value: unknown): never => {
@@ -109,4 +112,5 @@ export const resolveAddHotspotOptions = (options: IAddHotspotOptions): IResolved
   scene: resolveHotspotScene(options.scene),
   anchor: resolveHotspotAnchor(options.anchor),
   plane: resolveHotspotPlane(options.plane),
+  surface: resolveHotspotSurface(options.surface),
 });

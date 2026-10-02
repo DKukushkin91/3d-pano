@@ -7,11 +7,11 @@
 
 ## 1. Поле surface и его проверка (hotspot-surfaces, tour-config)
 
-- [ ] 1.1 Типы `THotspotSurface` и `TAddHotspotSurface` в `hotspots/hotspot-types.ts`, поле `surface` у `IHotspot` и `IAddHotspotOptions` (D182). Проверка: `pnpm typecheck` (требование «Структура тура»)
-- [ ] 1.2 `tour/validate-surface.ts` и вызов из `validateHotspots`: ровно одно из `image`/`video` — непустая строка, `width` больше 0, обязательный `plane` (D183). Контракт-тесты «Поверхность без плоскости», «Картинка и видео сразу», «Метки с картинкой и видео» (требования «Проверка поверхности», «Структура тура»)
-- [ ] 1.3 `hotspots/surface-options.ts`: разбор `surface` хоста с типами источников и `RangeError` с именем поля; сравнение поверхностей по полям для `<Hotspot>` (D184). Контракт-тесты «Нулевая ширина у хоста», неверный тип источника, сравнение (требования «Проверка поверхности», «Компонент Hotspot»)
-- [ ] 1.4 Раздел «Hotspot surfaces» в `docs/tour.md` (поля, ширина, обязательный `plane`, URL и CORS) — в том же коммите (D196). Проверка: `pnpm check:docs`
-- [ ] 1.5 Закоммитить `feat(tour): добавить поле surface у хотспотов`
+- [x] 1.1 Типы `THotspotSurface` и `TAddHotspotSurface` в `hotspots/hotspot-types.ts`, поле `surface` у `IHotspot` и `IAddHotspotOptions` (D182). Проверка: `pnpm typecheck` (требование «Структура тура»)
+- [x] 1.2 `tour/validate-surface.ts` и вызов из `validateHotspots`: ровно одно из `image`/`video` — непустая строка, `width` больше 0, обязательный `plane` (D183). Контракт-тесты «Поверхность без плоскости», «Картинка и видео сразу», «Метки с картинкой и видео» (требования «Проверка поверхности», «Структура тура»)
+- [x] 1.3 `hotspots/surface-options.ts`: разбор `surface` хоста с типами источников и `RangeError` с именем поля; сравнение поверхностей по полям для `<Hotspot>` (D184). Контракт-тесты «Нулевая ширина у хоста», неверный тип источника, сравнение (требования «Проверка поверхности», «Компонент Hotspot»)
+- [x] 1.4 Раздел «Hotspot surfaces» в `docs/tour.md` (поля, ширина, обязательный `plane`, URL и CORS) — в том же коммите (D196). Проверка: `pnpm check:docs`
+- [x] 1.5 Закоммитить `feat(tour): добавить поле surface у хотспотов`
 
 ## 2. Геометрия поверхности (hotspot-surfaces)
 

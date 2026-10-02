@@ -183,6 +183,7 @@ A hotspot is a point of the scene with an element over the panorama: a door to t
 | `data`     | any    | Optional JSON of your own, passed as is to `renderHotspot` and to the hotspot events.                                                                                                          |
 | `anchor`   | string | Which point of the element lies at `position`: `center` (default), `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left` or `bottom-right` (`EnumHotspotAnchor`).           |
 | `plane`    | object | Optional `{ width, facing?, spin? }` to lay the element in the world in perspective, see below.                                                                                                |
+| `surface`  | object | Optional picture or video drawn by WebGL in the hotspot's plane, see [Hotspot surfaces](#hotspot-surfaces).                                                                                    |
 
 Without `plane` a hotspot keeps its size in pixels. With `plane` it lies in a plane of the world:
 
@@ -190,7 +191,59 @@ Without `plane` a hotspot keeps its size in pixels. With `plane` it lies in a pl
 - `facing` is the direction its front side looks at, `{ yaw, pitch }` in degrees: `pitch` 90 lies on the floor facing up, `pitch` −90 hangs on the ceiling. Without `facing` the front side looks at the centre of the panorama, like a sign on a wall.
 - The top of the element points up along the plane; on a horizontal plane it points away from the centre of the panorama, so text on the floor reads from where the camera stands. `spin` rotates it further within the plane, in degrees.
 
-`validateTour` checks hotspots as strictly as the rest of the tour: a missing or repeated `id`, a non-finite or zero `position`, a `target.scene` that is not in the tour, invalid transition options, an unknown `anchor` or a `plane` without a positive `width` make the tour invalid, with the path of each problem (`scenes[2].hotspots[0].target.scene`).
+`validateTour` checks hotspots as strictly as the rest of the tour: a missing or repeated `id`, a non-finite or zero `position`, a `target.scene` that is not in the tour, invalid transition options, an unknown `anchor`, a `plane` without a positive `width` or an invalid `surface` make the tour invalid, with the path of each problem (`scenes[2].hotspots[0].target.scene`).
+
+## Hotspot surfaces
+
+A hotspot with a `plane` can show a picture or a video drawn by WebGL together with the panorama. Its element stays in place as the hit area and the focus target: clicks, hover, Tab, navigation, preloading and events work exactly as without a surface.
+
+```json
+{
+  "id": "to-balcony",
+  "position": { "x": 0, "y": -1.5, "z": 2 },
+  "title": "Balcony",
+  "target": { "scene": "balcony", "transition": { "type": "move" } },
+  "plane": { "width": 0.5, "facing": { "yaw": 0, "pitch": 90 } },
+  "surface": { "image": "/surfaces/floor-spot.png", "width": 0.125 }
+}
+```
+
+| Field   | Type   | Meaning                                                                                                                                                                   |
+| ------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image` | string | URL of a picture in a raster format the browser decodes with `createImageBitmap` (PNG, JPEG, WebP…). It is loaded with the viewer's `loader` and `retry`, like panoramas. |
+| `video` | string | URL of a video. It plays by itself, muted and looped, while its scene is on screen, and is paused and released when the scene leaves.                                     |
+| `width` | number | Optional width in world units, `plane.width` by default. The height follows the proportions of the picture or video.                                                      |
+
+A surface has exactly one of `image` and `video`.
+
+- The surface lies where the element lies: the same point, `facing`, `spin` and `anchor` — the anchor point of the surface sits at `position`. A `surface.width` smaller than `plane.width` makes the hit area larger than the picture, which suits small marks on the floor.
+- Surfaces cover each other by their distance from the camera, pixel by pixel, even where they cross; transparent pixels let what is behind show through. All surfaces lie over the panorama, and hotspot elements stay above the canvas.
+- A surface partly behind the camera is cut where the camera stands, not hidden as a whole.
+- During a blend or a move the surfaces fade and blur together with their scene.
+- A surface does not hold the scene back: the scene is ready without it, and the surface appears as soon as its picture has loaded. Hotspots with the same `image` share one download and one texture. A surface that fails to load is simply not drawn, without an `error` event, and is tried again the next time its scene is shown.
+- A browser may refuse to autoplay even a muted video (for example, in power saving mode); the surface then shows the first frame. For sound or your own controls pass a `<video>` to [`addHotspot`](api.md#hotspots).
+- WebGL can read pictures and videos from another origin only with CORS headers (`Access-Control-Allow-Origin`). An SVG by URL is not guaranteed to decode; pass it to `addHotspot` as an `<img>` instead.
+
+The library does not style hotspot elements, so make the hit area transparent yourself. The container of a hotspot with a surface carries `data-pano-surface`:
+
+```css
+[data-pano-surface] [data-pano-hotspot-button] {
+  width: 100px;
+  height: 100px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+}
+
+[data-pano-surface] [data-pano-hotspot-button]:hover {
+  background: rgb(255 255 255 / 0.3);
+}
+```
+
+With `plane.width: 0.5` the 100 px button covers 0.5 × 0.5 of the floor around the point, while the picture takes 0.125 × 0.125 in its centre.
+
+`validateTour` checks a surface as strictly as the rest of the tour: it must be an object with exactly one non-empty `image` or `video`, a `width` above 0, and the hotspot must have a `plane`.
 
 ## Scenes in the world
 

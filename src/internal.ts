@@ -14,6 +14,7 @@ export * from './hotspots/add-hotspot-options';
 export * from './hotspots/hotspot-dictionaries';
 export * from './hotspots/hotspot-label';
 export * from './hotspots/hotspot-presence';
+export * from './hotspots/surface-options';
 export * from './tour/tour-defaults';
 export * from './tour/url-template';
 export * from './tour/tile-pyramid';

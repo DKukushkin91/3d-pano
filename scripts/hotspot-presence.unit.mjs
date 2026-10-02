@@ -116,14 +116,21 @@ describe('hotspots · Проверка аргументов хотспотов �
     globalThis.HTMLElement = originalElement;
   });
 
-  it('умолчания: любая сцена, якорь center, без плоскости, позиция скопирована', () => {
+  it('умолчания: любая сцена, якорь center, без плоскости и поверхности, позиция скопирована', () => {
     const element = new globalThis.HTMLElement();
     const position = { ...POSITION };
     const resolved = resolveAddHotspotOptions({ element, position });
 
     position.x = 0;
 
-    assert.deepEqual(resolved, { element, position: POSITION, scene: null, anchor: 'center', plane: null });
+    assert.deepEqual(resolved, {
+      element,
+      position: POSITION,
+      scene: null,
+      anchor: 'center',
+      plane: null,
+      surface: null,
+    });
   });
 
   it('element не HTMLElement — TypeError', () => {
