@@ -10,11 +10,15 @@ import { type IResolvedRetryOptions, type TWait, withRetry } from './retry';
  */
 export type TImageLoader = (request: { url: string; signal: AbortSignal }) => Promise<Blob | ImageBitmap>;
 
+/**
+ * `decode` — параметры `createImageBitmap`: поверхностям хотспотов нужна предумноженная альфа.
+ */
 export interface IImageLoadSettings {
   loader: TImageLoader | null;
   retry: IResolvedRetryOptions;
   signal: AbortSignal;
   wait?: TWait;
+  decode?: ImageBitmapOptions;
 }
 
 const isImageData = (value: unknown): value is Blob | ImageBitmap =>
@@ -54,7 +58,7 @@ export const loadImage = (url: string, settings: IImageLoadSettings): Promise<Im
           ? await fetchImageBlob(url, settings.signal)
           : await requestFromHost(settings.loader, url, settings.signal);
 
-      return decodeImage(data, url);
+      return decodeImage(data, url, settings.decode);
     },
     { retry: settings.retry, signal: settings.signal, wait: settings.wait },
   );

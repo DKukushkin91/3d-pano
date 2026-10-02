@@ -274,6 +274,7 @@ export const createTiledSceneSession = (options: ITiledSceneSessionOptions): ISc
   };
 
   return {
+    sceneId: options.scene.id,
     load,
     isReadyFor: (target) => readinessKeys(target).every(isAvailable),
     drawings,

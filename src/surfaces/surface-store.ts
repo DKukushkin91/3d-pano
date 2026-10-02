@@ -19,11 +19,13 @@ export interface ISurfaceStoreEffects<TImage, TTexture> {
 }
 
 /**
- * Залитый источник: текстура и размер, по которому считается высота поверхности.
+ * Залитый источник: текстура, размер, по которому считается высота поверхности, и сам источник — по нему
+ * видео сообщает о новых кадрах.
  */
-export interface IStoredSurface<TTexture> {
+export interface IStoredSurface<TImage, TTexture> {
   texture: TTexture;
   size: ISurfaceSize;
+  image: TImage;
 }
 
 /**
@@ -31,8 +33,8 @@ export interface IStoredSurface<TTexture> {
  * заливает уже полученный источник заново (перерисованный `<canvas>`, новый кадр видео); `release`
  * отдаёт ссылку, повторный вызов ничего не делает.
  */
-export interface ISurfaceSourceHandle<TTexture> {
-  current: () => IStoredSurface<TTexture> | null;
+export interface ISurfaceSourceHandle<TImage, TTexture> {
+  current: () => IStoredSurface<TImage, TTexture> | null;
   refresh: () => void;
   release: () => void;
 }
@@ -44,7 +46,7 @@ export interface ISurfaceSourceHandle<TTexture> {
 export type TSurfaceLoad<TImage> = (signal: AbortSignal) => Promise<TImage>;
 
 export interface ISurfaceStore<TImage, TTexture> {
-  acquire: (key: unknown, load: TSurfaceLoad<TImage>) => ISurfaceSourceHandle<TTexture>;
+  acquire: (key: unknown, load: TSurfaceLoad<TImage>) => ISurfaceSourceHandle<TImage, TTexture>;
   count: () => number;
   dispose: () => void;
 }
@@ -54,7 +56,7 @@ interface IEntry<TImage, TTexture> {
   references: number;
   controller: AbortController | null;
   image: TImage | null;
-  stored: IStoredSurface<TTexture> | null;
+  stored: IStoredSurface<TImage, TTexture> | null;
 }
 
 /**
@@ -91,7 +93,7 @@ export const createSurfaceStore = <TImage, TTexture>(
       return;
     }
 
-    entry.stored = { texture: effects.upload(image, entry.stored?.texture ?? null), size };
+    entry.stored = { texture: effects.upload(image, entry.stored?.texture ?? null), size, image };
     effects.onChange();
   };
 
@@ -133,7 +135,7 @@ export const createSurfaceStore = <TImage, TTexture>(
     entries.delete(entry.key);
   };
 
-  const acquire = (key: unknown, load: TSurfaceLoad<TImage>): ISurfaceSourceHandle<TTexture> => {
+  const acquire = (key: unknown, load: TSurfaceLoad<TImage>): ISurfaceSourceHandle<TImage, TTexture> => {
     const entry = entries.get(key) ?? { key, references: 0, controller: null, image: null, stored: null };
     let isReleased = false;
 

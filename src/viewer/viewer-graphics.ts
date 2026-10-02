@@ -6,6 +6,8 @@ import type { ICompositeBlur } from '../render/composite-pass';
 import { type IFrameComposer, type IPreviousSceneFrame, createFrameComposer } from '../render/frame-composer';
 import type { IGlContext } from '../render/gl-context';
 import { type IFrameCamera, type IRenderer, createRenderer } from '../render/renderer';
+import type { ISurfaceDrawing } from '../render/surface-pass';
+import { type ISurfaceLayer, type ISurfaceLayerParts, createSurfaceLayer } from '../surfaces/surface-layer';
 import type { ITileFrame } from '../tiles/visible-tiles';
 import type { ICameraState } from './camera-state';
 import type { ISceneSession } from './scene-session';
@@ -21,9 +23,11 @@ export interface IPixelDensity {
 }
 
 /**
- * `draw` возвращает `true`, когда сценам нужны ещё кадры: идёт проявление тайлов.
+ * `draw` возвращает `true`, когда сценам нужны ещё кадры: идёт проявление тайлов или видео поверхности без
+ * сообщений о кадрах. `surfaces` — слой поверхностей хотспотов, его наполняет слой хотспотов.
  */
 export interface IViewerGraphics {
+  surfaces: ISurfaceLayer;
   draw: (
     frame: INavigatorFrame<ISceneSession>,
     camera: ICameraState,
@@ -75,6 +79,7 @@ const blurOf = (
 const previousSceneOf = (
   frame: INavigatorFrame<ISceneSession>,
   previousCamera: IFrameCamera | null,
+  surfaces: readonly ISurfaceDrawing[],
 ): IPreviousSceneFrame | null => {
   if (frame.previous === null || previousCamera === null) {
     return null;
@@ -82,7 +87,7 @@ const previousSceneOf = (
 
   return {
     drawings: frame.previous.drawings(),
-    surfaces: [],
+    surfaces,
     camera: previousCamera,
     frozenKey: frame.move === null ? frame.previousView : null,
   };
@@ -110,11 +115,18 @@ export const createViewerGraphics = (
   glContext: IGlContext,
   canvas: HTMLCanvasElement,
   tiles: ITileService,
+  surfaceParts: Omit<ISurfaceLayerParts, 'gl' | 'maxTextureSize'>,
 ): IViewerGraphics => {
   const renderer: IRenderer = createRenderer(glContext);
   const composer: IFrameComposer = createFrameComposer(glContext.gl, renderer);
+  const surfaces = createSurfaceLayer({
+    ...surfaceParts,
+    gl: glContext.gl,
+    maxTextureSize: glContext.maxTextureSize,
+  });
 
   return {
+    surfaces,
     draw: (frame, camera, density, timeMs) => {
       const frameCamera = camera.frameCamera();
 
@@ -147,20 +159,27 @@ export const createViewerGraphics = (
       );
 
       tiles.finishFrame();
+
+      const surfaceFrame = surfaces.frame(
+        { current: frame.current?.sceneId ?? null, previous: frame.previous?.sceneId ?? null },
+        { current: currentCamera, previous: previousCamera },
+      );
+
       composer.draw({
         camera: currentCamera,
         current: frame.current?.drawings() ?? [],
-        surfaces: [],
-        previous: previousSceneOf(frame, previousCamera),
+        surfaces: surfaceFrame.current,
+        previous: previousSceneOf(frame, previousCamera, surfaceFrame.previous),
         weight: frame.weight,
         blur: blurOf(frame, previousCamera),
         bufferWidth: bufferSize.width,
         bufferHeight: bufferSize.height,
       });
 
-      return isAnimating;
+      return isAnimating || surfaceFrame.isAnimating;
     },
     dispose: () => {
+      surfaces.dispose();
       composer.dispose();
       renderer.dispose();
     },

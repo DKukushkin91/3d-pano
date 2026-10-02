@@ -6,13 +6,17 @@ import type { ITextureTile } from './texture-split-plan';
  * Декодирование через `createImageBitmap` идёт вне основного потока там, где браузер это умеет, и не
  * блокирует вращение панорамы, пока грузятся большие изображения.
  */
-export const decodeImage = async (data: Blob | ImageBitmap, url: string): Promise<ImageBitmap> => {
+export const decodeImage = async (
+  data: Blob | ImageBitmap,
+  url: string,
+  options?: ImageBitmapOptions,
+): Promise<ImageBitmap> => {
   if (!(data instanceof Blob)) {
     return data;
   }
 
   try {
-    return await createImageBitmap(data);
+    return await createImageBitmap(data, options);
   } catch (error) {
     throw new PanoLoadError(
       createPanoError(EnumErrorCode.DecodeFailed, {

@@ -75,6 +75,7 @@ export interface IHotspotHandle {
   setScene: (scene: string | undefined) => void;
   setAnchor: (anchor: THotspotAnchor | undefined) => void;
   setPlane: (plane: IHotspotPlane | undefined) => void;
+  setSurface: (surface: TAddHotspotSurface | undefined) => void;
   remove: () => void;
 }
 

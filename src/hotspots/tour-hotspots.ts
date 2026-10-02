@@ -14,6 +14,7 @@ import {
   hotspotPreloadOf,
 } from './hotspot-presence';
 import type { IHotspot, TRenderHotspot } from './hotspot-types';
+import { resolveHotspotSurface } from './surface-options';
 
 /**
  * Что хотспоты тура берут у просмотрщика: слой, события, навигацию и камеру.
@@ -169,6 +170,7 @@ export const createTourHotspots = (ownerDocument: Document, host: ITourHotspotsH
       scene: scene.scene.id,
       anchor: hotspot.anchor ?? EnumHotspotAnchor.Center,
       plane: resolveHotspotPlane(hotspot.plane),
+      surface: resolveHotspotSurface(hotspot.surface),
       id: hotspot.id,
     });
     const entry: ITourEntry = {

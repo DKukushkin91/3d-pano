@@ -7,7 +7,9 @@ import {
 } from '../hotspots/add-hotspot-options';
 import { createHotspotLayer } from '../hotspots/hotspot-layer';
 import type { IAddHotspotOptions, IHotspotHandle, TRenderHotspot } from '../hotspots/hotspot-types';
+import { resolveHotspotSurface } from '../hotspots/surface-options';
 import { type ITourHotspotsHost, createTourHotspots } from '../hotspots/tour-hotspots';
+import { type ISurfaceLayer, withSurfaces } from '../surfaces/surface-layer';
 import type { IScene, ITour } from '../tour/tour-types';
 import type { ICameraState } from './camera-state';
 
@@ -24,6 +26,7 @@ export interface IViewerHotspots {
 
 export interface IViewerHotspotsParts extends Omit<ITourHotspotsHost, 'layer' | 'isInFrame'> {
   overlay: HTMLElement;
+  surfaces: ISurfaceLayer | null;
   camera: ICameraState;
   requestFrame: () => void;
 }
@@ -33,17 +36,18 @@ const INERT_HANDLE: IHotspotHandle = Object.freeze({
   setScene: () => undefined,
   setAnchor: () => undefined,
   setPlane: () => undefined,
+  setSurface: () => undefined,
   remove: () => undefined,
 });
 
 /**
- * Собирает слой и хотспоты тура и выдаёт `addHotspot`. Аргументы `addHotspot` и сеттеров проверяются
- * всегда, даже после `remove` и уничтожения, — ошибка программиста не должна прятаться за гонкой с
- * размонтированием; сами методы в этом случае ничего не делают.
+ * Собирает слой (с поверхностями, если есть WebGL) и хотспоты тура и выдаёт `addHotspot`. Аргументы
+ * `addHotspot` и сеттеров проверяются всегда, даже после `remove` и уничтожения, — ошибка программиста не
+ * должна прятаться за гонкой с размонтированием; сами методы в этом случае ничего не делают.
  */
 export const createViewerHotspots = (parts: IViewerHotspotsParts): IViewerHotspots => {
   const { overlay, camera } = parts;
-  const layer = createHotspotLayer(overlay, parts.requestFrame);
+  const layer = withSurfaces(createHotspotLayer(overlay, parts.requestFrame), parts.surfaces);
   const tourHotspots = createTourHotspots(overlay.ownerDocument, {
     ...parts,
     layer,
@@ -89,6 +93,13 @@ export const createViewerHotspots = (parts: IViewerHotspotsParts): IViewerHotspo
 
         if (isActive()) {
           entry.update({ plane: next });
+        }
+      },
+      setSurface: (surface) => {
+        const next = resolveHotspotSurface(surface);
+
+        if (isActive()) {
+          entry.update({ surface: next });
         }
       },
       remove: () => {

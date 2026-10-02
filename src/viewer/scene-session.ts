@@ -24,9 +24,11 @@ export interface ISceneSessionOptions {
  * Сцена в работе: её загрузчик и слои в видеопамяти. `load()` догружает недостающее и разрешается, когда
  * основное изображение целиком в текстурах; повторный вызов после ошибки — это `viewer.retry()`.
  * `prepareFrame` вызывается перед отрисовкой кадра, в котором сцена на экране: тайловая сцена выбирает и
- * запрашивает тайлы и ведёт проявление; `true` — нужны ещё кадры.
+ * запрашивает тайлы и ведёт проявление; `true` — нужны ещё кадры. `sceneId` — по нему кадр выбирает
+ * поверхности хотспотов этой сцены.
  */
 export interface ISceneSession extends INavigatorSession {
+  sceneId: string;
   drawings: () => TLayerDrawing[];
   prepareFrame: (frame: ITileFrame, timeMs: number) => boolean;
 }
@@ -127,6 +129,7 @@ export const createSceneSession = (options: ISceneSessionOptions): ISceneSession
   };
 
   return {
+    sceneId: scene.id,
     load,
     isReadyFor: () => mainLayer.isComplete(),
     prepareFrame: () => false,

@@ -13,9 +13,10 @@ import type { TViewTarget } from '../viewer/viewer-types';
 import type { IResolvedHotspotPlane } from './add-hotspot-options';
 import { HOTSPOT_ANCHOR_FRACTIONS, type THotspotAnchor } from './hotspot-dictionaries';
 import type { IPresenceEntry } from './hotspot-presence';
+import type { TResolvedSurface } from './surface-options';
 
 /**
- * Хотспот слоя: элемент и его размещение. `id` — идентификатор хотспота тура для атрибута
+ * Хотспот слоя: элемент, его размещение и поверхность. `id` — идентификатор хотспота тура для атрибута
  * `data-pano-hotspot`, у хотспотов хоста `null`.
  */
 export interface ILayerHotspot {
@@ -24,10 +25,13 @@ export interface ILayerHotspot {
   scene: string | null;
   anchor: THotspotAnchor;
   plane: IResolvedHotspotPlane | null;
+  surface: TResolvedSurface | null;
   id: string | null;
 }
 
-export type TLayerChanges = Partial<Pick<ILayerHotspot, 'position' | 'scene' | 'anchor' | 'plane'>>;
+export type TLayerChanges = Partial<
+  Pick<ILayerHotspot, 'position' | 'scene' | 'anchor' | 'plane' | 'surface'>
+>;
 
 /**
  * Хотспот в слое: оба контейнера, геометрия и последнее применённое размещение — чтобы в кадре писать в DOM
@@ -53,13 +57,19 @@ export const alignerTransform = (anchor: THotspotAnchor): string => {
   return `translate(${String(-fractions.x * PERCENT)}%, ${String(-fractions.y * PERCENT)}%)`;
 };
 
+/**
+ * Пересчитывает геометрию после изменения хотспота и отмечает контейнер атрибутом `data-pano-surface`,
+ * пока у хотспота есть рисуемая поверхность: по нему CSS хоста делает зону нажатия прозрачной.
+ */
 export const refreshGeometry = (record: ILayerRecord): void => {
-  const { position, plane } = record.hotspot;
+  const { position, plane, surface } = record.hotspot;
 
   record.scene = record.hotspot.scene;
   record.point = hotspotPoint(position);
   record.distance = hotspotDistance(position);
   record.basis = plane === null ? null : planeBasis(record.point, plane.facing, plane.spin);
+
+  record.anchorElement.toggleAttribute('data-pano-surface', plane !== null && surface !== null);
 };
 
 const setVisible = (record: ILayerRecord, isVisible: boolean): void => {

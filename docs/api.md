@@ -237,7 +237,7 @@ pin.setPosition({ x: 1.4, y: -0.4, z: 2.1 });
 pin.remove();
 ```
 
-`addHotspot({ element, position, scene?, anchor?, plane? })` returns `{ setPosition, setScene, setAnchor, setPlane, remove }`; a setter called with `undefined` returns the field to its default. A hotspot with `scene` is shown only while that scene is on screen, without it — in every scene. After `remove()` or `destroy()` the methods do nothing. Invalid arguments throw synchronously: an `element` that is not an `HTMLElement` throws `TypeError`, other fields `RangeError` naming the field; a `scene` that is not in the tour is not an error.
+`addHotspot({ element, position, scene?, anchor?, plane?, surface? })` returns `{ setPosition, setScene, setAnchor, setPlane, setSurface, remove }`; a setter called with `undefined` returns the field to its default. A hotspot with `scene` is shown only while that scene is on screen, without it — in every scene. After `remove()` or `destroy()` the methods do nothing. Invalid arguments throw synchronously: an `element` that is not an `HTMLElement` throws `TypeError`, other fields `RangeError` naming the field; a `scene` that is not in the tour is not an error.
 
 **The element of a tour hotspot** is a `<button type="button">` with the hotspot's `title` (set as text, never as markup; without a title the button gets an `aria-label` from the target scene). The library adds no styles of its own — style it with CSS. To draw your own element instead, pass `renderHotspot`:
 
@@ -264,6 +264,39 @@ const tourViewer = createPanoViewer(container, {
 
 **Placement.** `position` is a sphere point `{ yaw, pitch }` or a world point `{ x, y, z }` relative to the centre of the panorama. `anchor` chooses which point of the element lies there: `center` by default, or `top`, `bottom`, `left`, `right` and the four corners. Without `plane` the element keeps its size in pixels. With `plane: { width, facing?, spin? }` it lies in a plane of the world in perspective (CSS `matrix3d`) and grows when the camera zooms in — a mark on the floor, a sign on a wall; see [the tour format](tour.md#hotspots) for the fields.
 
+**Surfaces.** A hotspot with a `plane` can show a picture or a video drawn by WebGL together with the scene, while its element stays the hit area and the focus target (see [Hotspot surfaces](tour.md#hotspot-surfaces) for the behaviour). Tour hotspots take URLs; your own hotspots also take ready sources:
+
+| `surface` field | Accepts                                                                  |
+| --------------- | ------------------------------------------------------------------------ |
+| `image`         | a URL, an `HTMLImageElement`, an `HTMLCanvasElement` or an `ImageBitmap` |
+| `video`         | a URL or an `HTMLVideoElement`                                           |
+| `width`         | optional width in world units, `plane.width` by default                  |
+
+```ts
+const screen = document.createElement('video');
+
+screen.src = '/media/showreel.mp4';
+screen.crossOrigin = 'anonymous';
+screen.loop = true;
+
+const tv = viewer.addHotspot({
+  element: marker,
+  position: { yaw: 20, pitch: 5 },
+  plane: { width: 1.2 },
+  surface: { video: screen },
+});
+
+marker.addEventListener('click', () => {
+  void screen.play();
+});
+```
+
+- An element source is taken as it is at the call. After redrawing your `<canvas>`, call `setSurface({ image: canvas })` again — the same canvas is uploaded anew. An `<img>` that has not loaded yet is drawn once it loads.
+- The viewer never plays, pauses or unmutes your `<video>`: it shows its current picture and every new frame while it plays. A video given by URL — in the tour or here — plays by itself, muted and looped, while its scene is on screen.
+- A hotspot with a `surface` but without a `plane` draws no surface; set the plane later and it appears, in whatever order you call the setters.
+- A picture by URL is loaded like panoramas, with `loader` and `retry`; a failed one is not drawn and sends no `error`. Raster formats decode reliably; for an SVG pass an `<img>`. Sources from another origin need CORS headers. If you pass an `ImageBitmap`, create it with `premultiplyAlpha: 'premultiply'` (or the default) so that transparent edges blend cleanly.
+- Surfaces cover each other by distance and lie over the panorama; hotspot elements stay above the canvas. A source larger than the device's texture limit is not drawn.
+
 **Visibility.** Hotspots of a scene are shown while that scene is on screen: while the next scene loads they stay and work, and when it appears (the start of a blend) they leave and the new ones come. A hotspot behind the camera is invisible and cannot be pressed, but stays in the Tab order. Nearer hotspots lie above farther ones. The elements you pass are never restyled: the viewer moves its own containers around them.
 
 **Navigation.** Clicking a tour hotspot with `target` sends `hotspotClick` and then calls `showScene(target.scene, …target options)`; call `preventDefault()` in the handler to navigate your own way, for example through your router. Hovering or focusing such a hotspot preloads its scene, so the switch usually starts without network requests. A failed switch is reported by the `error` event, as when you call `showScene` yourself.
@@ -279,7 +312,7 @@ viewer.on('hotspotClick', ({ hotspot, preventDefault }) => {
 
 **Keyboard.** Hotspots are reachable with Tab. When the keyboard focus lands on a hotspot outside the frame or behind the camera, the camera turns to it with [`lookAt`](#camera-animation); focus by mouse or touch never turns the camera.
 
-**CSS hooks.** Each hotspot sits in a container with `data-pano-hotspot` (the hotspot id for tour hotspots, empty for yours) and `data-pano-visible="true"` or `"false"`; the default button has `data-pano-hotspot-button`. For example, to fade hotspots in:
+**CSS hooks.** Each hotspot sits in a container with `data-pano-hotspot` (the hotspot id for tour hotspots, empty for yours) and `data-pano-visible="true"` or `"false"`; a hotspot that draws a surface also has `data-pano-surface`, so you can make its element a transparent hit area. The default button has `data-pano-hotspot-button`. For example, to fade hotspots in:
 
 ```css
 [data-pano-hotspot] [data-pano-hotspot-button] {
