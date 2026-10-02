@@ -1,0 +1,175 @@
+import { type ICameraBasis, cameraToWorld } from '../math/camera-basis';
+import { cubeFaceFromDirection } from '../math/cube-faces';
+import type { IHalfTangents } from '../math/field-of-view';
+import { rectilinearRay } from '../math/rectilinear';
+import type { ITileAddress, ITileLevel } from '../tour/tile-pyramid';
+import { CUBE_FACES } from '../tour/tour-dictionaries';
+import { type IBufferSize, type IFacePlanePoint, neededLevelAt, pixelAngleAt, tileAt } from './tile-math';
+
+/**
+ * Шаг сетки выборки в пикселях буфера. Тайл нужного уровня занимает на экране не меньше половины своей
+ * стороны, поэтому при тайлах от 64 пикселей сетка его не пропустит; для меньших тайлов шаг уменьшается.
+ */
+export const SAMPLE_STEP_PIXELS = 32;
+
+/**
+ * Кадр, для которого ищутся тайлы: камера и размер буфера отрисовки.
+ */
+export interface ITileFrame {
+  basis: ICameraBasis;
+  halfTangents: IHalfTangents;
+  buffer: IBufferSize;
+}
+
+/**
+ * Точка выборки: грань (номер в `CUBE_FACES`), место на грани, нужный уровень и угол от центра кадра в
+ * радианах — по нему тайлы грузятся от центра к краям.
+ */
+export interface IFrameSample {
+  face: number;
+  point: IFacePlanePoint;
+  neededLevel: number;
+  distance: number;
+}
+
+/**
+ * Видимый тайл с углом от центра кадра до ближайшей точки, попавшей в него.
+ */
+export interface IVisibleTile extends ITileAddress {
+  distance: number;
+}
+
+export const tileKeyOf = ({ level, face, row, column }: ITileAddress): string =>
+  `${String(level)}/${String(face)}/${String(row)}/${String(column)}`;
+
+const gridPositions = (size: number, step: number): number[] => {
+  const positions: number[] = [];
+
+  for (let position = 0; position < size; position += step) {
+    positions.push(position);
+  }
+
+  positions.push(size);
+
+  return positions;
+};
+
+const sampleStepFor = (tileSize: number): number =>
+  Math.max(1, Math.min(SAMPLE_STEP_PIXELS, Math.floor(tileSize / 2)));
+
+/**
+ * Выборка лучей по сетке буфера и по его краям. Для каждой точки — та же цепочка, что в шейдере: луч,
+ * грань, размер пикселя и нужный уровень. Пустой буфер даёт пустую выборку.
+ */
+export const sampleTileFrame = (
+  frame: ITileFrame,
+  levels: readonly ITileLevel[],
+  tileSize: number,
+): IFrameSample[] => {
+  const { buffer, basis, halfTangents } = frame;
+  const samples: IFrameSample[] = [];
+
+  if (buffer.width <= 0 || buffer.height <= 0) {
+    return samples;
+  }
+
+  const step = sampleStepFor(tileSize);
+  const faceSizes = levels.map((level) => level.faceSize);
+  const rows = gridPositions(buffer.height, step);
+
+  for (const column of gridPositions(buffer.width, step)) {
+    for (const row of rows) {
+      const point = { x: (2 * column) / buffer.width - 1, y: 1 - (2 * row) / buffer.height };
+      const ray = rectilinearRay(point, halfTangents);
+      const facePoint = cubeFaceFromDirection(cameraToWorld(basis, ray));
+
+      samples.push({
+        face: CUBE_FACES.indexOf(facePoint.face),
+        point: { s: facePoint.s, t: facePoint.t },
+        neededLevel: neededLevelAt(pixelAngleAt(point, halfTangents, buffer), facePoint, faceSizes),
+        distance: Math.acos(Math.min(1, ray.z)),
+      });
+    }
+  }
+
+  return samples;
+};
+
+const collectTile = (tiles: Map<string, IVisibleTile>, sample: IFrameSample, level: ITileLevel): void => {
+  const { row, column } = tileAt(sample.point, level.tilesPerSide);
+  const address = { level: level.index, face: sample.face, row, column };
+  const key = tileKeyOf(address);
+  const known = tiles.get(key);
+
+  if (known === undefined || sample.distance < known.distance) {
+    tiles.set(key, { ...address, distance: sample.distance });
+  }
+};
+
+const byLevelThenDistance = (first: IVisibleTile, second: IVisibleTile): number =>
+  first.level - second.level || first.distance - second.distance;
+
+const sortedTiles = (tiles: Map<string, IVisibleTile>): IVisibleTile[] => {
+  const list = [...tiles.values()];
+
+  list.sort(byLevelThenDistance);
+
+  return list;
+};
+
+/**
+ * Тайлы, которые нужны кадру до готовности: только нужный уровень в каждой точке, без промежуточных —
+ * при смене сцены их всё равно не видно. Подложка (уровень 0) сюда не входит, она грузится целиком.
+ */
+export const neededTilesOf = (
+  samples: readonly IFrameSample[],
+  levels: readonly ITileLevel[],
+): IVisibleTile[] => {
+  const tiles = new Map<string, IVisibleTile>();
+
+  for (const sample of samples) {
+    const level = levels[sample.neededLevel];
+
+    if (sample.neededLevel > 0 && level !== undefined) {
+      collectTile(tiles, sample, level);
+    }
+  }
+
+  return sortedTiles(tiles);
+};
+
+/**
+ * Тайлы кадра после готовности: в каждой точке все уровни от следующего за подложкой до нужного —
+ * картинка становится чётче постепенно. Порядок — по уровню, затем от центра кадра.
+ */
+export const progressiveTilesOf = (
+  samples: readonly IFrameSample[],
+  levels: readonly ITileLevel[],
+): IVisibleTile[] => {
+  const tiles = new Map<string, IVisibleTile>();
+
+  for (const sample of samples) {
+    for (let index = 1; index <= sample.neededLevel; index += 1) {
+      const level = levels[index];
+
+      if (level !== undefined) {
+        collectTile(tiles, sample, level);
+      }
+    }
+  }
+
+  return sortedTiles(tiles);
+};
+
+/**
+ * Все тайлы подложки — самого мелкого уровня — по граням, строкам и столбцам.
+ */
+export const baseTilesOf = (baseLevel: ITileLevel): ITileAddress[] =>
+  CUBE_FACES.flatMap((_face, face) =>
+    Array.from({ length: baseLevel.tilesPerSide ** 2 }, (_unused, index) => ({
+      level: baseLevel.index,
+      face,
+      row: Math.floor(index / baseLevel.tilesPerSide),
+      column: index % baseLevel.tilesPerSide,
+    })),
+  );
