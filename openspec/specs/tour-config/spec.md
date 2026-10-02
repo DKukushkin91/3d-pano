@@ -10,9 +10,10 @@
 ### Requirement: Структура тура
 
 Тур SHALL быть объектом `{ startScene?, defaults?, scenes }`, где `scenes` — непустой массив сцен
-`{ id, title?, source, preview?, view?, limits?, hotspots? }`, а `defaults` может содержать `view` и
-`limits`. Хотспот сцены — `{ id, position, title?, target?, data?, anchor?, plane? }`. Тур MUST быть
-сериализуемым в JSON: функций, элементов DOM и кода в нём нет. Проверка: контракт-тест `validateTour`.
+`{ id, title?, source, preview?, view?, limits?, hotspots?, position?, heading?, cameraHeight? }`, а
+`defaults` может содержать `view`, `limits` и `cameraHeight`. Хотспот сцены — `{ id, position, title?,
+target?, data?, anchor?, plane? }`. Тур MUST быть сериализуемым в JSON: функций, элементов DOM и кода в нём
+нет. Проверка: контракт-тест `validateTour`.
 
 #### Scenario: Минимальный тур
 
@@ -28,6 +29,11 @@
 
 - **WHEN** сцена из ответа сервера содержит `hotspots` с `target` и произвольным `data`
 - **THEN** тур принимается без преобразований, а `data` доходит до `renderHotspot` и событий как есть
+
+#### Scenario: Квартира в мире
+
+- **WHEN** сцены из ответа сервера содержат `position`, `heading`, а `defaults` — `cameraHeight`
+- **THEN** тур принимается без преобразований, и переходы «шаг» идут по этим данным
 
 ### Requirement: Стартовая сцена
 
