@@ -8,7 +8,7 @@ import {
   type TSceneView,
   type TTransitionType,
 } from './navigation-dictionaries';
-import type { IShowSceneOptions, TSceneTransition } from './navigation-types';
+import type { IPreloadSceneOptions, IShowSceneOptions, TSceneTransition } from './navigation-types';
 import type { ISceneTarget } from './navigator-types';
 
 /**
@@ -112,6 +112,13 @@ export const resolveShowSceneOptions = (
   view: resolveView(options?.view),
   keepMotion: options?.keepMotion === true,
 });
+
+/**
+ * Опции предзагрузки с умолчанием: вид сцены. Неверный `view` — `RangeError` сразу, как у `showScene`.
+ */
+export const resolvePreloadSceneView = (
+  options: IPreloadSceneOptions | undefined,
+): TSceneView | IViewSettings => resolveView(options?.view);
 
 /**
  * Вид в момент появления новой сцены: `keep` — текущий вид камеры (его проведут через ограничения новой

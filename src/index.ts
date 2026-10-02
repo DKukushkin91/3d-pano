@@ -55,6 +55,7 @@ export {
 export type {
   IBlendTransition,
   ICutTransition,
+  IPreloadSceneOptions,
   ISetTourOptions,
   IShowSceneOptions,
   TSceneTransition,

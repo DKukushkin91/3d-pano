@@ -1,4 +1,4 @@
-import type { IShowSceneOptions } from '../navigation/navigation-types';
+import type { IPreloadSceneOptions, IShowSceneOptions } from '../navigation/navigation-types';
 import type { IEventEmitter } from '../state/event-emitter';
 import type { IScene, ITour } from '../tour/tour-types';
 import type { IPanoViewerEventMap, TViewTarget } from '../viewer/viewer-types';
@@ -6,7 +6,7 @@ import { resolveHotspotPlane } from './add-hotspot-options';
 import { EnumHotspotAnchor } from './hotspot-dictionaries';
 import { hotspotLabel } from './hotspot-label';
 import type { IHotspotLayer, ILayerEntry } from './hotspot-layer';
-import { type IEnterState, NOT_ENTERED, enterTransition } from './hotspot-presence';
+import { type IEnterState, NOT_ENTERED, enterTransition, hotspotPreloadOf } from './hotspot-presence';
 import type { IHotspot, TRenderHotspot } from './hotspot-types';
 
 /**
@@ -16,7 +16,7 @@ export interface ITourHotspotsHost {
   layer: IHotspotLayer;
   emitter: IEventEmitter<IPanoViewerEventMap>;
   showScene: (sceneId: string, options: IShowSceneOptions) => Promise<boolean>;
-  preloadScene: (sceneId: string) => Promise<boolean>;
+  preloadScene: (sceneId: string, options: IPreloadSceneOptions) => Promise<boolean>;
   lookAt: (position: TViewTarget) => void;
   isInFrame: (position: TViewTarget) => boolean;
 }
@@ -68,7 +68,7 @@ const createDefaultButton = (ownerDocument: Document, hotspot: IHotspot, tour: I
  * Хотспоты сцены на экране. Элемент — результат `renderHotspot` или кнопка по умолчанию (если функция
  * вернула не элемент — тоже кнопка). Слушатели висят на контейнере слоя и снимаются тем же `signal`, что
  * получает `renderHotspot`. Клик отправляет `hotspotClick` и, если его не отменили, переходит в `target`;
- * вход (наведение или фокус) отправляет `hotspotEnter` и предзагружает сцену `target`; фокус с клавиатуры
+ * вход (наведение или фокус) отправляет `hotspotEnter` и предзагружает сцену `target` с её видом; фокус с клавиатуры
  * на хотспоте вне кадра поворачивает к нему камеру. Хотспоты пересоздаются, только если сцена или её
  * хотспоты изменились, — замена тура с той же сценой их не трогает.
  */
@@ -87,7 +87,9 @@ export const createTourHotspots = (ownerDocument: Document, host: ITourHotspotsH
       host.emitter.emit('hotspotEnter', payload);
 
       if (entry.hotspot.target !== undefined) {
-        host.preloadScene(entry.hotspot.target.scene).catch(ignore);
+        const { sceneId, options } = hotspotPreloadOf(entry.hotspot.target);
+
+        host.preloadScene(sceneId, options).catch(ignore);
       }
     } else if (transition === 'leave') {
       host.emitter.emit('hotspotLeave', payload);

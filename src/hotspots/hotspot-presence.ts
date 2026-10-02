@@ -1,3 +1,6 @@
+import type { IPreloadSceneOptions } from '../navigation/navigation-types';
+import type { IHotspotTarget } from './hotspot-types';
+
 /**
  * Хотспот в слое: сцена, в которой он показан (`null` — в любой), расстояние до камеры и порядок
  * добавления — сначала хотспоты тура, затем хоста.
@@ -51,3 +54,14 @@ export const enterTransition = (before: IEnterState, after: IEnterState): 'enter
 
   return isEntered(after) ? 'enter' : 'leave';
 };
+
+/**
+ * Предзагрузка цели хотспота: сцена и вид, с которым она появится после клика, — тайловая сцена готовит
+ * кадр именно этого вида (например, текущего при `view: 'keep'`).
+ */
+export const hotspotPreloadOf = (
+  target: IHotspotTarget,
+): { sceneId: string; options: IPreloadSceneOptions } => ({
+  sceneId: target.scene,
+  options: { view: target.view },
+});

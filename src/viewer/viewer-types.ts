@@ -1,6 +1,10 @@
 import type { IAddHotspotOptions, IHotspot, IHotspotHandle, TRenderHotspot } from '../hotspots/hotspot-types';
 import type { TEasing } from '../math/easing';
-import type { ISetTourOptions, IShowSceneOptions } from '../navigation/navigation-types';
+import type {
+  IPreloadSceneOptions,
+  ISetTourOptions,
+  IShowSceneOptions,
+} from '../navigation/navigation-types';
 import type { TImageLoader } from '../resources/load-image';
 import type { IRetryOptions } from '../resources/retry';
 import type { IPanoError, IPanoViewerSnapshot } from '../state/viewer-state-types';
@@ -121,7 +125,7 @@ export interface IPanoViewer {
   lookAt: (target: TViewTarget, options?: ILookAtOptions) => Promise<boolean>;
   addHotspot: (options: IAddHotspotOptions) => IHotspotHandle;
   showScene: (sceneId: string, options?: IShowSceneOptions) => Promise<boolean>;
-  preloadScene: (sceneId: string) => Promise<boolean>;
+  preloadScene: (sceneId: string, options?: IPreloadSceneOptions) => Promise<boolean>;
   setTour: (tour: ITour, options?: ISetTourOptions) => Promise<boolean>;
   retry: () => Promise<void>;
   update: (options: TPanoViewerUpdate) => void;

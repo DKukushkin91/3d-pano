@@ -120,3 +120,70 @@ describe('multiresolution · Готовность тайловой сцены (�
     );
   });
 });
+
+describe('scene-navigation · Предзагрузка сцены (вид)', () => {
+  it('Другой ремонт той же комнаты: предзагрузка с keep готовит текущий вид, смена начинается сразу', async () => {
+    const harness = createHarness();
+
+    await harness.startAt('kitchen');
+    harness.camera.view = WINDOW_VIEW;
+
+    const preloaded = harness.navigator.preloadScene('bedroom', { view: 'keep' });
+    const bedroom = harness.latestSession('bedroom');
+
+    assert.equal(bedroom.targets[0].view.yaw, 120);
+    assert.equal(bedroom.targets[0].isPreload, true);
+
+    await harness.complete('bedroom');
+    assert.equal(await preloaded, true);
+
+    bedroom.readyFor = (target) => target.view.yaw === 120;
+
+    const shown = harness.navigator.showScene('bedroom', { view: 'keep' });
+
+    assert.equal(harness.navigator.frame(0).current, bedroom);
+    assert.equal(bedroom.loads, 1);
+    assert.equal(await shown, true);
+  });
+
+  it('Тайловая сцена уже в кэше: догружается только кадр нового вида, затем true', async () => {
+    const harness = createHarness();
+
+    await harness.startAt('kitchen');
+    void harness.navigator.showScene('bedroom');
+    await harness.complete('bedroom');
+
+    const kitchen = harness.latestSession('kitchen');
+
+    kitchen.readyFor = (target) => target.view.yaw === 10;
+
+    const preloaded = harness.navigator.preloadScene('kitchen', { view: { yaw: 250 } });
+
+    assert.equal(kitchen.loads, 2);
+    assert.equal(kitchen.targets.at(-1).view.yaw, 250);
+    kitchen.complete();
+    assert.equal(await preloaded, true);
+  });
+
+  it('сцена в кэше, готовая для вида, — сразу true без загрузки', async () => {
+    const harness = createHarness();
+
+    await harness.startAt('kitchen');
+    void harness.navigator.showScene('bedroom');
+    await harness.complete('bedroom');
+
+    assert.equal(await harness.navigator.preloadScene('kitchen'), true);
+    assert.equal(harness.latestSession('kitchen').loads, 1);
+  });
+
+  it('Неверный вид предзагрузки: синхронный RangeError с 3d-pano: и view', async () => {
+    const harness = createHarness();
+
+    await harness.startAt('kitchen');
+
+    assert.throws(() => harness.navigator.preloadScene('bedroom', { view: 'current' }), {
+      name: 'RangeError',
+      message: /^3d-pano: .*view/,
+    });
+  });
+});

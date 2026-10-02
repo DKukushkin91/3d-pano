@@ -1,21 +1,22 @@
+import { isAbortError } from '../resources/load-errors';
 import { findStartScene, resolveSceneLimits } from '../tour/tour-defaults';
 import type { IScene, ITour } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
-import { EnumSceneView } from './navigation-dictionaries';
-import type { ISetTourOptions, IShowSceneOptions } from './navigation-types';
+import type { IPreloadSceneOptions, ISetTourOptions, IShowSceneOptions } from './navigation-types';
 import type {
   INavigatorFrame,
   INavigatorSession,
   ISceneNavigatorHost,
   ISceneRecord,
+  ISceneTarget,
 } from './navigator-types';
 import { createSceneCache } from './scene-cache';
 import { invalidTourError, unknownSceneError } from './scene-errors';
 import { sceneKeyOf } from './scene-key';
-import { createScenePreloader } from './scene-preloader';
+import { createScenePreloader, toSceneLoadError } from './scene-preloader';
 import { createRecordFactory } from './scene-records';
 import { createSceneSwitcher } from './scene-switcher';
-import { resolveSceneTarget, resolveShowSceneOptions } from './show-scene-options';
+import { resolvePreloadSceneView, resolveSceneTarget, resolveShowSceneOptions } from './show-scene-options';
 import type { IAcquiredRecord } from './switch-state';
 
 /**
@@ -24,7 +25,7 @@ import type { IAcquiredRecord } from './switch-state';
  */
 export interface ISceneNavigator<TSession extends INavigatorSession> {
   showScene: (sceneId: string, options?: IShowSceneOptions) => Promise<boolean>;
-  preloadScene: (sceneId: string) => Promise<boolean>;
+  preloadScene: (sceneId: string, options?: IPreloadSceneOptions) => Promise<boolean>;
   setTour: (tour: ITour, options?: ISetTourOptions) => Promise<boolean>;
   retry: () => Promise<void>;
   frame: (timeMs: number) => INavigatorFrame<TSession>;
@@ -89,7 +90,26 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     setPreloadsPaused: preloader.setPaused,
   });
 
-  const preloadScene = (sceneId: string): Promise<boolean> => {
+  const prepareCached = (
+    record: ISceneRecord<TSession>,
+    target: ISceneTarget,
+    sceneId: string,
+  ): Promise<boolean> =>
+    record.session.isReadyFor(target)
+      ? Promise.resolve(true)
+      : record.session.load(target).then(
+          () => cache.get(record.key) === record,
+          (error: unknown) => {
+            if (isAbortError(error)) {
+              return false;
+            }
+
+            throw toSceneLoadError(error, sceneId);
+          },
+        );
+
+  const preloadScene = (sceneId: string, options?: IPreloadSceneOptions): Promise<boolean> => {
+    const view = resolvePreloadSceneView(options);
     const scene = findScene(tour, sceneId);
 
     if (isDestroyed) {
@@ -101,9 +121,15 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     }
 
     const key = sceneKeyOf(scene);
+    const target = resolveSceneTarget(tour, scene, view, host.getView(), true);
+    const cached = cache.get(key);
 
-    if (switcher.isOnScreen(scene) || cache.get(key) !== undefined) {
+    if (switcher.isOnScreen(scene)) {
       return Promise.resolve(true);
+    }
+
+    if (cached !== undefined) {
+      return prepareCached(cached, target, sceneId);
     }
 
     const following = switcher.followPending(key);
@@ -116,11 +142,7 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
       return Promise.resolve(false);
     }
 
-    return preloader.preload(
-      scene,
-      key,
-      resolveSceneTarget(tour, scene, EnumSceneView.Scene, host.getView(), true),
-    );
+    return preloader.preload(scene, key, target);
   };
 
   const setTour = (nextTour: ITour, options?: ISetTourOptions): Promise<boolean> => {

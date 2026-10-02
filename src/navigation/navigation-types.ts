@@ -34,3 +34,11 @@ export interface IShowSceneOptions {
 export interface ISetTourOptions extends IShowSceneOptions {
   scene?: string;
 }
+
+/**
+ * Опции `preloadScene`: `view` — вид, для которого готовится тайловая сцена, по тем же правилам, что у
+ * `showScene` (по умолчанию `scene`). Остальным сценам вид не нужен — они готовятся целиком.
+ */
+export interface IPreloadSceneOptions {
+  view?: TSceneView | IViewSettings;
+}

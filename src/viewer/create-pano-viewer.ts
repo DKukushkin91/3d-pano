@@ -151,7 +151,8 @@ export const createViewer = (
     requestFrame: loop.requestRender,
     emitter,
     showScene: (sceneId, showOptions) => navigator?.showScene(sceneId, showOptions) ?? Promise.resolve(false),
-    preloadScene: (sceneId) => navigator?.preloadScene(sceneId) ?? Promise.resolve(false),
+    preloadScene: (sceneId, preloadOptions) =>
+      navigator?.preloadScene(sceneId, preloadOptions) ?? Promise.resolve(false),
     lookAt: (position) => {
       void motion.start(resolveLookAtRequest(position, undefined));
     },
@@ -245,7 +246,8 @@ export const createViewer = (
     project: (point) => (isDestroyed ? null : camera.project(point)),
     unproject: (x, y) => (isDestroyed ? null : camera.unproject(x, y)),
     showScene: (sceneId, showOptions) => navigator?.showScene(sceneId, showOptions) ?? Promise.resolve(false),
-    preloadScene: (sceneId) => navigator?.preloadScene(sceneId) ?? Promise.resolve(false),
+    preloadScene: (sceneId, preloadOptions) =>
+      navigator?.preloadScene(sceneId, preloadOptions) ?? Promise.resolve(false),
     setTour: (nextTour, tourOptions) => navigator?.setTour(nextTour, tourOptions) ?? Promise.resolve(false),
     retry: () => navigator?.retry() ?? Promise.resolve(),
     update: (nextOptions) => {

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import {
   NOT_ENTERED,
   enterTransition,
+  hotspotPreloadOf,
   hotspotLabel,
   isShownInScene,
   resolveAddHotspotOptions,
@@ -162,6 +163,21 @@ describe('hotspots · Проверка аргументов хотспотов �
       width: 0.5,
       facing: { yaw: 0, pitch: 90 },
       spin: 0,
+    });
+  });
+});
+
+describe('hotspots · Предзагрузка при наведении (вид цели)', () => {
+  const RENOVATION_SCENE = 'living-room-v2';
+
+  it('Переход с сохранением вида: предзагрузка цели получает view из target', () => {
+    assert.deepEqual(hotspotPreloadOf({ scene: RENOVATION_SCENE, view: 'keep' }), {
+      sceneId: RENOVATION_SCENE,
+      options: { view: 'keep' },
+    });
+    assert.deepEqual(hotspotPreloadOf({ scene: 'bedroom' }), {
+      sceneId: 'bedroom',
+      options: { view: undefined },
     });
   });
 });
