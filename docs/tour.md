@@ -29,23 +29,26 @@ A tour is plain JSON-compatible data: a list of scenes, the scene to start with 
 }
 ```
 
-| Field        | Type   | Meaning                                                                          |
-| ------------ | ------ | -------------------------------------------------------------------------------- |
-| `scenes`     | array  | At least one scene. Scene ids must be unique.                                    |
-| `startScene` | string | Id of the scene shown first. Defaults to the first scene in `scenes`.            |
-| `defaults`   | object | `view` and `limits` shared by all scenes; a scene overrides them field by field. |
+| Field        | Type   | Meaning                                                                                          |
+| ------------ | ------ | ------------------------------------------------------------------------------------------------ |
+| `scenes`     | array  | At least one scene. Scene ids must be unique.                                                    |
+| `startScene` | string | Id of the scene shown first. Defaults to the first scene in `scenes`.                            |
+| `defaults`   | object | `view`, `limits` and `cameraHeight` shared by all scenes; a scene overrides them field by field. |
 
 ## Scenes
 
-| Field      | Type   | Meaning                                                                                   |
-| ---------- | ------ | ----------------------------------------------------------------------------------------- |
-| `id`       | string | Unique, non-empty.                                                                        |
-| `title`    | string | Optional human-readable name.                                                             |
-| `source`   | object | The panorama image, see [Sources](#sources).                                              |
-| `preview`  | object | Optional small image, shown while `source` loads. Any kind except a multiresolution cube. |
-| `view`     | object | Optional initial view, see [View](#view).                                                 |
-| `limits`   | object | Optional camera limits, see [Limits](#limits).                                            |
-| `hotspots` | array  | Optional interactive points of the scene, see [Hotspots](#hotspots).                      |
+| Field          | Type   | Meaning                                                                                               |
+| -------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| `id`           | string | Unique, non-empty.                                                                                    |
+| `title`        | string | Optional human-readable name.                                                                         |
+| `source`       | object | The panorama image, see [Sources](#sources).                                                          |
+| `preview`      | object | Optional small image, shown while `source` loads. Any kind except a multiresolution cube.             |
+| `view`         | object | Optional initial view, see [View](#view).                                                             |
+| `limits`       | object | Optional camera limits, see [Limits](#limits).                                                        |
+| `hotspots`     | array  | Optional interactive points of the scene, see [Hotspots](#hotspots).                                  |
+| `position`     | object | Optional centre of the panorama in the tour's world, see [Scenes in the world](#scenes-in-the-world). |
+| `heading`      | number | Optional world direction of the panorama's `yaw` 0, in degrees.                                       |
+| `cameraHeight` | number | Optional height of the camera above the floor.                                                        |
 
 ## Sources
 
@@ -188,6 +191,42 @@ Without `plane` a hotspot keeps its size in pixels. With `plane` it lies in a pl
 - The top of the element points up along the plane; on a horizontal plane it points away from the centre of the panorama, so text on the floor reads from where the camera stands. `spin` rotates it further within the plane, in degrees.
 
 `validateTour` checks hotspots as strictly as the rest of the tour: a missing or repeated `id`, a non-finite or zero `position`, a `target.scene` that is not in the tour, invalid transition options, an unknown `anchor` or a `plane` without a positive `width` make the tour invalid, with the path of each problem (`scenes[2].hotspots[0].target.scene`).
+
+## Scenes in the world
+
+Scenes can share one space: where each panorama was taken and how it is turned. The [move transition](api.md#scenes-and-transitions) uses it to step from room to room the way a person walks — forward, with the floor passing under the camera, and still looking in the same direction.
+
+```json
+{
+  "defaults": { "cameraHeight": 1.5 },
+  "scenes": [
+    {
+      "id": "kitchen",
+      "source": { "type": "equirect", "url": "/panoramas/kitchen.jpg" },
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "heading": 0
+    },
+    {
+      "id": "bedroom",
+      "source": { "type": "equirect", "url": "/panoramas/bedroom.jpg" },
+      "position": { "x": 4, "y": 0, "z": 2 },
+      "heading": 90
+    }
+  ]
+}
+```
+
+| Field          | Type   | Meaning                                                                                                                                           |
+| -------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `position`     | object | `{ x, y, z }` — where the camera stood, in the units of your tour: X to the right, Y up, Z forward of the tour's world.                           |
+| `heading`      | number | Which way of the world the panorama's `yaw` 0 looks, in degrees, growing to the right like `yaw`. `90` turns the panorama a quarter to the right. |
+| `cameraHeight` | number | Height of the camera above the floor, in the same units. Usually the same for the whole tour, so put it in `defaults`.                            |
+
+Use any unit — metres are the natural choice — as long as all scenes use the same one. Positions of [hotspots](#hotspots) stay relative to the centre of their own scene, in the axes of that scene (already turned by its `heading`), so placing a scene in the world does not move its hotspots.
+
+A panorama has no depth, so when the camera steps away from the centre the viewer lays the image on a simple model of the room: a flat floor `cameraHeight` below the centre and a sphere around it. Marks on the floor then stay on the floor as the camera moves. Without `cameraHeight` the model is the sphere alone and the floor bulges during a step — set it for tours that use the move transition. While the camera stands in the centre, the model changes nothing.
+
+`validateTour` checks the place as strictly as the rest of the tour: `position` must be an object with finite `x`, `y` and `z`, `heading` a finite number, `cameraHeight` a number above 0 in the scene and in `defaults`.
 
 ## Coordinates
 

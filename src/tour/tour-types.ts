@@ -1,4 +1,5 @@
 import type { IHotspot } from '../hotspots/hotspot-types';
+import type { IDirection } from '../viewer/viewer-types';
 import type { EnumSourceType, TBoundsMode, TCubeFace, TFovMode } from './tour-dictionaries';
 
 /**
@@ -74,6 +75,12 @@ export interface IResolvedViewLimits {
   bounds: TBoundsMode | IBoundsRanges;
 }
 
+/**
+ * Сцена тура. Место в мире необязательно: `position` — центр панорамы в единицах тура, `heading` — угол в
+ * мире, куда смотрит её `yaw` 0 (градусы, растёт вправо), `cameraHeight` — высота камеры над полом. По ним
+ * переход «шаг» знает, куда идти и как довернуть следующую сцену; позиции хотспотов остаются относительно
+ * центра своей сцены.
+ */
 export interface IScene {
   id: string;
   title?: string;
@@ -82,11 +89,18 @@ export interface IScene {
   view?: IViewSettings;
   limits?: IViewLimits;
   hotspots?: IHotspot[];
+  position?: IDirection;
+  heading?: number;
+  cameraHeight?: number;
 }
 
+/**
+ * Умолчания тура: вид, ограничения и высота камеры — обычно она одна на весь тур.
+ */
 export interface ITourDefaults {
   view?: IViewSettings;
   limits?: IViewLimits;
+  cameraHeight?: number;
 }
 
 /**

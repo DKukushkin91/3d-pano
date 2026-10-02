@@ -1,5 +1,6 @@
 import type { ITourIssue } from './tour-types';
 import { validateHotspots } from './validate-hotspots';
+import { validateDefaultCameraHeight, validateScenePlace } from './validate-place';
 import { validateSource, validateTourTileSize } from './validate-source';
 import { validateLimits, validateView } from './validate-view';
 import {
@@ -43,6 +44,7 @@ const validateScene = (value: unknown, path: string, report: TReport, seenIds: S
 
   validateView(value.view, childPath(path, 'view'), report);
   validateLimits(value.limits, childPath(path, 'limits'), report);
+  validateScenePlace(value, path, report);
 };
 
 const validateScenes = (value: unknown, report: TReport): Set<string> => {
@@ -87,6 +89,7 @@ const validateDefaults = (value: unknown, report: TReport): void => {
 
   validateView(value.view, 'defaults.view', report);
   validateLimits(value.limits, 'defaults.limits', report);
+  validateDefaultCameraHeight(value.cameraHeight, 'defaults.cameraHeight', report);
 };
 
 /**

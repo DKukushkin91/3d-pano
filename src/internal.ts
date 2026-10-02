@@ -16,6 +16,7 @@ export * from './hotspots/hotspot-presence';
 export * from './tour/tour-defaults';
 export * from './tour/url-template';
 export * from './tour/tile-pyramid';
+export * from './tour/scene-place';
 export * from './tiles/tile-math';
 export * from './tiles/visible-tiles';
 export * from './tiles/tile-queue';
