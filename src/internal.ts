@@ -63,3 +63,5 @@ export * from './controls/handled-input';
 export * from './controls/inertia';
 export * from './controls/keyboard-motion';
 export * from './controls/zoom-gestures';
+export * from './surfaces/surface-frames';
+export * from './surfaces/surface-store';
