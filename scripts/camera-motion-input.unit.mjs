@@ -50,8 +50,8 @@ describe('camera-motion · Прерывание вводом пользоват�
 describe('camera-motion · Плавный поворот к цели (публичный тип)', () => {
   it('ядро экспортирует ILookAtOptions и TViewTarget, а у просмотрщика есть lookAt', async () => {
     const declarations = await readFile(new URL('../dist/index.d.ts', import.meta.url), 'utf8');
-    const viewerTypes = await Promise.all(
-      [...declarations.matchAll(/from "\.\/(viewer-types-[^"]+)\.js"/g)].map(([, chunk]) =>
+    const chunks = await Promise.all(
+      [...declarations.matchAll(/from "\.\/([^"]+)\.js"/g)].map(([, chunk]) =>
         readFile(new URL(`../dist/${chunk}.d.ts`, import.meta.url), 'utf8'),
       ),
     );
@@ -59,7 +59,7 @@ describe('camera-motion · Плавный поворот к цели (публи
     assert.match(declarations, /\bILookAtOptions\b/);
     assert.match(declarations, /\bTViewTarget\b/);
     assert.ok(
-      viewerTypes.some((source) => /lookAt: \(target: TViewTarget, options\?: ILookAtOptions\)/.test(source)),
+      chunks.some((source) => /lookAt: \(target: TViewTarget, options\?: ILookAtOptions\)/.test(source)),
     );
   });
 });
