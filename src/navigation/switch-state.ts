@@ -1,20 +1,28 @@
 import { EnumViewerStatus } from '../state/viewer-dictionaries';
 import type { IScene, ITour, IView } from '../tour/tour-types';
 import { type IDeferred, createDeferred } from './deferred';
-import type { INavigatorFrame, INavigatorSession, ISceneRecord, ISceneSessionState } from './navigator-types';
+import type {
+  INavigatorFrame,
+  INavigatorSession,
+  ISceneRecord,
+  ISceneSessionState,
+  ISceneTarget,
+} from './navigator-types';
 import { sceneKeyOf } from './scene-key';
 import type { IResolvedShowSceneOptions, IResolvedTransition } from './show-scene-options';
 import { isTransitionFinished, transitionWeight } from './transition-weight';
 
 /**
  * Принятая смена сцены. `promises` — промис вызова и забранных предзагрузок; `hasPrevious` — была ли на
- * экране готовая сцена в момент вызова (тогда новая ждёт полной загрузки и считается переходом).
+ * экране готовая сцена в момент вызова (тогда новая ждёт полной загрузки и считается переходом);
+ * `target` — кадр готовности, зафиксированный в момент вызова.
  */
 export interface ISceneSwitch<TSession extends INavigatorSession> {
   tour: ITour;
   scene: IScene;
   record: ISceneRecord<TSession>;
   options: IResolvedShowSceneOptions;
+  target: ISceneTarget;
   promises: IDeferred<boolean>[];
   hasPrevious: boolean;
   isFailed: boolean;
@@ -38,13 +46,11 @@ export interface IDisplayedScene<TSession extends INavigatorSession> {
 }
 
 /**
- * Сессия для новой смены: готовая из кэша, начатая предзагрузка (с её загрузкой и промисом хоста) или
- * новая.
+ * Сессия для новой смены: готовая из кэша, начатая предзагрузка (с промисом хоста) или новая.
  */
 export interface IAcquiredRecord<TSession extends INavigatorSession> {
   record: ISceneRecord<TSession>;
   promises: IDeferred<boolean>[];
-  loading: Promise<void> | null;
 }
 
 export const INITIAL_SESSION_STATE: Readonly<ISceneSessionState> = Object.freeze({

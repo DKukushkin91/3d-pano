@@ -1,6 +1,7 @@
 import { findStartScene, resolveSceneLimits } from '../tour/tour-defaults';
 import type { IScene, ITour } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
+import { EnumSceneView } from './navigation-dictionaries';
 import type { ISetTourOptions, IShowSceneOptions } from './navigation-types';
 import type {
   INavigatorFrame,
@@ -14,7 +15,7 @@ import { sceneKeyOf } from './scene-key';
 import { createScenePreloader } from './scene-preloader';
 import { createRecordFactory } from './scene-records';
 import { createSceneSwitcher } from './scene-switcher';
-import { resolveShowSceneOptions } from './show-scene-options';
+import { resolveSceneTarget, resolveShowSceneOptions } from './show-scene-options';
 import type { IAcquiredRecord } from './switch-state';
 
 /**
@@ -67,7 +68,7 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     const cached = cache.get(key);
 
     if (cached !== undefined) {
-      return { record: cached, promises: [], loading: null };
+      return { record: cached, promises: [] };
     }
 
     const adopted = preloader.adopt(key);
@@ -75,7 +76,6 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     return {
       record: adopted?.record ?? createRecord(scene, withPreview),
       promises: adopted === null ? [] : [adopted.deferred],
-      loading: adopted?.loading ?? null,
     };
   };
 
@@ -96,7 +96,7 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
       return Promise.resolve(false);
     }
 
-    if (scene === undefined) {
+    if (tour === null || scene === undefined) {
       return Promise.reject(unknownSceneError(sceneId));
     }
 
@@ -112,7 +112,15 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
       return following;
     }
 
-    return budgetMegabytes === 0 ? Promise.resolve(false) : preloader.preload(scene, key);
+    if (budgetMegabytes === 0) {
+      return Promise.resolve(false);
+    }
+
+    return preloader.preload(
+      scene,
+      key,
+      resolveSceneTarget(tour, scene, EnumSceneView.Scene, host.getView(), true),
+    );
   };
 
   const setTour = (nextTour: ITour, options?: ISetTourOptions): Promise<boolean> => {

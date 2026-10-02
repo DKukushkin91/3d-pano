@@ -138,18 +138,45 @@ export const neededTilesOf = (
   return sortedTiles(tiles);
 };
 
+const coveredLevel = (
+  sample: IFrameSample,
+  levels: readonly ITileLevel[],
+  isCovered: (address: ITileAddress) => boolean,
+): number => {
+  for (let index = sample.neededLevel; index >= 1; index -= 1) {
+    const level = levels[index];
+
+    if (level !== undefined) {
+      const { row, column } = tileAt(sample.point, level.tilesPerSide);
+
+      if (isCovered({ level: index, face: sample.face, row, column })) {
+        return index;
+      }
+    }
+  }
+
+  return 0;
+};
+
 /**
- * Тайлы кадра после готовности: в каждой точке все уровни от следующего за подложкой до нужного —
- * картинка становится чётче постепенно. Порядок — по уровню, затем от центра кадра.
+ * Тайлы кадра после готовности: в каждой точке уровни от самого подробного, уже лежащего в пуле
+ * (`isCovered`), до нужного — картинка становится чётче постепенно, а грубые уровни там, где есть подробный,
+ * не просятся. Лежащий тайл остаётся в списке: кадр его рисует, и пул не должен его вытеснить. Порядок — по
+ * уровню, затем от центра кадра.
  */
 export const progressiveTilesOf = (
   samples: readonly IFrameSample[],
   levels: readonly ITileLevel[],
+  isCovered: (address: ITileAddress) => boolean = () => false,
 ): IVisibleTile[] => {
   const tiles = new Map<string, IVisibleTile>();
 
   for (const sample of samples) {
-    for (let index = 1; index <= sample.neededLevel; index += 1) {
+    for (
+      let index = Math.max(1, coveredLevel(sample, levels, isCovered));
+      index <= sample.neededLevel;
+      index += 1
+    ) {
       const level = levels[index];
 
       if (level !== undefined) {

@@ -44,7 +44,7 @@ viewer.on('sceneReady', ({ sceneId }) => {
 });
 ```
 
-The container needs a size. A scene can also be six cube faces: `{ type: 'cube', url: '/tiles/room/{face}.jpg' }`.
+The container needs a size. A scene can also be six cube faces: `{ type: 'cube', url: '/tiles/room/{face}.jpg' }`, or a multiresolution cube that loads only the tiles in view at the detail the screen needs: `{ type: 'cube', url: '/tiles/room/{level}/{face}/{row}_{col}.jpg', tileSize: 512, levels: [512, 1024, 2048, 4096] }`, see [Multiresolution cube](docs/tour.md#multiresolution-cube).
 
 ## Scenes
 

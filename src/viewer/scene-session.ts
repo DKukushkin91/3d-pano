@@ -5,6 +5,7 @@ import { type IPanoramaLayer, createPanoramaLayer } from '../render/panorama-lay
 import { PanoLoadError, createPanoError } from '../resources/load-errors';
 import { EnumImageRole, createSceneLoader } from '../resources/scene-loader';
 import { EnumErrorCode, EnumViewerStatus, type TViewerStatus } from '../state/viewer-dictionaries';
+import type { ITileFrame } from '../tiles/visible-tiles';
 import type { IScene } from '../tour/tour-types';
 
 /**
@@ -22,9 +23,12 @@ export interface ISceneSessionOptions {
 /**
  * Сцена в работе: её загрузчик и слои в видеопамяти. `load()` догружает недостающее и разрешается, когда
  * основное изображение целиком в текстурах; повторный вызов после ошибки — это `viewer.retry()`.
+ * `prepareFrame` вызывается перед отрисовкой кадра, в котором сцена на экране: тайловая сцена выбирает и
+ * запрашивает тайлы и ведёт проявление; `true` — нужны ещё кадры.
  */
 export interface ISceneSession extends INavigatorSession {
   drawings: () => TLayerDrawing[];
+  prepareFrame: (frame: ITileFrame, timeMs: number) => boolean;
 }
 
 const statusOf = (previewLayer: IPanoramaLayer | null, mainLayer: IPanoramaLayer): TViewerStatus => {
@@ -46,7 +50,8 @@ const densityOf = (previewLayer: IPanoramaLayer | null, mainLayer: IPanoramaLaye
 /**
  * Сессия сцены. Статус: `ready`, когда основное изображение целиком в текстурах, `preview`, когда целиком
  * загружено превью. Плотность для ограничения зума берётся по самому подробному слою, который виден
- * целиком: основной источник, а пока он грузится — превью.
+ * целиком: основной источник, а пока он грузится — превью. Вызов `load()` во время загрузки возвращает её
+ * же промис: смена, забравшая предзагрузку, не запрашивает изображения повторно.
  */
 export const createSceneSession = (options: ISceneSessionOptions): ISceneSession => {
   const { gl, maxTextureSize } = options.glContext;
@@ -97,7 +102,7 @@ export const createSceneSession = (options: ISceneSessionOptions): ISceneSession
     },
   });
 
-  const load = async (): Promise<void> => {
+  const loadMissing = async (): Promise<void> => {
     uploadFailure = null;
 
     try {
@@ -111,8 +116,20 @@ export const createSceneSession = (options: ISceneSessionOptions): ISceneSession
     }
   };
 
+  let loading: Promise<void> | null = null;
+
+  const load = (): Promise<void> => {
+    loading ??= loadMissing().finally(() => {
+      loading = null;
+    });
+
+    return loading;
+  };
+
   return {
     load,
+    isReadyFor: () => mainLayer.isComplete(),
+    prepareFrame: () => false,
     drawings: () => {
       const mainDrawing = mainLayer.drawing();
       const previewDrawing = mainLayer.isComplete() ? null : previewLayer?.drawing();

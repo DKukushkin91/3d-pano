@@ -1,6 +1,6 @@
 import { EnumEasing, type TEasingFunction, resolveEasing } from '../math/easing';
-import { LIBRARY_DEFAULT_VIEW } from '../tour/tour-defaults';
-import type { IView, IViewSettings } from '../tour/tour-types';
+import { LIBRARY_DEFAULT_VIEW, resolveSceneLimits, resolveSceneView } from '../tour/tour-defaults';
+import type { IScene, ITour, IView, IViewSettings } from '../tour/tour-types';
 import { applyViewSettings } from '../viewer/camera-state';
 import {
   EnumSceneView,
@@ -9,6 +9,7 @@ import {
   type TTransitionType,
 } from './navigation-dictionaries';
 import type { IShowSceneOptions, TSceneTransition } from './navigation-types';
+import type { ISceneTarget } from './navigator-types';
 
 /**
  * Переход с подставленными умолчаниями. Мгновенная смена — это переход длительностью 0.
@@ -131,3 +132,19 @@ export const resolveViewAfterSwitch = (
 
   return applyViewSettings(sceneStartView, view);
 };
+
+/**
+ * Кадр готовности сцены по правилам `view` у `showScene`: вид считается в момент вызова и дальше не
+ * меняется, даже если пользователь повернётся во время загрузки.
+ */
+export const resolveSceneTarget = (
+  tour: ITour,
+  scene: IScene,
+  view: TSceneView | IViewSettings,
+  currentView: IView,
+  isPreload: boolean,
+): ISceneTarget => ({
+  view: resolveViewAfterSwitch(view, currentView, resolveSceneView(tour, scene)),
+  limits: resolveSceneLimits(tour, scene),
+  isPreload,
+});

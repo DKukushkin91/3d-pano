@@ -25,6 +25,8 @@ export type TResolvedControlsOptions = Required<IControlsOptions>;
 
 /**
  * Опции `createPanoViewer`. `label` обязателен: без доступного имени просмотрщик недоступен скринридерам.
+ * `tileCacheMegabytes` — бюджет общего пула тайлов (по умолчанию 128, `0` — только подложки), `tileFadeMs` —
+ * проявление тайла поверх уровня грубее (по умолчанию 200, `0` — сразу).
  */
 export interface IPanoViewerOptions {
   tour: ITour;
@@ -35,6 +37,8 @@ export interface IPanoViewerOptions {
   maxPixelRatio?: number;
   renderScale?: number;
   sceneCacheMegabytes?: number;
+  tileCacheMegabytes?: number;
+  tileFadeMs?: number;
   renderHotspot?: TRenderHotspot;
 }
 

@@ -45,6 +45,8 @@ describe('viewer-lifecycle · Проверка опций', () => {
       maxPixelRatio: 2,
       renderScale: 1,
       sceneCacheMegabytes: 256,
+      tileCacheMegabytes: 128,
+      tileFadeMs: 200,
       renderHotspot: null,
     });
   });

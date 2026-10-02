@@ -5,6 +5,7 @@ import type { ISceneNavigator } from '../navigation/scene-navigator';
 import { createGlContext, releaseGlContext } from '../render/gl-context';
 import { createRenderLoop } from '../render/render-loop';
 import { createPanoError } from '../resources/load-errors';
+import { loadImage } from '../resources/load-image';
 import { createEventEmitter } from '../state/event-emitter';
 import { createSnapshotStore } from '../state/snapshot-store';
 import { EnumErrorCode, EnumViewerStatus } from '../state/viewer-dictionaries';
@@ -22,7 +23,8 @@ import { createCameraMotion } from './camera-motion';
 import { createCameraState } from './camera-state';
 import { resolveLookAtRequest } from './look-at-options';
 import type { ISceneSession } from './scene-session';
-import { createViewerGraphics } from './viewer-graphics';
+import { createTileService } from './tile-service';
+import { type IPixelDensity, createViewerGraphics } from './viewer-graphics';
 import { createViewerHotspots } from './viewer-hotspots';
 import { createViewerNavigator } from './viewer-navigation';
 import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
@@ -70,9 +72,29 @@ export const createViewer = (
     readElementSize(elements.root),
   );
   const glContext = createGlContext(elements.canvas, debug.maxTextureSize ?? null);
-  const graphics = glContext === null ? null : createViewerGraphics(glContext, elements.canvas);
+  const tiles =
+    glContext === null
+      ? null
+      : createTileService({
+          gl: glContext.gl,
+          loadImage: (url, signal) =>
+            loadImage(url, { loader: resolvedOptions.loader, retry: resolvedOptions.retry, signal }),
+          requestFrame: () => {
+            loop.requestRender();
+          },
+          budgetMegabytes: resolvedOptions.tileCacheMegabytes,
+          fadeMs: resolvedOptions.tileFadeMs,
+        });
+  const graphics =
+    glContext === null || tiles === null ? null : createViewerGraphics(glContext, elements.canvas, tiles);
   let navigator: ISceneNavigator<ISceneSession> | null = null;
   let isDestroyed = false;
+
+  const pixelDensity = (): IPixelDensity => ({
+    devicePixelRatio: container.ownerDocument.defaultView?.devicePixelRatio ?? 1,
+    maxPixelRatio: resolvedOptions.maxPixelRatio,
+    renderScale: resolvedOptions.renderScale,
+  });
 
   const renderFrame = (timeMs: number): boolean => {
     const isInputMoving = input.step(timeMs);
@@ -86,15 +108,10 @@ export const createViewer = (
 
     hotspots.layout(changedView !== null);
 
-    if (graphics !== null && frame !== null) {
-      graphics.draw(frame, camera, {
-        devicePixelRatio: container.ownerDocument.defaultView?.devicePixelRatio ?? 1,
-        maxPixelRatio: resolvedOptions.maxPixelRatio,
-        renderScale: resolvedOptions.renderScale,
-      });
-    }
+    const isFading =
+      graphics !== null && frame !== null && graphics.draw(frame, camera, pixelDensity(), timeMs);
 
-    return isInputMoving || isCameraMoving || frame?.isAnimating === true;
+    return isInputMoving || isCameraMoving || isFading || frame?.isAnimating === true;
   };
 
   const loop = createRenderLoop(renderFrame);
@@ -149,7 +166,9 @@ export const createViewer = (
 
   navigator = createViewerNavigator({
     glContext,
+    tiles,
     camera,
+    pixelDensity,
     handleSceneChange: (keepMotion) => {
       input.handleSceneChange(keepMotion);
       motion.handleSceneChange(keepMotion);
@@ -195,6 +214,7 @@ export const createViewer = (
     motion.dispose();
     input.dispose();
     navigator?.destroy();
+    tiles?.dispose();
     loop.dispose();
     stopObservingSize();
     graphics?.dispose();
@@ -239,10 +259,15 @@ export const createViewer = (
         return;
       }
 
+      if (nextResolvedOptions.tileCacheMegabytes !== resolvedOptions.tileCacheMegabytes) {
+        tiles?.setBudget(nextResolvedOptions.tileCacheMegabytes);
+      }
+
       resolvedOptions = nextResolvedOptions;
       elements.setLabel(resolvedOptions.label);
       input.update(resolvedOptions.controls);
       navigator?.setCacheBudget(resolvedOptions.sceneCacheMegabytes);
+      tiles?.setFadeMs(resolvedOptions.tileFadeMs);
       hotspots.setRenderer(resolvedOptions.renderHotspot);
       loop.requestRender();
     },

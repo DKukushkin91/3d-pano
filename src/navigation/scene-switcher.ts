@@ -13,7 +13,7 @@ import type {
 import { sceneKeyOf } from './scene-key';
 import { toSceneLoadError } from './scene-preloader';
 import { type ISwitcherState, createScenePresentation } from './scene-presentation';
-import type { IResolvedShowSceneOptions } from './show-scene-options';
+import { type IResolvedShowSceneOptions, resolveSceneTarget } from './show-scene-options';
 import {
   type IAcquiredRecord,
   type ISceneSwitch,
@@ -161,16 +161,16 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
     );
   };
 
-  const startSwitch = (sceneSwitch: ISceneSwitch<TSession>, loading: Promise<void> | null): void => {
+  const startSwitch = (sceneSwitch: ISceneSwitch<TSession>, isReady: boolean): void => {
     if (!sceneSwitch.hasPrevious) {
       presentCamera(sceneSwitch);
       syncState();
     }
 
-    if (sceneSwitch.record.isComplete) {
+    if (isReady) {
       completeSwitch(sceneSwitch);
     } else {
-      watchLoading(sceneSwitch, loading ?? sceneSwitch.record.session.load());
+      watchLoading(sceneSwitch, sceneSwitch.record.session.load(sceneSwitch.target));
     }
   };
 
@@ -186,15 +186,17 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
       scene,
       record: acquired.record,
       options,
+      target: resolveSceneTarget(tour, scene, options.view, host.getView(), false),
       promises: [deferred, ...acquired.promises],
       hasPrevious,
       isFailed: false,
     };
+    const isReady = acquired.record.isComplete && acquired.record.session.isReadyFor(sceneSwitch.target);
 
     state.pending = sceneSwitch;
     publishScene(scene.id, {
       status: EnumViewerStatus.Loading,
-      loadProgress: sceneSwitch.record.isComplete ? 1 : sceneSwitch.record.state.loadProgress,
+      loadProgress: isReady ? 1 : sceneSwitch.record.state.loadProgress,
       error: null,
     });
 
@@ -203,7 +205,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
     }
 
     if (sceneSwitch === state.pending) {
-      startSwitch(sceneSwitch, acquired.loading);
+      startSwitch(sceneSwitch, isReady);
     }
 
     return deferred.promise;
@@ -217,7 +219,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
       return Promise.resolve();
     }
 
-    const loading = failed.record.session.load();
+    const loading = failed.record.session.load(failed.target);
 
     failed.isFailed = false;
     syncState({ status: failed.record.state.status, error: null });

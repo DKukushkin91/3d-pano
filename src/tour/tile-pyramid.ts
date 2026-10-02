@@ -1,3 +1,4 @@
+import { pixelsPerRadianForCube } from '../view/view-limits';
 import { CUBE_FACES } from './tour-dictionaries';
 import type { ICubeSource } from './tour-types';
 import { FACE_PLACEHOLDER } from './url-template';
@@ -67,3 +68,10 @@ export const tileUrlOf = (source: TTiledCubeSource, address: ITileAddress): stri
     .replaceAll(ROW_PLACEHOLDER, String(address.row))
     .replaceAll(COLUMN_PLACEHOLDER, String(address.column));
 };
+
+/**
+ * Плотность тайлового куба для `maxPixelZoom` — по самому подробному уровню из описания: приблизиться можно
+ * сразу до его предела, а тайлы догрузятся по ходу приближения.
+ */
+export const tiledCubeDensity = (source: TTiledCubeSource): number =>
+  pixelsPerRadianForCube(source.levels.at(-1) ?? source.tileSize);

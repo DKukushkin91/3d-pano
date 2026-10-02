@@ -1,21 +1,20 @@
 import { PanoLoadError, toPanoError } from '../resources/load-errors';
 import type { IScene } from '../tour/tour-types';
 import { type IDeferred, createDeferred } from './deferred';
-import type { INavigatorSession, ISceneRecord } from './navigator-types';
+import type { INavigatorSession, ISceneRecord, ISceneTarget } from './navigator-types';
 import { createPreloadQueue } from './preload-queue';
 
 /**
- * Предзагрузка, которую забрала смена сцены: начатая сессия (или `null`, если очередь до неё не дошла),
- * её загрузка и промис хоста, который теперь завершает смена.
+ * Предзагрузка, которую забрала смена сцены: начатая сессия (или `null`, если очередь до неё не дошла) и
+ * промис хоста, который теперь завершает смена. Повторный `load` начатой сессии загрузку не перезапускает.
  */
 export interface IAdoptedPreload<TSession extends INavigatorSession> {
   record: ISceneRecord<TSession> | null;
-  loading: Promise<void> | null;
   deferred: IDeferred<boolean>;
 }
 
 export interface IScenePreloader<TSession extends INavigatorSession> {
-  preload: (scene: IScene, key: string) => Promise<boolean>;
+  preload: (scene: IScene, key: string, target: ISceneTarget) => Promise<boolean>;
   adopt: (key: string) => IAdoptedPreload<TSession> | null;
   setPaused: (isPaused: boolean) => void;
   dropMissing: (keys: ReadonlySet<string>) => void;
@@ -30,9 +29,9 @@ export interface IScenePreloaderOptions<TSession extends INavigatorSession> {
 interface IPreloadJob<TSession extends INavigatorSession> {
   key: string;
   scene: IScene;
+  target: ISceneTarget;
   deferred: IDeferred<boolean>;
   record: ISceneRecord<TSession> | null;
-  loading: Promise<void> | null;
   isReleased: boolean;
 }
 
@@ -78,11 +77,9 @@ export const createScenePreloader = <TSession extends INavigatorSession>(
 
   const startJob = (job: IPreloadJob<TSession>): void => {
     const record = options.createRecord(job.scene);
-    const loading = record.session.load();
 
     job.record = record;
-    job.loading = loading;
-    loading.then(
+    record.session.load(job.target).then(
       () => {
         handleJobLoaded(job, record);
       },
@@ -101,7 +98,7 @@ export const createScenePreloader = <TSession extends INavigatorSession>(
   };
 
   return {
-    preload: (scene, key) => {
+    preload: (scene, key, target) => {
       const existing = queue.find(key);
 
       if (existing !== undefined) {
@@ -111,9 +108,9 @@ export const createScenePreloader = <TSession extends INavigatorSession>(
       const job: IPreloadJob<TSession> = {
         key,
         scene,
+        target,
         deferred: createDeferred<boolean>(),
         record: null,
-        loading: null,
         isReleased: false,
       };
 
@@ -130,7 +127,7 @@ export const createScenePreloader = <TSession extends INavigatorSession>(
 
       job.isReleased = true;
 
-      return { record: job.record, loading: job.loading, deferred: job.deferred };
+      return { record: job.record, deferred: job.deferred };
     },
     setPaused: queue.setPaused,
     dropMissing: (keys) => {

@@ -172,6 +172,14 @@ describe('multiresolution · Видимые тайлы и порядок заг�
     assert.deepEqual([...new Set(levels)], [1, 2, 3]);
   });
 
+  it('там, где нужный уровень уже лежит в пуле, грубые уровни не просятся, а лежащий тайл остаётся в кадре', () => {
+    const samples = samplesOf(frameOf({ fov: 30 }));
+    const tiles = progressiveTilesOf(samples, LEVELS, (address) => address.level === 3);
+
+    assert.ok(tiles.length > 0);
+    assert.ok(tiles.every((tile) => tile.level === 3));
+  });
+
   it('пустой буфер — пустая выборка', () => {
     assert.deepEqual(samplesOf(frameOf({ buffer: { width: 0, height: 0 } })), []);
   });

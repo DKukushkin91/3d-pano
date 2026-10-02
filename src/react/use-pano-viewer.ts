@@ -45,6 +45,8 @@ const updatableOptions = (options: IPanoViewerOptions): TPanoViewerUpdate => ({
   maxPixelRatio: options.maxPixelRatio,
   renderScale: options.renderScale,
   sceneCacheMegabytes: options.sceneCacheMegabytes,
+  tileCacheMegabytes: options.tileCacheMegabytes,
+  tileFadeMs: options.tileFadeMs,
   renderHotspot: options.renderHotspot,
 });
 

@@ -15,6 +15,8 @@ export interface IResolvedViewerOptions {
   maxPixelRatio: number;
   renderScale: number;
   sceneCacheMegabytes: number;
+  tileCacheMegabytes: number;
+  tileFadeMs: number;
   renderHotspot: TRenderHotspot | null;
 }
 
@@ -33,6 +35,8 @@ export const DEFAULT_CONTROLS_OPTIONS: Readonly<TResolvedControlsOptions> = {
 export const DEFAULT_MAX_PIXEL_RATIO = 2;
 export const DEFAULT_RENDER_SCALE = 1;
 export const DEFAULT_SCENE_CACHE_MEGABYTES = 256;
+export const DEFAULT_TILE_CACHE_MEGABYTES = 128;
+export const DEFAULT_TILE_FADE_MS = 200;
 
 const failRange = (name: string, requirement: string, value: unknown): never => {
   throw new RangeError(`3d-pano: option "${name}" must be ${requirement}, got ${String(value)}`);
@@ -137,6 +141,12 @@ export const resolveViewerOptions = (
     sceneCacheMegabytes: has('sceneCacheMegabytes')
       ? nonNegativeNumber('sceneCacheMegabytes', next.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES)
       : (current?.sceneCacheMegabytes ?? DEFAULT_SCENE_CACHE_MEGABYTES),
+    tileCacheMegabytes: has('tileCacheMegabytes')
+      ? nonNegativeNumber('tileCacheMegabytes', next.tileCacheMegabytes ?? DEFAULT_TILE_CACHE_MEGABYTES)
+      : (current?.tileCacheMegabytes ?? DEFAULT_TILE_CACHE_MEGABYTES),
+    tileFadeMs: has('tileFadeMs')
+      ? nonNegativeNumber('tileFadeMs', next.tileFadeMs ?? DEFAULT_TILE_FADE_MS)
+      : (current?.tileFadeMs ?? DEFAULT_TILE_FADE_MS),
     renderHotspot: has('renderHotspot')
       ? resolveRenderHotspot(next.renderHotspot)
       : (current?.renderHotspot ?? null),
@@ -149,6 +159,8 @@ const comparableValues = (options: IResolvedViewerOptions): readonly unknown[] =
   options.maxPixelRatio,
   options.renderScale,
   options.sceneCacheMegabytes,
+  options.tileCacheMegabytes,
+  options.tileFadeMs,
   options.renderHotspot,
   options.retry.attempts,
   options.retry.delayMs,

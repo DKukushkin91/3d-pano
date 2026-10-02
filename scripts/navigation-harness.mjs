@@ -35,19 +35,42 @@ export const networkFailure = (url) =>
 export const notFound = (url) =>
   new PanoLoadError(createPanoError(EnumErrorCode.HttpStatus, { message: 'http', url, httpStatus: 404 }));
 
+/**
+ * Поддельная сессия ведёт себя как настоящая: вызов `load` во время загрузки возвращает тот же промис.
+ * `targets` — кадры готовности всех вызовов; `readyFor` подменяется тестом тайловой сцены.
+ */
 const createFakeSession = (scene, withPreview, onChange) => {
   const session = {
     scene,
     withPreview,
     loads: 0,
+    targets: [],
     isDisposed: false,
     settleLoad: null,
-    load: () => {
-      session.loads += 1;
+    pendingLoad: null,
+    readyFor: () => true,
+    isReadyFor: (target) => session.readyFor(target),
+    load: (target) => {
+      session.targets.push(target);
 
-      return new Promise((resolve, reject) => {
+      if (session.pendingLoad !== null) {
+        return session.pendingLoad;
+      }
+
+      session.loads += 1;
+      session.pendingLoad = new Promise((resolve, reject) => {
         session.settleLoad = { resolve, reject };
       });
+      session.pendingLoad.then(
+        () => {
+          session.pendingLoad = null;
+        },
+        () => {
+          session.pendingLoad = null;
+        },
+      );
+
+      return session.pendingLoad;
     },
     byteSize: () => SCENE_BYTES,
     dispose: () => {

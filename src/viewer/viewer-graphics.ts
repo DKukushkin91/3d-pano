@@ -3,8 +3,10 @@ import type { INavigatorFrame } from '../navigation/navigator-types';
 import { type IFrameComposer, type IPreviousSceneFrame, createFrameComposer } from '../render/frame-composer';
 import type { IGlContext } from '../render/gl-context';
 import { type IRenderer, createRenderer } from '../render/renderer';
+import type { ITileFrame } from '../tiles/visible-tiles';
 import type { ICameraState } from './camera-state';
 import type { ISceneSession } from './scene-session';
+import type { ITileService } from './tile-service';
 
 /**
  * Плотность буфера кадра: `devicePixelRatio` окна и опции просмотрщика.
@@ -15,8 +17,16 @@ export interface IPixelDensity {
   renderScale: number;
 }
 
+/**
+ * `draw` возвращает `true`, когда сценам нужны ещё кадры: идёт проявление тайлов.
+ */
 export interface IViewerGraphics {
-  draw: (frame: INavigatorFrame<ISceneSession>, camera: ICameraState, density: IPixelDensity) => void;
+  draw: (
+    frame: INavigatorFrame<ISceneSession>,
+    camera: ICameraState,
+    density: IPixelDensity,
+    timeMs: number,
+  ) => boolean;
   dispose: () => void;
 }
 
@@ -35,20 +45,39 @@ const previousSceneOf = (
   };
 };
 
+const prepareScenes = (
+  frame: INavigatorFrame<ISceneSession>,
+  camera: ICameraState,
+  tileFrame: ITileFrame,
+  timeMs: number,
+): boolean => {
+  const isCurrentAnimating = frame.current?.prepareFrame(tileFrame, timeMs) ?? false;
+  const previousCamera = frame.previousView === null ? null : camera.frameCameraOf(frame.previousView);
+  const previousFrame = previousCamera === null ? tileFrame : { ...previousCamera, buffer: tileFrame.buffer };
+  const isPreviousAnimating = frame.previous?.prepareFrame(previousFrame, timeMs) ?? false;
+
+  return isCurrentAnimating || isPreviousAnimating;
+};
+
 /**
- * Отрисовка кадра просмотрщика: размер буфера по контейнеру и плотности, затем текущая сцена — прямо в
- * canvas или, во время смешивания, через текстуры кадра вместе с предыдущей.
+ * Отрисовка кадра просмотрщика: размер буфера по контейнеру и плотности, подготовка тайлов сцен на экране
+ * (текущая первой забирает место в пуле, предыдущая при смешивании — со своей замершей или живой камерой),
+ * затем текущая сцена — прямо в canvas или, во время смешивания, через текстуры кадра вместе с предыдущей.
  */
-export const createViewerGraphics = (glContext: IGlContext, canvas: HTMLCanvasElement): IViewerGraphics => {
+export const createViewerGraphics = (
+  glContext: IGlContext,
+  canvas: HTMLCanvasElement,
+  tiles: ITileService,
+): IViewerGraphics => {
   const renderer: IRenderer = createRenderer(glContext);
   const composer: IFrameComposer = createFrameComposer(glContext.gl, renderer);
 
   return {
-    draw: (frame, camera, density) => {
+    draw: (frame, camera, density, timeMs) => {
       const frameCamera = camera.frameCamera();
 
       if (frameCamera === null) {
-        return;
+        return false;
       }
 
       const viewport = camera.getViewport();
@@ -63,6 +92,11 @@ export const createViewerGraphics = (glContext: IGlContext, canvas: HTMLCanvasEl
         canvas.height = bufferSize.height;
       }
 
+      tiles.startFrame();
+
+      const isAnimating = prepareScenes(frame, camera, { ...frameCamera, buffer: bufferSize }, timeMs);
+
+      tiles.finishFrame();
       composer.draw({
         camera: frameCamera,
         current: frame.current?.drawings() ?? [],
@@ -71,6 +105,8 @@ export const createViewerGraphics = (glContext: IGlContext, canvas: HTMLCanvasEl
         bufferWidth: bufferSize.width,
         bufferHeight: bufferSize.height,
       });
+
+      return isAnimating;
     },
     dispose: () => {
       composer.dispose();
