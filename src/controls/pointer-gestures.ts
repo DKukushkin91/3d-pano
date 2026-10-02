@@ -1,4 +1,5 @@
 import { type IDragStart, type IScreenPosition, dragView } from './drag-gesture';
+import { isHandledPointerDown, isHandledWheel } from './handled-input';
 import {
   type IMotionSample,
   INERTIA_SAMPLE_WINDOW_MS,
@@ -20,12 +21,11 @@ export interface IPointerGestures {
   handleWheel: (event: WheelEvent) => void;
   stepInertia: (elapsedSeconds: number) => boolean;
   stopInertia: () => void;
+  inertiaYawVelocity: () => number;
   reanchor: () => void;
   activePointerCount: () => number;
   isDragging: () => boolean;
 }
-
-const PRIMARY_MOUSE_BUTTON = 0;
 
 interface IPinchStart {
   distance: number;
@@ -40,6 +40,7 @@ export const createPointerGestures = ({
   target,
   controls,
   onInteractionChange,
+  onUserInput,
 }: IInputContext): IPointerGestures => {
   const pointers = new Map<number, IScreenPosition>();
   let drag: (IDragStart & { pointerId: number }) | null = null;
@@ -70,20 +71,24 @@ export const createPointerGestures = ({
   };
 
   const handlePointerDown = (event: PointerEvent): void => {
-    const { drag: isDragEnabled, pinch: isPinchEnabled } = controls();
-    const isSecondaryMouseButton = event.pointerType === 'mouse' && event.button !== PRIMARY_MOUSE_BUTTON;
+    const facts = {
+      isOnPanorama: isGestureTarget(event.target),
+      pointerType: event.pointerType,
+      button: event.button,
+    };
 
-    if (!isGestureTarget(event.target) || isSecondaryMouseButton || (!isDragEnabled && !isPinchEnabled)) {
+    if (!isHandledPointerDown(facts, controls())) {
       return;
     }
 
+    onUserInput();
     velocity = ZERO_VELOCITY;
     pointers.set(event.pointerId, localPosition(event));
     target.root.setPointerCapture(event.pointerId);
 
     if (pointers.size === 1) {
       startDrag(event.pointerId, localPosition(event));
-    } else if (pointers.size === 2 && isPinchEnabled) {
+    } else if (pointers.size === 2 && controls().pinch) {
       drag = null;
       pinch = { distance: pointerDistance(), fov: target.getView().fov };
     }
@@ -156,12 +161,13 @@ export const createPointerGestures = ({
   };
 
   const handleWheel = (event: WheelEvent): void => {
-    const { wheel: isWheelEnabled, wheelSpeed } = controls();
+    const { wheelSpeed } = controls();
 
-    if (!isWheelEnabled || !isGestureTarget(event.target)) {
+    if (!isHandledWheel(isGestureTarget(event.target), controls())) {
       return;
     }
 
+    onUserInput();
     event.preventDefault();
     target.setView({
       fov: wheelFov(target.getView().fov, wheelDeltaPixels(event.deltaY, event.deltaMode), wheelSpeed),
@@ -206,6 +212,7 @@ export const createPointerGestures = ({
     stopInertia: () => {
       velocity = ZERO_VELOCITY;
     },
+    inertiaYawVelocity: () => velocity.yaw,
     reanchor,
     activePointerCount: () => pointers.size,
     isDragging: () => drag !== null,

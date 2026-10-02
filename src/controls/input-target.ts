@@ -16,10 +16,13 @@ export interface IInputTarget {
 }
 
 /**
- * Общие зависимости частей ввода: цель, текущие опции управления и уведомление о смене взаимодействия.
+ * Общие зависимости частей ввода: цель, текущие опции управления, уведомление о смене взаимодействия и
+ * сигнал «пользователь начал управлять камерой» — нажатие, колесо или клавиша, которые просмотрщик
+ * обрабатывает.
  */
 export interface IInputContext {
   target: IInputTarget;
   controls: () => TResolvedControlsOptions;
   onInteractionChange: () => void;
+  onUserInput: () => void;
 }

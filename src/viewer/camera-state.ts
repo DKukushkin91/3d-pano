@@ -8,7 +8,7 @@ import type { IFrameCamera } from '../render/renderer';
 import { EnumFovMode, type TFovMode } from '../tour/tour-dictionaries';
 import type { IResolvedViewLimits, IView, IViewSettings, TAngleRange } from '../tour/tour-types';
 import { constrainView } from '../view/view-limits';
-import type { IDirection, IProjectedPoint, ISpherePoint } from './viewer-types';
+import type { IProjectedPoint, ISpherePoint, TViewTarget } from './viewer-types';
 
 /**
  * Камера просмотрщика: вид в градусах, ограничения сцены, CSS-размер кадра и плотность загруженного
@@ -27,17 +27,16 @@ export interface ICameraState {
   setSourceDensity: (pixelsPerRadian: number | null) => void;
   frameCamera: () => IFrameCamera | null;
   frameCameraOf: (view: IView) => IFrameCamera | null;
-  project: (point: ISpherePoint | IDirection) => IProjectedPoint | null;
+  project: (point: TViewTarget) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
   takeViewChange: () => IView | null;
 }
 
 const MIN_VIEWPORT_SIZE = 1;
 
-const isSpherePoint = (point: ISpherePoint | IDirection): point is ISpherePoint =>
-  'yaw' in point && 'pitch' in point;
+const isSpherePoint = (point: TViewTarget): point is ISpherePoint => 'yaw' in point && 'pitch' in point;
 
-const directionOf = (point: ISpherePoint | IDirection): IVector3 =>
+const directionOf = (point: TViewTarget): IVector3 =>
   isSpherePoint(point) ? directionFromAngles(toRadians(point.yaw), toRadians(point.pitch)) : point;
 
 const hasArea = (size: ICssSize): boolean => size.width > 0 && size.height > 0;
@@ -124,7 +123,7 @@ export const createCameraState = (
 
   const currentCamera = (): IFrameCamera => cameraOf(view);
 
-  const project = (point: ISpherePoint | IDirection): IProjectedPoint | null => {
+  const project = (point: TViewTarget): IProjectedPoint | null => {
     if (!hasArea(viewport)) {
       return null;
     }

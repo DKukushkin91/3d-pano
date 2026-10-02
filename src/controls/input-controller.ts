@@ -9,13 +9,27 @@ import { touchActionFor } from './touch-action';
  * Ввод просмотрщика. `step` вызывается из кадра отрисовки и двигает камеру по инерции и клавиатуре;
  * возвращает `true`, пока движение продолжается и нужен следующий кадр. `handleSceneChange` вызывается в
  * момент появления новой сцены: без `keepMotion` гасит инерцию, а идущее перетаскивание и щипок
- * продолжаются от нового вида — это ввод пользователя, а не движение камеры.
+ * продолжаются от нового вида — это ввод пользователя, а не движение камеры. `isInteracting` — держит ли
+ * пользователь указатель или клавишу; `stopInertia` гасит инерцию и затухание клавиатуры после отпускания,
+ * а `inertiaYawVelocity` — их скорость по `yaw` в градусах в секунду.
  */
 export interface IInputController {
   update: (controls: TResolvedControlsOptions) => void;
   step: (timeMs: number) => boolean;
   handleSceneChange: (keepMotion: boolean) => void;
+  isInteracting: () => boolean;
+  inertiaYawVelocity: () => number;
+  stopInertia: () => void;
   dispose: () => void;
+}
+
+/**
+ * Что ввод сообщает просмотрщику: смену флага взаимодействия и начало ввода, который просмотрщик
+ * обрабатывает (по нему прерывается плавный поворот).
+ */
+export interface IInputEvents {
+  onInteractionChange: (isInteracting: boolean) => void;
+  onUserInput: () => void;
 }
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -30,7 +44,7 @@ const FIRST_FRAME_SECONDS = 1 / 60;
 export const createInputController = (
   target: IInputTarget,
   initialControls: TResolvedControlsOptions,
-  onInteractionChange: (isInteracting: boolean) => void,
+  events: IInputEvents,
 ): IInputController => {
   const { root } = target;
   let controls = initialControls;
@@ -50,14 +64,18 @@ export const createInputController = (
     onInteractionChange: () => {
       refreshInteraction();
     },
+    onUserInput: events.onUserInput,
   };
   const pointerGestures = createPointerGestures(context);
   const keyboardInput = createKeyboardInput(context);
 
+  const isInteracting = (): boolean =>
+    pointerGestures.activePointerCount() > 0 || keyboardInput.pressedCount() > 0;
+
   const refreshInteraction = (): void => {
     const activePointers = pointerGestures.activePointerCount();
 
-    onInteractionChange(activePointers > 0 || keyboardInput.pressedCount() > 0);
+    events.onInteractionChange(isInteracting());
     root.style.userSelect = activePointers > 0 ? 'none' : '';
     root.style.cursor = cursorFor(pointerGestures.isDragging());
   };
@@ -114,6 +132,12 @@ export const createInputController = (
       }
 
       pointerGestures.reanchor();
+    },
+    isInteracting,
+    inertiaYawVelocity: () => pointerGestures.inertiaYawVelocity() || keyboardInput.yawVelocity(),
+    stopInertia: () => {
+      pointerGestures.stopInertia();
+      keyboardInput.stopMotion();
     },
     dispose: () => {
       for (const remove of removers) {

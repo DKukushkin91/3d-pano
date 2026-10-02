@@ -32,22 +32,23 @@ Invalid options are programmer errors and throw synchronously: a non-element con
 
 All methods are plain functions without `this`, so they can be passed around as callbacks.
 
-| Method                    | Meaning                                                                                                                                                                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getView()`               | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                     |
-| `setView(view)`           | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                               |
-| `project(point)`          | Screen position of a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera.                         |
-| `unproject(x, y)`         | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                  |
-| `showScene(id, options?)` | Switches to a scene of the tour, see [Scenes and transitions](#scenes-and-transitions).                                                                                                                                               |
-| `preloadScene(id)`        | Prepares a scene in video memory without showing it, see [Preloading](#preloading-and-the-scene-cache).                                                                                                                               |
-| `setTour(tour, options?)` | Replaces the tour without recreating the viewer, see [Replacing the tour](#replacing-the-tour).                                                                                                                                       |
-| `retry()`                 | Requests again the images of the current scene that failed (including a scene switch that failed) and finishes the switch; resolves when the scene is ready. Does nothing unless the error category is `resource`.                    |
-| `update(options)`         | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio`, `renderScale` and `sceneCacheMegabytes` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole. |
-| `on(name, handler)`       | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                                                  |
-| `getSnapshot()`           | The current [state snapshot](#state-snapshot).                                                                                                                                                                                        |
-| `subscribe(listener)`     | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                                       |
-| `destroy()`               | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                                                  |
-| `overlay`                 | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                                         |
+| Method                     | Meaning                                                                                                                                                                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getView()`                | The current view `{ yaw, pitch, roll, fov, fovMode }` in degrees.                                                                                                                                                                        |
+| `setView(view)`            | Changes any fields of the view; the scene limits apply. A non-finite angle or an unknown `fovMode` throws `RangeError`.                                                                                                                  |
+| `project(point)`           | Screen position of a target (`TViewTarget`) — a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }`: `{ x, y, isInView }` in CSS pixels from the top-left corner of the container, or `null` when the point is behind the camera. |
+| `unproject(x, y)`          | The sphere point `{ yaw, pitch }` shown at a pixel of the container.                                                                                                                                                                     |
+| `lookAt(target, options?)` | Turns the camera smoothly to a sphere point or a direction, see [Camera animation](#camera-animation).                                                                                                                                   |
+| `showScene(id, options?)`  | Switches to a scene of the tour, see [Scenes and transitions](#scenes-and-transitions).                                                                                                                                                  |
+| `preloadScene(id)`         | Prepares a scene in video memory without showing it, see [Preloading](#preloading-and-the-scene-cache).                                                                                                                                  |
+| `setTour(tour, options?)`  | Replaces the tour without recreating the viewer, see [Replacing the tour](#replacing-the-tour).                                                                                                                                          |
+| `retry()`                  | Requests again the images of the current scene that failed (including a scene switch that failed) and finishes the switch; resolves when the scene is ready. Does nothing unless the error category is `resource`.                       |
+| `update(options)`          | Changes `label`, `loader`, `retry`, `controls`, `maxPixelRatio`, `renderScale` and `sceneCacheMegabytes` without recreating the viewer. A key set to `undefined` returns the default; `controls` and `retry` are replaced as a whole.    |
+| `on(name, handler)`        | Subscribes to an [event](#events); returns the unsubscribe function.                                                                                                                                                                     |
+| `getSnapshot()`            | The current [state snapshot](#state-snapshot).                                                                                                                                                                                           |
+| `subscribe(listener)`      | Calls `listener` after every snapshot change; returns the unsubscribe function.                                                                                                                                                          |
+| `destroy()`                | Removes the viewer, its listeners and GPU resources and cancels loading. Calling any method afterwards is harmless and does nothing.                                                                                                     |
+| `overlay`                  | An element above the panorama for your own interface. Pointer events on its children never rotate the camera.                                                                                                                            |
 
 `project` is what you need to place your own markers over the panorama:
 
@@ -79,7 +80,7 @@ While the new scene loads, the current one stays on screen and under the user's 
 | ------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `transition` | `{ type: 'cut' }` | `{ type: 'cut' }` replaces the scene in one frame. `{ type: 'blend', durationMs?, easing? }` dissolves the old scene into the new one, by default in 500 ms with `sine-in-out`; `durationMs: 0` is a cut. |
 | `view`       | `'scene'`         | `'scene'` — the start view of the new scene from the tour. `'keep'` — the current view, within the limits of the new scene. A view object — its fields over the start view of the new scene.              |
-| `keepMotion` | `false`           | `true` keeps the inertia of the camera across the switch. Dragging and held keys always continue — they are the user's input.                                                                             |
+| `keepMotion` | `false`           | `true` keeps the inertia of the camera and a running [`lookAt`](#camera-animation) across the switch. Dragging and held keys always continue — they are the user's input.                                 |
 
 The view and limits of the new scene apply the moment it appears. During a blend both scenes are drawn every frame and the controls stay on: with `view: 'keep'` both move with the camera, so switching between two renovations of the same room is seamless; otherwise the old scene stays still while the camera turns the new one.
 
@@ -124,6 +125,46 @@ await viewer.setTour(tour, { scene: 'kitchen', view: 'keep' });
 ```
 
 Scenes whose sources are the same in the new tour stay in the cache. If the scene on screen keeps its id and sources, nothing reloads and the view stays — only the new limits apply. An invalid tour rejects with `invalid-tour` (and `issues`) and leaves the old tour working; preloads of scenes missing from the new tour resolve `false`.
+
+## Camera animation
+
+`lookAt(target, options?)` turns the camera smoothly to a target and returns a promise:
+
+```ts
+import type { ILookAtOptions, TViewTarget } from '@dkukushkin/3d-pano';
+
+const pin: TViewTarget = { x: 1.2, y: -0.4, z: 2 };
+const options: ILookAtOptions = { fov: 60, durationMs: 900, easing: 'cubic-out' };
+
+const isReached = await viewer.lookAt(pin, options);
+```
+
+The target is the same as for `project`: a sphere point `{ yaw, pitch }` or a direction `{ x, y, z }` from the centre of the panorama, so a world point relative to the centre works as is. A direction straight up or down keeps the current `yaw`.
+
+| Option       | Default       | Meaning                                                                                        |
+| ------------ | ------------- | ---------------------------------------------------------------------------------------------- |
+| `fov`        | current       | Field of view at the end, in degrees of the current FOV mode: zoom in or out in the same move. |
+| `durationMs` | `900`         | Duration of the turn, counted from the first frame after the call; `0` sets the view at once.  |
+| `easing`     | `'cubic-out'` | A name from `EnumEasing` or your own function, as for [transitions](#scenes-and-transitions).  |
+| `signal`     | —             | An `AbortSignal` that cancels this turn.                                                       |
+
+Only `yaw`, `pitch` and `fov` change; `roll` and `fovMode` stay. The target goes through the scene limits first, so the camera arrives smoothly at the closest allowed view and the promise still resolves `true`; every frame stays within the limits, even with overshooting curves such as `back-out`. `yaw` takes the shorter way round; with a `bounds.yaw` range the camera stays inside it even when that way is longer. A target exactly behind the camera follows its current rotation (inertia or an interrupted turn) and is reached by turning right when the camera is still. When the camera already looks at the target, the promise resolves `true` at once.
+
+**What stops a turn.** The promise resolves `false` and the camera stays where it got to when:
+
+- the user presses on the panorama, scrolls the wheel, pinches or presses a control key — input disabled in `controls` and clicks on your interface in the overlay do not count;
+- you call `setView` or another `lookAt`;
+- the `signal` aborts;
+- the viewer is destroyed.
+
+If the user is already dragging or holding a key when you call `lookAt`, it resolves `false` at once and leaves the camera alone. Inertia after a release is not input: `lookAt` stops it and turns the camera. The promise never rejects; invalid arguments are programmer errors and throw `RangeError` synchronously.
+
+**Scene switches.** While a new scene loads, the turn goes on. When the scene appears, the turn stops with `false`, unless `showScene` was called with `keepMotion: true`: then it continues to the same target within the limits of the new scene and ends on time. To turn to a point in another scene, wait for the switch first:
+
+```ts
+await viewer.showScene('bedroom');
+await viewer.lookAt({ yaw: 120, pitch: -15 });
+```
 
 ## Controls
 

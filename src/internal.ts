@@ -39,6 +39,7 @@ export * from './navigation/scene-navigator';
 export * from './navigation/show-scene-options';
 export * from './navigation/transition-weight';
 export * from './controls/drag-gesture';
+export * from './controls/handled-input';
 export * from './controls/inertia';
 export * from './controls/keyboard-motion';
 export * from './controls/zoom-gestures';

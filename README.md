@@ -5,6 +5,7 @@ A framework-agnostic WebGL2 viewer for 360° panoramas and virtual tours.
 - Show a scene from a single equirectangular image or from six cube faces, with a low-resolution preview while the full image loads.
 - Switch scenes of a tour with a cut or a blend and 31 easing curves; keep the view and the inertia when only the renovation changes.
 - Preload neighbouring scenes into video memory, within a budget, and replace the whole tour without recreating the viewer.
+- Turn the camera smoothly to a point of the panorama or of the world with `lookAt`: easing, zoom in the same move, cancellation with `AbortSignal`.
 - Drag, inertia, wheel, pinch and keyboard controls with configurable limits.
 - No runtime dependencies in the core; an optional React adapter lives in `@dkukushkin/3d-pano/react`.
 - Safe to import on the server: nothing touches the DOM until a viewer is created.
@@ -56,6 +57,16 @@ await viewer.showScene('bedroom', {
 
 The current scene stays on screen until the next one has loaded; the promise resolves `true` when the switch is complete and `false` when a newer call superseded it. See [Scenes and transitions](docs/api.md#scenes-and-transitions).
 
+## Camera animation
+
+```ts
+const controller = new AbortController();
+
+const isReached = await viewer.lookAt({ yaw: 120, pitch: -15 }, { fov: 60, signal: controller.signal });
+```
+
+The camera turns in 900 ms with `cubic-out` by default and stays within the scene limits. The promise resolves `true` when the camera arrives and `false` when the user grabs the panorama, another call supersedes the turn or the signal aborts. See [Camera animation](docs/api.md#camera-animation).
+
 ## React
 
 ```tsx
@@ -73,7 +84,7 @@ export const Tour = () => (
 ## Documentation
 
 - [Tour format](docs/tour.md) — scenes, image sources, initial view and limits, coordinate conventions.
-- [Viewer API](docs/api.md) — creating a viewer, methods, scene switching and transitions, preloading, events, state snapshot, errors, image loading.
+- [Viewer API](docs/api.md) — creating a viewer, methods, scene switching and transitions, preloading, camera animation, events, state snapshot, errors, image loading.
 - [React](docs/react.md) — `<PanoViewer>`, the `scene` prop and hooks.
 
 ## Development

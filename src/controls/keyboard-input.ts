@@ -1,3 +1,4 @@
+import { isHandledKeyDown } from './handled-input';
 import type { IInputContext } from './input-target';
 import {
   STILL_MOTION,
@@ -18,6 +19,8 @@ export interface IKeyboardInput {
   handleBlur: () => void;
   step: (elapsedSeconds: number) => boolean;
   pressedCount: () => number;
+  yawVelocity: () => number;
+  stopMotion: () => void;
   release: () => void;
 }
 
@@ -31,6 +34,7 @@ export const createKeyboardInput = ({
   target,
   controls,
   onInteractionChange,
+  onUserInput,
 }: IInputContext): IKeyboardInput => {
   const pressedActions = new Set<TKeyAction>();
   const releasesAfterStep = new Set<TKeyAction>();
@@ -39,12 +43,17 @@ export const createKeyboardInput = ({
 
   const handleKeyDown = (event: KeyboardEvent): void => {
     const action = keyActionFromKey(event.key);
-    const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
+    const facts = {
+      key: event.key,
+      isOnRoot: event.target === target.root,
+      hasModifier: event.ctrlKey || event.metaKey || event.altKey,
+    };
 
-    if (!controls().keyboard || event.target !== target.root || action === undefined || hasModifier) {
+    if (action === undefined || !isHandledKeyDown(facts, controls())) {
       return;
     }
 
+    onUserInput();
     event.preventDefault();
     pressedActions.add(action);
     releasesAfterStep.delete(action);
@@ -106,6 +115,10 @@ export const createKeyboardInput = ({
     handleBlur: release,
     step,
     pressedCount: () => pressedActions.size,
+    yawVelocity: () => motion.yaw,
+    stopMotion: () => {
+      motion = STILL_MOTION;
+    },
     release,
   };
 };

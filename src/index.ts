@@ -53,10 +53,12 @@ export type {
 export type {
   IControlsOptions,
   IDirection,
+  ILookAtOptions,
   IPanoViewer,
   IPanoViewerEventMap,
   IPanoViewerOptions,
   IProjectedPoint,
   ISpherePoint,
   TPanoViewerUpdate,
+  TViewTarget,
 } from './viewer/viewer-types';

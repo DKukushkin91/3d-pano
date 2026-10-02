@@ -19,7 +19,9 @@ import {
 } from '../tour/tour-defaults';
 import type { IScene } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
+import { createCameraMotion } from './camera-motion';
 import { createCameraState } from './camera-state';
+import { resolveLookAtRequest } from './look-at-options';
 import { type ISceneSession, createSceneSession } from './scene-session';
 import { createViewerGraphics } from './viewer-graphics';
 import { areViewerOptionsEqual, resolveViewerOptions } from './viewer-options';
@@ -73,6 +75,7 @@ export const createViewer = (
 
   const renderFrame = (timeMs: number): boolean => {
     const isInputMoving = input.step(timeMs);
+    const isCameraMoving = motion.step(timeMs);
     const frame = navigator?.frame(timeMs) ?? null;
     const changedView = camera.takeViewChange();
 
@@ -88,7 +91,7 @@ export const createViewer = (
       });
     }
 
-    return isInputMoving || frame?.isAnimating === true;
+    return isInputMoving || isCameraMoving || frame?.isAnimating === true;
   };
 
   const loop = createRenderLoop(renderFrame);
@@ -103,10 +106,25 @@ export const createViewer = (
       requestFrame: loop.requestRender,
     },
     resolvedOptions.controls,
-    (isInteracting) => {
-      store.update({ isInteracting });
+    {
+      onInteractionChange: (isInteracting) => {
+        store.update({ isInteracting });
+      },
+      onUserInput: () => {
+        motion.interrupt();
+      },
     },
   );
+  const motion = createCameraMotion({
+    getView: camera.getView,
+    setView: camera.setView,
+    constrained: camera.constrained,
+    yawRange: camera.yawRange,
+    isInputActive: input.isInteracting,
+    inertiaYawVelocity: input.inertiaYawVelocity,
+    stopInertia: input.stopInertia,
+    requestFrame: loop.requestRender,
+  });
   const stopObservingSize = observeElementSize(elements.root, (size) => {
     camera.setViewport(size);
     loop.requestRender();
@@ -129,6 +147,7 @@ export const createViewer = (
           camera.resetScene(view, limits);
           camera.setSourceDensity(pixelsPerRadian);
           input.handleSceneChange(keepMotion);
+          motion.handleSceneChange(keepMotion);
           loop.requestRender();
         },
         applyLimits: (limits) => {
@@ -173,6 +192,7 @@ export const createViewer = (
     }
 
     isDestroyed = true;
+    motion.dispose();
     input.dispose();
     navigator?.destroy();
     loop.dispose();
@@ -195,10 +215,12 @@ export const createViewer = (
     getView: camera.getView,
     setView: (settings) => {
       if (!isDestroyed) {
+        motion.interrupt();
         camera.setView(settings);
         loop.requestRender();
       }
     },
+    lookAt: (target, lookAtOptions) => motion.start(resolveLookAtRequest(target, lookAtOptions)),
     project: (point) => (isDestroyed ? null : camera.project(point)),
     unproject: (x, y) => (isDestroyed ? null : camera.unproject(x, y)),
     showScene: (sceneId, showOptions) => navigator?.showScene(sceneId, showOptions) ?? Promise.resolve(false),

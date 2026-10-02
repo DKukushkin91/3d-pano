@@ -99,14 +99,16 @@ export interface IPanoViewerEventMap {
 /**
  * Просмотрщик. Методы — обычные функции без `this`: их можно передавать как колбэки. `showScene`,
  * `preloadScene` и `setTour` разрешаются `true`, когда дело сделано, и `false`, когда вызов перебит
- * следующим или просмотрщик уничтожен; отклоняются исключением с полем `details: IPanoError`.
+ * следующим или просмотрщик уничтожен; отклоняются исключением с полем `details: IPanoError`. `lookAt`
+ * разрешается `true`, когда камера доехала, и `false`, когда поворот прерван, и никогда не отклоняется.
  */
 export interface IPanoViewer {
   readonly overlay: HTMLElement;
   getView: () => IView;
   setView: (view: IViewSettings) => void;
-  project: (point: ISpherePoint | IDirection) => IProjectedPoint | null;
+  project: (point: TViewTarget) => IProjectedPoint | null;
   unproject: (x: number, y: number) => ISpherePoint | null;
+  lookAt: (target: TViewTarget, options?: ILookAtOptions) => Promise<boolean>;
   showScene: (sceneId: string, options?: IShowSceneOptions) => Promise<boolean>;
   preloadScene: (sceneId: string) => Promise<boolean>;
   setTour: (tour: ITour, options?: ISetTourOptions) => Promise<boolean>;
