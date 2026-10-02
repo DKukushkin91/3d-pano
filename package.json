@@ -53,7 +53,7 @@
     "check:specs": "openspec validate --all --strict --no-interactive",
     "test:unit": "node --test scripts/*.unit.mjs",
     "check:package": "publint && attw --pack . --profile esm-only",
-    "check": "pnpm format:check && pnpm lint && pnpm check:comments && pnpm check:clean-room && pnpm check:specs && pnpm typecheck && pnpm build && pnpm test:unit && pnpm check:package && pnpm check:examples && pnpm check:docs",
+    "check": "pnpm format:check && pnpm build && pnpm lint && pnpm check:comments && pnpm check:clean-room && pnpm check:specs && pnpm typecheck && pnpm test:unit && pnpm check:package && pnpm check:examples && pnpm check:docs",
     "dev": "pnpm --filter ./examples/playground dev",
     "prepack": "pnpm build",
     "check:examples": "pnpm --filter ./examples/playground typecheck && pnpm --filter ./examples/playground build",
