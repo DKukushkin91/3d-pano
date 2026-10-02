@@ -14,8 +14,8 @@ export const VARIANT_SWITCH: IShowSceneOptions = {
 export const ROOM_SWITCH: IShowSceneOptions = { transition: { type: 'blend', durationMs: 800 } };
 
 const ROOMS = [
-  { id: 'balcony', variants: ['balcony', 'balcony-cube'] },
-  { id: 'hotel-room', variants: ['hotel-room', 'hotel-room-cube'] },
+  { id: 'balcony', variants: ['balcony', 'balcony-cube', 'balcony-tiles'] },
+  { id: 'hotel-room', variants: ['hotel-room', 'hotel-room-cube', 'hotel-room-tiles'] },
 ] as const;
 
 interface IScenePickerProps {
