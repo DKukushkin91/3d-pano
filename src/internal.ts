@@ -15,6 +15,7 @@ export * from './hotspots/hotspot-label';
 export * from './hotspots/hotspot-presence';
 export * from './tour/tour-defaults';
 export * from './tour/url-template';
+export * from './tour/tile-pyramid';
 export * from './tour/validate-tour';
 export * from './tour/validate-hotspots';
 export * from './view/view-limits';

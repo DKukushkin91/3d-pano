@@ -20,6 +20,16 @@ const CUBE_SCENE = {
   },
 };
 
+const tiledHall = (levels) => ({
+  ...CUBE_SCENE,
+  source: {
+    ...CUBE_SCENE.source,
+    url: 'https://cdn.example.com/hall/{level}/{face}/{row}_{col}.jpg',
+    tileSize: 512,
+    levels,
+  },
+});
+
 const KITCHEN_KEY = 'kitchen';
 const KITCHEN_SESSION = 'kitchen-session';
 const HALL_KEY = 'hall';
@@ -72,6 +82,11 @@ describe('scene-navigation · Замена тура: ключ по содерж�
     assert.notEqual(sceneKeyOf(KITCHEN), sceneKeyOf(otherUrl));
     assert.notEqual(sceneKeyOf(CUBE_SCENE), sceneKeyOf(otherFaces));
     assert.notEqual(sceneKeyOf(KITCHEN), sceneKeyOf(withPreview));
+  });
+
+  it('два куба с одним url и разными levels — разные ключи', () => {
+    assert.notEqual(sceneKeyOf(tiledHall([512, 1024])), sceneKeyOf(tiledHall([512, 1024, 2048])));
+    assert.equal(sceneKeyOf(tiledHall([512, 1024])), sceneKeyOf(tiledHall([512, 1024])));
   });
 });
 

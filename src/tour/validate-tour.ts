@@ -1,6 +1,6 @@
 import type { ITourIssue } from './tour-types';
 import { validateHotspots } from './validate-hotspots';
-import { validateSource } from './validate-source';
+import { validateSource, validateTourTileSize } from './validate-source';
 import { validateLimits, validateView } from './validate-view';
 import {
   MUST_BE_NON_EMPTY_STRING,
@@ -38,7 +38,7 @@ const validateScene = (value: unknown, path: string, report: TReport, seenIds: S
   validateSource(value.source, childPath(path, 'source'), report);
 
   if (value.preview !== undefined) {
-    validateSource(value.preview, childPath(path, 'preview'), report);
+    validateSource(value.preview, childPath(path, 'preview'), report, true);
   }
 
   validateView(value.view, childPath(path, 'view'), report);
@@ -57,6 +57,7 @@ const validateScenes = (value: unknown, report: TReport): Set<string> => {
   value.forEach((scene: unknown, index) => {
     validateScene(scene, itemPath('scenes', index), report, seenIds);
   });
+  validateTourTileSize(value, report);
 
   return seenIds;
 };

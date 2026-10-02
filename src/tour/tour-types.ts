@@ -12,11 +12,15 @@ export interface IEquirectSource {
 /**
  * Шесть граней куба по шаблону URL: `{face}` заменяется именем грани, а `faceNames` переопределяет имена
  * по умолчанию (`front`, `right`, `back`, `left`, `up`, `down`), например на `f`, `r`, `b`, `l`, `u`, `d`.
+ * С `tileSize` и `levels` куб тайловый: `levels` — размеры грани от мелкого уровня к крупному, а в
+ * шаблоне есть ещё `{level}` (номер уровня с нуля), `{row}` и `{col}` — строка и столбец тайла.
  */
 export interface ICubeSource {
   type: typeof EnumSourceType.Cube;
   url: string;
   faceNames?: Partial<Record<TCubeFace, string>>;
+  tileSize?: number;
+  levels?: number[];
 }
 
 export type TPanoramaSource = IEquirectSource | ICubeSource;

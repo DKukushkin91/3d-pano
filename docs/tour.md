@@ -37,15 +37,15 @@ A tour is plain JSON-compatible data: a list of scenes, the scene to start with 
 
 ## Scenes
 
-| Field      | Type   | Meaning                                                              |
-| ---------- | ------ | -------------------------------------------------------------------- |
-| `id`       | string | Unique, non-empty.                                                   |
-| `title`    | string | Optional human-readable name.                                        |
-| `source`   | object | The panorama image, see [Sources](#sources).                         |
-| `preview`  | object | Optional small image of the same kinds, shown while `source` loads.  |
-| `view`     | object | Optional initial view, see [View](#view).                            |
-| `limits`   | object | Optional camera limits, see [Limits](#limits).                       |
-| `hotspots` | array  | Optional interactive points of the scene, see [Hotspots](#hotspots). |
+| Field      | Type   | Meaning                                                                                   |
+| ---------- | ------ | ----------------------------------------------------------------------------------------- |
+| `id`       | string | Unique, non-empty.                                                                        |
+| `title`    | string | Optional human-readable name.                                                             |
+| `source`   | object | The panorama image, see [Sources](#sources).                                              |
+| `preview`  | object | Optional small image, shown while `source` loads. Any kind except a multiresolution cube. |
+| `view`     | object | Optional initial view, see [View](#view).                                                 |
+| `limits`   | object | Optional camera limits, see [Limits](#limits).                                            |
+| `hotspots` | array  | Optional interactive points of the scene, see [Hotspots](#hotspots).                      |
 
 ## Sources
 
@@ -69,9 +69,50 @@ A scene shows either **one equirectangular file** or **six cube faces** — whic
 
 The centre of `front` is straight ahead, `right` is at `yaw` 90, `back` at 180 and `left` at −90. The bottom edge of `up` touches the top edge of `front`, and the top edge of `down` touches its bottom edge — the common layout produced by panorama stitching tools.
 
+A cube with `tileSize` and `levels` is a [multiresolution cube](#multiresolution-cube): it is loaded in tiles, a little at a time.
+
 **URLs** may be `http:`, `https:`, `blob:`, `data:image/…` or relative. Any other scheme (`javascript:`, `file:` and so on) is rejected by `validateTour` before anything is loaded.
 
 The string values have named constants with the same values — `EnumSourceType.Equirect`, `EnumSourceType.Cube`, `EnumCubeFace.Front` and so on. Strings and constants are interchangeable.
+
+## Multiresolution cube
+
+A large panorama does not have to be downloaded whole before it appears. A multiresolution cube stores every face at several sizes, cut into square tiles. The viewer loads a small base first, then only the tiles in view, at the detail the screen actually needs, and keeps loading as the user turns and zooms.
+
+```json
+{
+  "type": "cube",
+  "url": "/tiles/kitchen/{level}/{face}/{row}_{col}.jpg",
+  "faceNames": { "front": "f", "right": "r", "back": "b", "left": "l", "up": "u", "down": "d" },
+  "tileSize": 512,
+  "levels": [512, 1024, 2048, 4096]
+}
+```
+
+| Field       | Type     | Meaning                                                                 |
+| ----------- | -------- | ----------------------------------------------------------------------- |
+| `url`       | string   | Template with `{level}`, `{face}`, `{row}` and `{col}`.                 |
+| `tileSize`  | number   | Side of a tile in pixels.                                               |
+| `levels`    | number[] | Face sizes in pixels, from the smallest level to the most detailed one. |
+| `faceNames` | object   | Optional face names for `{face}`, as for a plain cube.                  |
+
+In the template, `{level}` is the index in `levels` starting from 0, `{row}` counts tiles from the top of the face and `{col}` from its left, in the same face orientation as a plain cube. A level no larger than `tileSize` is a single tile `0_0` of the level's own size; a larger level is cut into `tileSize` squares. For the source above the files are:
+
+```text
+/tiles/kitchen/0/f/0_0.jpg              the whole 512 front face
+/tiles/kitchen/1/f/0_0.jpg … 1_1.jpg    four 512 tiles of the 1024 face
+/tiles/kitchen/2/f/0_0.jpg … 3_3.jpg    16 tiles of the 2048 face
+/tiles/kitchen/3/f/0_0.jpg … 7_7.jpg    64 tiles of the 4096 face
+```
+
+How it loads:
+
+- The smallest level is loaded whole and stays under everything else, so turning quickly never shows an empty area. Keep it small — 512 or less.
+- The scene appears when the base and the tiles of the most detailed level needed for its first frame are loaded. After that, other tiles load in the background as the user looks around, from the centre of the view outwards; tiles that leave the view before they arrive are cancelled.
+- The level is chosen for every pixel: the smallest level whose pixels are no larger than the screen's. `limits.maxPixelZoom` counts from the most detailed level, so the user can zoom in before its tiles arrive.
+- Tiles of all scenes share one memory budget, `tileCacheMegabytes` in the [viewer options](api.md).
+
+Doubling face sizes and 512-pixel tiles are a good default. `validateTour` requires `tileSize` and `levels` together; `tileSize` is an integer above 0; `levels` are 1 to 10 increasing integers above 0, each no larger than `tileSize` or a multiple of it, so every tile is full; `url` contains all four placeholders; every multiresolution scene of a tour uses the same `tileSize`; a `preview` cannot be a multiresolution cube.
 
 ## View
 
