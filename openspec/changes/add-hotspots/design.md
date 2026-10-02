@@ -76,6 +76,7 @@
 | D117 | `addHotspot` после `destroy()` возвращает объект, методы которого ничего не делают; аргументы всё равно проверяются                                                                                                                                                                                                        | бросать ошибку                                                                                               | согласовано 2026-10-02 |
 | D118 | Песочница: точки на полу между сценами демо-тура, текстовый хотспот, пины через `addHotspot`, журнал событий и переключатель отмены перехода; React — `renderHotspot` и `<Hotspot>` с переключателем видимости                                                                                                             | только ванильная страница                                                                                    | согласовано 2026-10-02 |
 | D119 | Документы: раздел хотспотов в `docs/tour.md`, раздел «Hotspots» и события в `docs/api.md`, `<Hotspot>` и `renderHotspot` в `docs/react.md`, строка в `README.md`; строки хотспотов и neometria в `parity.md`                                                                                                               | только `docs/api.md`                                                                                         | согласовано 2026-10-02 |
+| D120 | `usePanoViewer` с `renderHotspot` возвращает порталы полем `hotspotPortals` (`ReactNode`, без `renderHotspot` — `null`); хост рендерит его в своей разметке                                                                                                                                                                | поле `hotspots`; `renderHotspot` только у `<PanoViewer>`                                                     | согласовано 2026-10-02 |
 
 ### Контракт публичного API (добавления)
 
@@ -174,6 +175,11 @@ export interface IHotspotProps extends Omit<IAddHotspotOptions, 'element'> {
 }
 
 export const Hotspot: (props: IHotspotProps) => ReactElement | null;
+
+interface IUsePanoViewerResult {
+  // …M1–M2
+  hotspotPortals: ReactNode;
+}
 ```
 
 ### Слой хотспотов в DOM
@@ -278,4 +284,4 @@ focusin + :focus-visible + точка вне кадра ──► lookAt(positio
 
 ## Open Questions
 
-Нет. Все решения D88–D119 согласованы с владельцем 2026-10-02.
+Нет. Все решения D88–D120 согласованы с владельцем 2026-10-02 (D120 — при реализации).

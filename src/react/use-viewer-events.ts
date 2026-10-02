@@ -9,6 +9,9 @@ export interface IPanoViewerEventProps {
   onSceneChange?: (payload: IPanoViewerEventMap['sceneChange']) => void;
   onViewChange?: (payload: IPanoViewerEventMap['viewChange']) => void;
   onError?: (payload: IPanoViewerEventMap['error']) => void;
+  onHotspotClick?: (payload: IPanoViewerEventMap['hotspotClick']) => void;
+  onHotspotEnter?: (payload: IPanoViewerEventMap['hotspotEnter']) => void;
+  onHotspotLeave?: (payload: IPanoViewerEventMap['hotspotLeave']) => void;
 }
 
 /**
@@ -27,6 +30,9 @@ export const subscribeToViewerEvents = (
     viewer.on('sceneChange', (payload) => readHandlers().onSceneChange?.(payload)),
     viewer.on('viewChange', (payload) => readHandlers().onViewChange?.(payload)),
     viewer.on('error', (payload) => readHandlers().onError?.(payload)),
+    viewer.on('hotspotClick', (payload) => readHandlers().onHotspotClick?.(payload)),
+    viewer.on('hotspotEnter', (payload) => readHandlers().onHotspotEnter?.(payload)),
+    viewer.on('hotspotLeave', (payload) => readHandlers().onHotspotLeave?.(payload)),
   ];
 
   return () => {

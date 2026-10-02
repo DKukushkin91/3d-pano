@@ -1,22 +1,31 @@
-import { type RefCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefCallback, useEffect, useRef, useState } from 'react';
 
 import type { IPanoViewerSnapshot } from '../state/viewer-state-types';
 import { createPanoViewer } from '../viewer/create-pano-viewer';
 import type { IPanoViewer, IPanoViewerOptions, TPanoViewerUpdate } from '../viewer/viewer-types';
+import { type TRenderHotspotNode, useHotspotPortals } from './use-hotspot-portals';
 import { usePanoSnapshot } from './use-pano-snapshot';
 import { type IPanoViewerSceneProps, tourWithStartScene, useSceneSync } from './use-scene-sync';
 import { type IPanoViewerEventProps, subscribeToViewerEvents } from './use-viewer-events';
 
 /**
- * Опции хука: опции просмотрщика, пропсы сцены и те же обработчики событий, что у компонента.
+ * Опции хука: опции просмотрщика, пропсы сцены и те же обработчики событий, что у компонента;
+ * `renderHotspot` возвращает `ReactNode`.
  */
 export interface IUsePanoViewerOptions
-  extends IPanoViewerOptions, IPanoViewerSceneProps, IPanoViewerEventProps {}
+  extends Omit<IPanoViewerOptions, 'renderHotspot'>, IPanoViewerSceneProps, IPanoViewerEventProps {
+  renderHotspot?: TRenderHotspotNode;
+}
 
+/**
+ * `hotspotPortals` — порталы `renderHotspot`, которые хост рендерит в своей разметке; без `renderHotspot`
+ * — `null`.
+ */
 export interface IUsePanoViewerResult {
   containerRef: RefCallback<HTMLElement>;
   viewer: IPanoViewer | null;
   snapshot: IPanoViewerSnapshot;
+  hotspotPortals: ReactNode;
 }
 
 /**
@@ -36,6 +45,7 @@ const updatableOptions = (options: IPanoViewerOptions): TPanoViewerUpdate => ({
   maxPixelRatio: options.maxPixelRatio,
   renderScale: options.renderScale,
   sceneCacheMegabytes: options.sceneCacheMegabytes,
+  renderHotspot: options.renderHotspot,
 });
 
 /**
@@ -96,19 +106,33 @@ export const useViewerInstance = (
 export const usePanoViewer = ({
   scene,
   sceneOptions,
+  renderHotspot,
   onSceneLoadStart,
   onSceneReady,
   onSceneChange,
   onViewChange,
   onError,
+  onHotspotClick,
+  onHotspotEnter,
+  onHotspotLeave,
   ...options
 }: IUsePanoViewerOptions): IUsePanoViewerResult => {
+  const portals = useHotspotPortals(renderHotspot);
   const instance = useViewerInstance(
-    options,
+    { ...options, renderHotspot: portals.renderHotspot },
     { scene, sceneOptions },
-    { onSceneLoadStart, onSceneReady, onSceneChange, onViewChange, onError },
+    {
+      onSceneLoadStart,
+      onSceneReady,
+      onSceneChange,
+      onViewChange,
+      onError,
+      onHotspotClick,
+      onHotspotEnter,
+      onHotspotLeave,
+    },
   );
   const snapshot = usePanoSnapshot(instance.viewer);
 
-  return { ...instance, snapshot };
+  return { ...instance, snapshot, hotspotPortals: portals.hotspotPortals };
 };

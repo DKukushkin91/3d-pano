@@ -41,11 +41,11 @@
 
 ## 6. React (react-adapter)
 
-- [ ] 6.1 Пропсы `onHotspotClick`, `onHotspotEnter`, `onHotspotLeave` в `IPanoViewerEventProps` и подписке. Проверка: сценарий «Отмена перехода из React» (требование «Обработчики событий как пропсы»)
-- [ ] 6.2 Проп `renderHotspot(hotspot, sceneId) → ReactNode` у `<PanoViewer>` и `usePanoViewer`: адаптер отдаёт ядру элементы-контейнеры и держит порталы до `signal.abort()` (D115). Проверка: сценарий «Компонент точки на полу» (требование «Своя отрисовка хотспотов в React»)
-- [ ] 6.3 `<Hotspot>` и контекст просмотрщика из `<PanoViewer>`, проп `viewer` вне его (D116); сеттер при смене пропса, `remove` при размонтировании. Проверка: сценарий «Пины товаров» (требование «Компонент Hotspot»)
-- [ ] 6.4 `docs/react.md`: `<Hotspot>`, `renderHotspot`, события хотспотов — в том же коммите. Проверка: `pnpm check:docs`
-- [ ] 6.5 Закоммитить `feat(react): добавить компонент Hotspot и отрисовку хотспотов тура`
+- [x] 6.1 Пропсы `onHotspotClick`, `onHotspotEnter`, `onHotspotLeave` в `IPanoViewerEventProps` и подписке. Проверка: сценарий «Отмена перехода из React» (требование «Обработчики событий как пропсы»)
+- [x] 6.2 Проп `renderHotspot(hotspot, sceneId) → ReactNode` у `<PanoViewer>` и `usePanoViewer`: адаптер отдаёт ядру элементы-контейнеры и держит порталы до `signal.abort()` (D115). Проверка: сценарий «Компонент точки на полу» (требование «Своя отрисовка хотспотов в React»)
+- [x] 6.3 `<Hotspot>` и контекст просмотрщика из `<PanoViewer>`, проп `viewer` вне его (D116); сеттер при смене пропса, `remove` при размонтировании. Проверка: сценарий «Пины товаров» (требование «Компонент Hotspot»)
+- [x] 6.4 `docs/react.md`: `<Hotspot>`, `renderHotspot`, события хотспотов — в том же коммите. Проверка: `pnpm check:docs`
+- [x] 6.5 Закоммитить `feat(react): добавить компонент Hotspot и отрисовку хотспотов тура`
 
 ## 7. Песочница (D118)
 

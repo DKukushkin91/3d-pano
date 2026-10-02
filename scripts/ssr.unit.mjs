@@ -69,6 +69,26 @@ describe('react-adapter · Серверный рендеринг', () => {
     );
   });
 
+  it('хотспоты на сервере: Hotspot и renderHotspot не рисуют ничего и не трогают DOM', async () => {
+    const { Hotspot, PanoViewer } = await import('../dist/react.js');
+    const markup = renderToString(
+      createElement(
+        PanoViewer,
+        {
+          tour: TOUR,
+          label: 'Room',
+          className: 'viewer',
+          renderHotspot: (hotspot) => createElement('span', null, hotspot.id),
+          onHotspotClick: () => undefined,
+        },
+        createElement(Hotspot, { position: { yaw: 10, pitch: 0 }, className: 'pin' }, 'Chair'),
+      ),
+    );
+
+    assert.equal(markup, '<div class="viewer"></div>');
+    assert.equal(renderToString(createElement(Hotspot, { position: { x: 1, y: 0, z: 1 } }, 'Lamp')), '');
+  });
+
   it('usePanoSnapshot на сервере и без просмотрщика возвращает начальный снимок', async () => {
     const { usePanoSnapshot } = await import('../dist/react.js');
     const Status = () => createElement('span', null, usePanoSnapshot(null).status);
