@@ -1,3 +1,4 @@
+import type { TEasing } from '../math/easing';
 import type { ISetTourOptions, IShowSceneOptions } from '../navigation/navigation-types';
 import type { TImageLoader } from '../resources/load-image';
 import type { IRetryOptions } from '../resources/retry';
@@ -54,6 +55,23 @@ export interface IDirection {
   x: number;
   y: number;
   z: number;
+}
+
+/**
+ * Цель `project` и `lookAt`: точка сферы или направление из центра панорамы.
+ */
+export type TViewTarget = ISpherePoint | IDirection;
+
+/**
+ * Опции `lookAt`. `fov` — поле обзора в конце поворота в градусах текущего режима FOV, без него поле
+ * обзора не меняется. `durationMs` по умолчанию 900, 0 — сразу; `easing` по умолчанию `cubic-out`.
+ * `signal` отменяет именно этот поворот.
+ */
+export interface ILookAtOptions {
+  fov?: number;
+  durationMs?: number;
+  easing?: TEasing;
+  signal?: AbortSignal;
 }
 
 /**

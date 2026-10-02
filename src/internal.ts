@@ -27,6 +27,7 @@ export * from './resources/texture-memory';
 export * from './resources/image-decoder';
 export * from './dom/drawing-buffer-size';
 export * from './viewer/camera-state';
+export * from './viewer/look-at-options';
 export * from './viewer/create-pano-viewer';
 export * from './viewer/viewer-options';
 export * from './navigation/navigation-dictionaries';

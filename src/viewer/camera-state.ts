@@ -6,17 +6,20 @@ import { directionFromScreen, screenFromDirection } from '../math/rectilinear';
 import type { IVector3 } from '../math/vector3';
 import type { IFrameCamera } from '../render/renderer';
 import { EnumFovMode, type TFovMode } from '../tour/tour-dictionaries';
-import type { IResolvedViewLimits, IView, IViewSettings } from '../tour/tour-types';
+import type { IResolvedViewLimits, IView, IViewSettings, TAngleRange } from '../tour/tour-types';
 import { constrainView } from '../view/view-limits';
 import type { IDirection, IProjectedPoint, ISpherePoint } from './viewer-types';
 
 /**
  * Камера просмотрщика: вид в градусах, ограничения сцены, CSS-размер кадра и плотность загруженного
- * источника. Любое изменение снова проводит вид через `constrainView`.
+ * источника. Любое изменение снова проводит вид через `constrainView`. `constrained` проводит через те же
+ * ограничения произвольный вид, не меняя камеру: так поворот заранее знает, куда приедет.
  */
 export interface ICameraState {
   getView: () => IView;
   setView: (settings: IViewSettings) => void;
+  constrained: (view: IView) => IView;
+  yawRange: () => TAngleRange | undefined;
   resetScene: (view: IView, limits: IResolvedViewLimits) => void;
   setLimits: (limits: IResolvedViewLimits) => void;
   setViewport: (size: ICssSize) => void;
@@ -92,14 +95,17 @@ export const createCameraState = (
   let view = initialView;
   let isViewChanged = true;
 
-  const constrain = (nextView: IView, previousFov: number | null): void => {
-    view = constrainView(nextView, {
+  const constrainedView = (nextView: IView, previousFov: number | null): IView =>
+    constrainView(nextView, {
       limits,
       viewportWidth: Math.max(viewport.width, MIN_VIEWPORT_SIZE),
       viewportHeight: Math.max(viewport.height, MIN_VIEWPORT_SIZE),
       sourcePixelsPerRadian,
       previousFov,
     });
+
+  const constrain = (nextView: IView, previousFov: number | null): void => {
+    view = constrainedView(nextView, previousFov);
     isViewChanged = true;
   };
 
@@ -156,6 +162,8 @@ export const createCameraState = (
     setView: (settings) => {
       constrain(applyViewSettings(view, settings), view.fov);
     },
+    constrained: (nextView) => constrainedView(nextView, view.fov),
+    yawRange: () => (typeof limits.bounds === 'string' ? undefined : limits.bounds.yaw),
     resetScene: (nextView, nextLimits) => {
       limits = nextLimits;
       sourcePixelsPerRadian = null;
