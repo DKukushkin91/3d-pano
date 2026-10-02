@@ -1,5 +1,6 @@
 import type { TEasing } from '../math/easing';
 import type { IViewSettings } from '../tour/tour-types';
+import type { TViewTarget } from '../viewer/viewer-types';
 import type { EnumTransitionType, TSceneView } from './navigation-dictionaries';
 
 export interface ICutTransition {
@@ -15,11 +16,25 @@ export interface IBlendTransition {
   easing?: TEasing;
 }
 
-export type TSceneTransition = ICutTransition | IBlendTransition;
+/**
+ * Шаг: камера идёт к `point` (точка сцены или сферы; без неё — точка хотспота, центр новой сцены по местам
+ * сцен или центр кадра) за `durationMs` (по умолчанию 500) с плавностью `easing` (`quad-out`), новая сцена
+ * проявляется навстречу. `turn` — доворот новой сцены в градусах, `blur` — размытие 0…1 (0.5).
+ */
+export interface IMoveTransition {
+  type: typeof EnumTransitionType.Move;
+  durationMs?: number;
+  easing?: TEasing;
+  point?: TViewTarget;
+  turn?: number;
+  blur?: number;
+}
+
+export type TSceneTransition = ICutTransition | IBlendTransition | IMoveTransition;
 
 /**
- * Опции `showScene`. Без `transition` — мгновенная смена; `view` по умолчанию `scene`; `keepMotion`
- * сохраняет инерцию вращения после смены.
+ * Опции `showScene`. Без `transition` — мгновенная смена; `view` по умолчанию `scene`, а у шага — `keep`;
+ * `keepMotion` сохраняет инерцию вращения после смены.
  */
 export interface IShowSceneOptions {
   transition?: TSceneTransition;

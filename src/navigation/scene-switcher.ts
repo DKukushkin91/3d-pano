@@ -1,6 +1,7 @@
 import { isAbortError } from '../resources/load-errors';
 import { EnumErrorCategory, EnumViewerStatus } from '../state/viewer-dictionaries';
 import type { IPanoViewerSnapshot } from '../state/viewer-state-types';
+import type { IScenePlace } from '../tour/scene-place';
 import type { IScene, ITour } from '../tour/tour-types';
 import { createDeferred } from './deferred';
 import type {
@@ -13,7 +14,7 @@ import type {
 import { sceneKeyOf } from './scene-key';
 import { toSceneLoadError } from './scene-preloader';
 import { type ISwitcherState, createScenePresentation } from './scene-presentation';
-import { type IResolvedShowSceneOptions, resolveSceneTarget } from './show-scene-options';
+import type { IResolvedShowSceneOptions } from './show-scene-options';
 import {
   type IAcquiredRecord,
   type ISceneSwitch,
@@ -21,6 +22,7 @@ import {
   rejectPromises,
   replacePendingCaller,
   settlePromises,
+  switchTargetOf,
 } from './switch-state';
 
 export interface ISceneSwitcherOptions<TSession extends INavigatorSession> {
@@ -37,6 +39,7 @@ export interface ISceneSwitcherOptions<TSession extends INavigatorSession> {
  */
 export interface ISceneSwitcher<TSession extends INavigatorSession> {
   handleRecordChange: (record: ISceneRecord<TSession>, state: ISceneSessionState) => void;
+  displayedPlace: () => IScenePlace | null;
   isOnScreen: (scene: IScene) => boolean;
   switchTo: (tour: ITour, scene: IScene, options: IResolvedShowSceneOptions) => Promise<boolean>;
   stayOnScreen: (sceneId: string) => Promise<boolean>;
@@ -68,6 +71,9 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
   });
 
   const hasSceneOnScreen = (): boolean => state.displayed?.record.isComplete === true;
+
+  const displayedPlace = (): IScenePlace | null =>
+    hasSceneOnScreen() ? (state.displayed?.place ?? null) : null;
 
   const publishScene = (sceneId: string, changes: Partial<IPanoViewerSnapshot>): void => {
     const previousSceneId = store.getSnapshot().sceneId;
@@ -163,7 +169,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
 
   const startSwitch = (sceneSwitch: ISceneSwitch<TSession>, isReady: boolean): void => {
     if (!sceneSwitch.hasPrevious) {
-      presentCamera(sceneSwitch);
+      presentCamera(sceneSwitch, 0);
       syncState();
     }
 
@@ -186,7 +192,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
       scene,
       record: acquired.record,
       options,
-      target: resolveSceneTarget(tour, scene, options.view, host.getView(), false),
+      target: switchTargetOf(tour, scene, options, host.getView(), hasPrevious ? displayedPlace() : null),
       promises: [deferred, ...acquired.promises],
       hasPrevious,
       isFailed: false,
@@ -236,6 +242,7 @@ export const createSceneSwitcher = <TSession extends INavigatorSession>({
   };
 
   return {
+    displayedPlace,
     handleRecordChange: (record, sessionState) => {
       record.state = sessionState;
 

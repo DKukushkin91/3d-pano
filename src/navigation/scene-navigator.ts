@@ -1,4 +1,5 @@
 import { isAbortError } from '../resources/load-errors';
+import { resolveScenePlace } from '../tour/scene-place';
 import { findStartScene, resolveSceneLimits } from '../tour/tour-defaults';
 import type { IScene, ITour } from '../tour/tour-types';
 import { validateTour } from '../tour/validate-tour';
@@ -16,7 +17,12 @@ import { sceneKeyOf } from './scene-key';
 import { createScenePreloader, toSceneLoadError } from './scene-preloader';
 import { createRecordFactory } from './scene-records';
 import { createSceneSwitcher } from './scene-switcher';
-import { resolvePreloadSceneView, resolveSceneTarget, resolveShowSceneOptions } from './show-scene-options';
+import {
+  resolvePreloadSceneView,
+  resolveSceneTarget,
+  resolveShowSceneOptions,
+  viewTurnOf,
+} from './show-scene-options';
 import type { IAcquiredRecord } from './switch-state';
 
 /**
@@ -121,7 +127,8 @@ export const createSceneNavigator = <TSession extends INavigatorSession>(
     }
 
     const key = sceneKeyOf(scene);
-    const target = resolveSceneTarget(tour, scene, view, host.getView(), true);
+    const turnDegrees = viewTurnOf(null, switcher.displayedPlace(), resolveScenePlace(tour, scene));
+    const target = resolveSceneTarget(tour, scene, view, host.getView(), true, turnDegrees);
     const cached = cache.get(key);
 
     if (switcher.isOnScreen(scene)) {

@@ -1,3 +1,5 @@
+import type { ISceneModel } from '../math/scene-space';
+import type { IVector3 } from '../math/vector3';
 import type { IEventEmitter } from '../state/event-emitter';
 import type { ISnapshotStore } from '../state/snapshot-store';
 import type { TViewerStatus } from '../state/viewer-dictionaries';
@@ -68,15 +70,38 @@ export interface ISceneRefresh {
 }
 
 /**
+ * Пространство сцены в кадре шага: сдвиг камеры от центра сцены и модель «пол + сфера».
+ */
+export interface ISceneSpace {
+  offset: IVector3;
+  model: ISceneModel;
+}
+
+/**
+ * Шаг в кадре: пространство текущей и предыдущей сцены, сила размытия и точка шага в осях предыдущей сцены
+ * — к ней направлено радиальное размытие.
+ */
+export interface INavigatorMove {
+  current: ISceneSpace;
+  previous: ISceneSpace;
+  blurStrength: number;
+  target: IVector3;
+}
+
+/**
  * Что рисовать в кадре: текущая сцена с живой камерой и, во время смешивания, предыдущая с весом
- * `1 − weight`. `previousView` — замершая камера предыдущей сцены, `null` — живая.
+ * `1 − weight`. `previousView` — замершая камера предыдущей сцены, `null` — живая; живая камера рисует
+ * предыдущую сцену с `yaw`, сдвинутым на `previousYawShift` градусов (обратный доворот). `move` — шаг,
+ * `null` вне него.
  */
 export interface INavigatorFrame<TSession extends INavigatorSession> {
   current: TSession | null;
   previous: TSession | null;
   previousView: IView | null;
+  previousYawShift: number;
   weight: number;
   isAnimating: boolean;
+  move: INavigatorMove | null;
 }
 
 /**

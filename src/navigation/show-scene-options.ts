@@ -1,7 +1,9 @@
 import { EnumEasing, type TEasingFunction, resolveEasing } from '../math/easing';
+import type { IScenePlace } from '../tour/scene-place';
 import { LIBRARY_DEFAULT_VIEW, resolveSceneLimits, resolveSceneView } from '../tour/tour-defaults';
 import type { IScene, ITour, IView, IViewSettings } from '../tour/tour-types';
 import { applyViewSettings } from '../viewer/camera-state';
+import { DEFAULT_MOVE_DURATION_MS, type IResolvedMove, resolveMove } from './move-options';
 import {
   EnumSceneView,
   EnumTransitionType,
@@ -12,12 +14,14 @@ import type { IPreloadSceneOptions, IShowSceneOptions, TSceneTransition } from '
 import type { ISceneTarget } from './navigator-types';
 
 /**
- * Переход с подставленными умолчаниями. Мгновенная смена — это переход длительностью 0.
+ * Переход с подставленными умолчаниями. Мгновенная смена — это переход длительностью 0; у шага есть
+ * `move`, у остальных — `null`.
  */
 export interface IResolvedTransition {
   type: TTransitionType;
   durationMs: number;
   easing: TEasingFunction;
+  move: IResolvedMove | null;
 }
 
 export interface IResolvedShowSceneOptions {
@@ -28,11 +32,13 @@ export interface IResolvedShowSceneOptions {
 
 export const DEFAULT_BLEND_DURATION_MS = 500;
 export const DEFAULT_BLEND_EASING: typeof EnumEasing.SineInOut = EnumEasing.SineInOut;
+export const DEFAULT_MOVE_EASING: typeof EnumEasing.QuadOut = EnumEasing.QuadOut;
 
 const CUT_TRANSITION: Readonly<IResolvedTransition> = Object.freeze({
   type: EnumTransitionType.Cut,
   durationMs: 0,
   easing: resolveEasing(EnumEasing.Linear),
+  move: null,
 });
 
 const failRange = (name: string, requirement: string, value: unknown): never => {
@@ -61,15 +67,17 @@ const resolveTransition = (transition: TSceneTransition | undefined): IResolvedT
     return CUT_TRANSITION;
   }
 
-  const durationMs = transition.durationMs ?? DEFAULT_BLEND_DURATION_MS;
+  const isMove = transition.type === EnumTransitionType.Move;
+  const durationMs = transition.durationMs ?? (isMove ? DEFAULT_MOVE_DURATION_MS : DEFAULT_BLEND_DURATION_MS);
 
   if (!Number.isFinite(durationMs) || durationMs < 0) {
     failRange('transition.durationMs', 'a finite number >= 0', durationMs);
   }
 
-  const easing = resolveEasing(transition.easing ?? DEFAULT_BLEND_EASING);
+  const easing = resolveEasing(transition.easing ?? (isMove ? DEFAULT_MOVE_EASING : DEFAULT_BLEND_EASING));
+  const move = isMove ? resolveMove(transition) : null;
 
-  return durationMs === 0 ? CUT_TRANSITION : { type: EnumTransitionType.Blend, durationMs, easing };
+  return durationMs === 0 ? CUT_TRANSITION : { type: transition.type, durationMs, easing, move };
 };
 
 const copyViewSettings = ({ yaw, pitch, roll, fov, fovMode }: IViewSettings): IViewSettings => ({
@@ -80,9 +88,12 @@ const copyViewSettings = ({ yaw, pitch, roll, fov, fovMode }: IViewSettings): IV
   fovMode,
 });
 
-const resolveView = (view: unknown): TSceneView | IViewSettings => {
+const resolveView = (
+  view: unknown,
+  fallback: TSceneView = EnumSceneView.Scene,
+): TSceneView | IViewSettings => {
   if (view === undefined) {
-    return EnumSceneView.Scene;
+    return fallback;
   }
 
   if (isSceneView(view)) {
@@ -101,17 +112,22 @@ const resolveView = (view: unknown): TSceneView | IViewSettings => {
 };
 
 /**
- * Опции смены сцены с умолчаниями: мгновенная смена, `blend` — 500 мс `sine-in-out`, вид сцены, без
- * сохранения инерции. Неверные значения — ошибки программиста хоста, поэтому `RangeError` сразу, ещё до
- * изменения снимка и сетевых запросов.
+ * Опции смены сцены с умолчаниями: мгновенная смена, `blend` — 500 мс `sine-in-out`, `move` — 500 мс
+ * `quad-out` с размытием 0.5; вид сцены, а у шага — `keep`; без сохранения инерции. Неверные значения —
+ * ошибки программиста хоста, поэтому `RangeError` сразу, ещё до изменения снимка и сетевых запросов.
  */
 export const resolveShowSceneOptions = (
   options: IShowSceneOptions | undefined,
-): IResolvedShowSceneOptions => ({
-  transition: resolveTransition(options?.transition),
-  view: resolveView(options?.view),
-  keepMotion: options?.keepMotion === true,
-});
+): IResolvedShowSceneOptions => {
+  const transition = resolveTransition(options?.transition);
+  const viewFallback = transition.move === null ? EnumSceneView.Scene : EnumSceneView.Keep;
+
+  return {
+    transition,
+    view: resolveView(options?.view, viewFallback),
+    keepMotion: options?.keepMotion === true,
+  };
+};
 
 /**
  * Опции предзагрузки с умолчанием: вид сцены. Неверный `view` — `RangeError` сразу, как у `showScene`.
@@ -121,16 +137,18 @@ export const resolvePreloadSceneView = (
 ): TSceneView | IViewSettings => resolveView(options?.view);
 
 /**
- * Вид в момент появления новой сцены: `keep` — текущий вид камеры (его проведут через ограничения новой
- * сцены), `scene` — стартовый вид сцены, объект — его поля поверх стартового вида.
+ * Вид в момент появления новой сцены: `keep` — текущий вид камеры с `yaw`, сдвинутым на доворот (тогда
+ * направление в мире то же; ограничения новой сцены применит камера), `scene` — стартовый вид сцены,
+ * объект — его поля поверх стартового вида.
  */
 export const resolveViewAfterSwitch = (
   view: TSceneView | IViewSettings,
   currentView: IView,
   sceneStartView: IView,
+  turnDegrees = 0,
 ): IView => {
   if (view === EnumSceneView.Keep) {
-    return currentView;
+    return { ...currentView, yaw: currentView.yaw + turnDegrees };
   }
 
   if (view === EnumSceneView.Scene) {
@@ -139,6 +157,13 @@ export const resolveViewAfterSwitch = (
 
   return applyViewSettings(sceneStartView, view);
 };
+
+/**
+ * Доворот новой сцены в градусах: явный `turn` шага, иначе разность `heading` сцены на экране и новой (без
+ * сцены на экране — 0). У вариантов ремонта одной комнаты `heading` одинаковый, и доворота нет.
+ */
+export const viewTurnOf = (explicitTurn: number | null, from: IScenePlace | null, to: IScenePlace): number =>
+  explicitTurn ?? (from === null ? 0 : from.heading - to.heading);
 
 /**
  * Кадр готовности сцены по правилам `view` у `showScene`: вид считается в момент вызова и дальше не
@@ -150,8 +175,9 @@ export const resolveSceneTarget = (
   view: TSceneView | IViewSettings,
   currentView: IView,
   isPreload: boolean,
+  turnDegrees = 0,
 ): ISceneTarget => ({
-  view: resolveViewAfterSwitch(view, currentView, resolveSceneView(tour, scene)),
+  view: resolveViewAfterSwitch(view, currentView, resolveSceneView(tour, scene), turnDegrees),
   limits: resolveSceneLimits(tour, scene),
   isPreload,
 });

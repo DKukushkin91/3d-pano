@@ -1,15 +1,23 @@
 import { EnumViewerStatus } from '../state/viewer-dictionaries';
+import { type IScenePlace, resolveScenePlace } from '../tour/scene-place';
 import type { IScene, ITour, IView } from '../tour/tour-types';
 import { type IDeferred, createDeferred } from './deferred';
+import { type IMoveGeometry, moveFrameAt } from './move-geometry';
 import type {
   INavigatorFrame,
+  INavigatorMove,
   INavigatorSession,
   ISceneRecord,
   ISceneSessionState,
   ISceneTarget,
 } from './navigator-types';
 import { sceneKeyOf } from './scene-key';
-import type { IResolvedShowSceneOptions, IResolvedTransition } from './show-scene-options';
+import {
+  type IResolvedShowSceneOptions,
+  type IResolvedTransition,
+  resolveSceneTarget,
+  viewTurnOf,
+} from './show-scene-options';
 import { isTransitionFinished, transitionWeight } from './transition-weight';
 
 /**
@@ -36,13 +44,19 @@ export interface IBlendState<TSession extends INavigatorSession> {
   from: ISceneRecord<TSession>;
   transition: IResolvedTransition;
   previousView: IView | null;
+  previousYawShift: number;
+  move: IMoveGeometry | null;
   startMs: number | null;
   promises: IDeferred<boolean>[];
 }
 
+/**
+ * Сцена на экране и её место в мире — от него считаются доворот и шаг к следующей сцене.
+ */
 export interface IDisplayedScene<TSession extends INavigatorSession> {
   sceneId: string;
   record: ISceneRecord<TSession>;
+  place: IScenePlace;
 }
 
 /**
@@ -73,8 +87,20 @@ export const rejectPromises = (promises: readonly IDeferred<boolean>[], error: u
 
 export const isDefined = <TValue>(value: TValue | undefined): value is TValue => value !== undefined;
 
+const moveOf = (geometry: IMoveGeometry, progress: number, eased: number): INavigatorMove => {
+  const frame = moveFrameAt(geometry, progress, eased);
+
+  return {
+    current: { offset: frame.toOffset, model: geometry.toModel },
+    previous: { offset: frame.fromOffset, model: geometry.fromModel },
+    blurStrength: frame.blurStrength,
+    target: geometry.step,
+  };
+};
+
 /**
- * Кадр смешивания для момента `timeMs`, `null` — смешивание закончилось.
+ * Кадр смешивания или шага для момента `timeMs`, `null` — переход закончился. Сдвиги камеры идут по тому же
+ * сглаженному прогрессу, что и вес новой сцены.
  */
 export const blendFrame = <TSession extends INavigatorSession>(
   blend: IBlendState<TSession>,
@@ -89,12 +115,17 @@ export const blendFrame = <TSession extends INavigatorSession>(
     return null;
   }
 
+  const weight = transitionWeight(blend.transition, elapsedMs);
+  const progress = elapsedMs / blend.transition.durationMs;
+
   return {
     current,
     previous: blend.from.session,
     previousView: blend.previousView,
-    weight: transitionWeight(blend.transition, elapsedMs),
+    previousYawShift: blend.previousYawShift,
+    weight,
     isAnimating: true,
+    move: blend.move === null ? null : moveOf(blend.move, progress, weight),
   };
 };
 
@@ -119,4 +150,22 @@ export const replacePendingCaller = <TSession extends INavigatorSession>(
   pending.options = options;
 
   return deferred.promise;
+};
+
+/**
+ * Кадр готовности смены: вид появления с доворотом от сцены на экране (`fromPlace`, `null` — её нет).
+ */
+export const switchTargetOf = (
+  tour: ITour,
+  scene: IScene,
+  options: IResolvedShowSceneOptions,
+  currentView: IView,
+  fromPlace: IScenePlace | null,
+): ISceneTarget => {
+  const turnDegrees =
+    fromPlace === null
+      ? 0
+      : viewTurnOf(options.transition.move?.turn ?? null, fromPlace, resolveScenePlace(tour, scene));
+
+  return resolveSceneTarget(tour, scene, options.view, currentView, false, turnDegrees);
 };

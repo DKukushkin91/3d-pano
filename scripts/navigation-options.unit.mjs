@@ -34,7 +34,7 @@ const assertRangeError = (options, optionName) => {
 
 describe('scene-transitions · Словари переходов', () => {
   it('Константа или строка: EnumTransitionType.Blend и "blend" разрешаются одинаково', () => {
-    assert.deepEqual(Object.values(EnumTransitionType), ['cut', 'blend']);
+    assert.deepEqual(Object.values(EnumTransitionType), ['cut', 'blend', 'move']);
 
     const fromConstant = resolveShowSceneOptions({ transition: { type: EnumTransitionType.Blend } });
     const fromString = resolveShowSceneOptions({ transition: { type: 'blend' } });

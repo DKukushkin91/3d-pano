@@ -1,5 +1,7 @@
 import type { IPanoViewerSnapshot } from '../state/viewer-state-types';
+import { type IScenePlace, resolveScenePlace } from '../tour/scene-place';
 import { resolveSceneLimits, resolveSceneView } from '../tour/tour-defaults';
+import { type IMoveGeometry, resolveMoveGeometry } from './move-geometry';
 import { EnumSceneView, EnumTransitionType } from './navigation-dictionaries';
 import type {
   INavigatorFrame,
@@ -7,7 +9,7 @@ import type {
   ISceneNavigatorHost,
   ISceneRecord,
 } from './navigator-types';
-import { resolveViewAfterSwitch } from './show-scene-options';
+import { resolveViewAfterSwitch, viewTurnOf } from './show-scene-options';
 import {
   type IBlendState,
   type IDisplayedScene,
@@ -36,7 +38,7 @@ export interface IScenePresentationOptions<TSession extends INavigatorSession> {
 
 export interface IScenePresentation<TSession extends INavigatorSession> {
   syncState: (changes?: Partial<IPanoViewerSnapshot>) => void;
-  presentCamera: (sceneSwitch: ISceneSwitch<TSession>) => void;
+  presentCamera: (sceneSwitch: ISceneSwitch<TSession>, turnDegrees: number) => void;
   appear: (sceneSwitch: ISceneSwitch<TSession>, from: ISceneRecord<TSession>) => void;
   finishBlend: () => void;
   frame: (timeMs: number) => INavigatorFrame<TSession>;
@@ -74,31 +76,66 @@ export const createScenePresentation = <TSession extends INavigatorSession>({
     syncState();
   };
 
-  const presentCamera = ({ tour, scene, options, record }: ISceneSwitch<TSession>): void => {
+  const presentCamera = (
+    { tour, scene, options, record }: ISceneSwitch<TSession>,
+    turnDegrees: number,
+  ): void => {
     host.present({
       tour,
       scene,
-      view: resolveViewAfterSwitch(options.view, host.getView(), resolveSceneView(tour, scene)),
+      view: resolveViewAfterSwitch(options.view, host.getView(), resolveSceneView(tour, scene), turnDegrees),
       limits: resolveSceneLimits(tour, scene),
       pixelsPerRadian: record.state.pixelsPerRadian,
       keepMotion: options.keepMotion,
     });
-    state.displayed = { sceneId: scene.id, record };
+    state.displayed = { sceneId: scene.id, record, place: resolveScenePlace(tour, scene) };
     host.requestFrame();
+  };
+
+  const moveGeometryOf = (
+    sceneSwitch: ISceneSwitch<TSession>,
+    from: IScenePlace,
+    to: IScenePlace,
+  ): IMoveGeometry | null => {
+    const { move } = sceneSwitch.options.transition;
+
+    return move === null
+      ? null
+      : resolveMoveGeometry({
+          from,
+          to,
+          view: host.getView(),
+          point: move.point,
+          turn: move.turn,
+          blur: move.blur,
+        });
   };
 
   const appear = (sceneSwitch: ISceneSwitch<TSession>, from: ISceneRecord<TSession>): void => {
     const { transition, view } = sceneSwitch.options;
-    const previousView = view === EnumSceneView.Keep ? null : host.getView();
+    const isLive = view === EnumSceneView.Keep;
+    const previousView = isLive ? null : host.getView();
+    const fromPlace = state.displayed?.place ?? null;
+    const toPlace = resolveScenePlace(sceneSwitch.tour, sceneSwitch.scene);
+    const turnDegrees = viewTurnOf(transition.move?.turn ?? null, fromPlace, toPlace);
+    const move = fromPlace === null ? null : moveGeometryOf(sceneSwitch, fromPlace, toPlace);
 
     finishBlend();
-    presentCamera(sceneSwitch);
+    presentCamera(sceneSwitch, isLive ? turnDegrees : 0);
     state.pending = null;
 
     if (transition.type === EnumTransitionType.Cut) {
       settlePromises(sceneSwitch.promises, true);
     } else {
-      state.blend = { from, transition, previousView, startMs: null, promises: sceneSwitch.promises };
+      state.blend = {
+        from,
+        transition,
+        previousView,
+        previousYawShift: isLive ? -turnDegrees : 0,
+        move,
+        startMs: null,
+        promises: sceneSwitch.promises,
+      };
     }
 
     syncState();
@@ -114,7 +151,15 @@ export const createScenePresentation = <TSession extends INavigatorSession>({
 
     finishBlend();
 
-    return { current, previous: null, previousView: null, weight: 1, isAnimating: false };
+    return {
+      current,
+      previous: null,
+      previousView: null,
+      previousYawShift: 0,
+      weight: 1,
+      isAnimating: false,
+      move: null,
+    };
   };
 
   return { syncState, presentCamera, appear, finishBlend, frame };
