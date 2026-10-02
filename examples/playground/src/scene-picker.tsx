@@ -3,7 +3,7 @@ import type { MouseEvent, ReactElement } from 'react';
 
 /**
  * Переходы как в neometria: смена ремонта — короткое смешивание с сохранением вида и инерции, смена
- * комнаты — более длинное со стартовым видом сцены.
+ * комнаты — шаг к следующей комнате по местам сцен в мире.
  */
 export const VARIANT_SWITCH: IShowSceneOptions = {
   transition: { type: 'blend', durationMs: 300, easing: 'sine-in-out' },
@@ -11,7 +11,7 @@ export const VARIANT_SWITCH: IShowSceneOptions = {
   keepMotion: true,
 };
 
-export const ROOM_SWITCH: IShowSceneOptions = { transition: { type: 'blend', durationMs: 800 } };
+export const ROOM_SWITCH: IShowSceneOptions = { transition: { type: 'move' } };
 
 const ROOMS = [
   { id: 'balcony', variants: ['balcony', 'balcony-cube', 'balcony-tiles'] },

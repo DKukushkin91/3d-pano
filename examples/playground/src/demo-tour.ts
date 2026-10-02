@@ -15,21 +15,27 @@ export const NEOMETRIA_FACE_NAMES = {
   down: 'd',
 } as const;
 
+const ROOM_PLACE = { position: { x: 0, y: 0, z: 0 }, heading: 0 };
+const BALCONY_PLACE = { position: { x: 0.2, y: 0, z: -3.9 }, heading: 180 };
+
 /**
  * Тур из локальных панорам владельца: балкон и номер — каждый одним файлом, гранями куба и тайловым кубом.
  * Варианты одного снимка — это «смена ремонта»: при смешивании с `view: 'keep'` смена должна быть
- * незаметной. Точки на полу ведут из балкона в номер и обратно внутри одного варианта. Источники нарочно
- * записаны по-разному — константой словаря и строкой: проверка типов песочницы подтверждает, что обе формы
- * равнозначны.
+ * незаметной. Точки на полу ведут шагом из балкона в номер и обратно внутри одного варианта. Места в мире
+ * сняты на глаз по точкам на полу: балкон в 3.9 м позади центра номера и повёрнут к нему спиной. Источники
+ * нарочно записаны по-разному — константой словаря и строкой: проверка типов песочницы подтверждает, что
+ * обе формы равнозначны.
  */
 export const DEMO_TOUR: ITour = {
   startScene: 'balcony',
   defaults: {
     view: { fov: 90 },
+    cameraHeight: 1.5,
   },
   scenes: [
     {
       id: 'balcony',
+      ...BALCONY_PLACE,
       title: 'Balcony — one equirectangular file',
       source: { type: EnumSourceType.Equirect, url: LOCAL_ASSETS.balcony },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
@@ -37,6 +43,7 @@ export const DEMO_TOUR: ITour = {
     },
     {
       id: 'balcony-cube',
+      ...BALCONY_PLACE,
       title: 'Balcony — six cube faces',
       source: { type: 'cube', url: GENERATED_ASSETS.balconyFaces, faceNames: NEOMETRIA_FACE_NAMES },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
@@ -44,6 +51,7 @@ export const DEMO_TOUR: ITour = {
     },
     {
       id: 'hotel-room',
+      ...ROOM_PLACE,
       title: 'Hotel room — one equirectangular file',
       source: { type: 'equirect', url: LOCAL_ASSETS.hotelRoom },
       preview: { type: EnumSourceType.Equirect, url: GENERATED_ASSETS.hotelRoomPreview },
@@ -51,6 +59,7 @@ export const DEMO_TOUR: ITour = {
     },
     {
       id: 'hotel-room-cube',
+      ...ROOM_PLACE,
       title: 'Hotel room — six cube faces',
       source: {
         type: EnumSourceType.Cube,
@@ -62,6 +71,7 @@ export const DEMO_TOUR: ITour = {
     },
     {
       id: 'balcony-tiles',
+      ...BALCONY_PLACE,
       title: 'Balcony — multiresolution cube',
       source: {
         type: 'cube',
@@ -73,6 +83,7 @@ export const DEMO_TOUR: ITour = {
     },
     {
       id: 'hotel-room-tiles',
+      ...ROOM_PLACE,
       title: 'Hotel room — multiresolution cube',
       source: {
         type: EnumSourceType.Cube,

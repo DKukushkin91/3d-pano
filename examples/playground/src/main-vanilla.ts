@@ -253,6 +253,8 @@ createSceneControls(
     easing: required(document.querySelector<HTMLSelectElement>('[data-easing]')),
     view: required(document.querySelector<HTMLSelectElement>('[data-view]')),
     keepMotion: required(document.querySelector<HTMLInputElement>('[data-keep-motion]')),
+    moveTurn: required(document.querySelector<HTMLInputElement>('[data-move-turn]')),
+    moveBlur: required(document.querySelector<HTMLInputElement>('[data-move-blur]')),
   },
   { onShow: handleShowScene, onPreload: handlePreloadScene },
 );

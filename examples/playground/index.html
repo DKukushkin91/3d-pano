@@ -24,6 +24,7 @@
           <select data-transition-type>
             <option value="cut">cut</option>
             <option value="blend" selected>blend</option>
+            <option value="move">move</option>
           </select>
         </label>
         <label>duration, ms <input type="number" min="0" step="50" value="500" data-duration /></label>
@@ -34,11 +35,14 @@
         <label>
           view
           <select data-view>
+            <option value="" selected>default</option>
             <option value="scene">scene</option>
             <option value="keep">keep</option>
           </select>
         </label>
         <label><input type="checkbox" data-keep-motion /> keepMotion (keep inertia)</label>
+        <label>move turn <input type="number" step="15" placeholder="heading" data-move-turn /></label>
+        <label>blur <input type="number" min="0" max="1" step="0.1" value="0.5" data-move-blur /></label>
       </fieldset>
       <fieldset class="toolbar" data-look-at-buttons>
         <legend>lookAt</legend>
