@@ -33,3 +33,36 @@ export interface IHotspot {
   anchor?: THotspotAnchor;
   plane?: IHotspotPlane;
 }
+
+/**
+ * Хотспот хоста: свой элемент в проекции `position`. Со `scene` он показан только в этой сцене, без неё —
+ * в любой.
+ */
+export interface IAddHotspotOptions {
+  element: HTMLElement;
+  position: TViewTarget;
+  scene?: string;
+  anchor?: THotspotAnchor;
+  plane?: IHotspotPlane;
+}
+
+/**
+ * Управление хотспотом хоста: по сеттеру на поле, `undefined` возвращает поле к умолчанию. После `remove`
+ * или уничтожения просмотрщика методы ничего не делают.
+ */
+export interface IHotspotHandle {
+  setPosition: (position: TViewTarget) => void;
+  setScene: (scene: string | undefined) => void;
+  setAnchor: (anchor: THotspotAnchor | undefined) => void;
+  setPlane: (plane: IHotspotPlane | undefined) => void;
+  remove: () => void;
+}
+
+/**
+ * Второй аргумент `renderHotspot`: сцена хотспота и сигнал, который отменяется, когда элемент убран, —
+ * по нему хост освобождает своё (слушатели, порталы).
+ */
+export interface IHotspotRenderContext {
+  sceneId: string;
+  signal: AbortSignal;
+}

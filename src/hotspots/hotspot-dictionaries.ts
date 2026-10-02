@@ -31,3 +31,6 @@ export const HOTSPOT_ANCHOR_FRACTIONS: Readonly<Record<THotspotAnchor, { x: numb
   [EnumHotspotAnchor.BottomLeft]: { x: 0, y: 1 },
   [EnumHotspotAnchor.BottomRight]: { x: 1, y: 1 },
 };
+
+export const isHotspotAnchor = (value: unknown): value is THotspotAnchor =>
+  Object.values(EnumHotspotAnchor).some((anchor) => anchor === value);

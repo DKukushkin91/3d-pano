@@ -2,6 +2,7 @@ import { toDegrees } from '../math/angles';
 import { anglesFromDirection } from '../math/camera-basis';
 import { EnumEasing, type TEasingFunction, resolveEasing } from '../math/easing';
 import type { IView } from '../tour/tour-types';
+import { VIEW_TARGET_REQUIREMENT, parseViewTarget } from './view-target';
 import type { ILookAtOptions, ISpherePoint, TViewTarget } from './viewer-types';
 
 /**
@@ -19,49 +20,15 @@ export interface ILookAtRequest {
 export const DEFAULT_LOOK_AT_DURATION_MS = 900;
 export const DEFAULT_LOOK_AT_EASING: typeof EnumEasing.CubicOut = EnumEasing.CubicOut;
 
-const TARGET_REQUIREMENT =
-  'a { yaw, pitch } point with finite angles or a non-zero { x, y, z } direction with finite coordinates';
-
 const failArgument = (name: string, requirement: string, value: unknown): never => {
   throw new RangeError(`3d-pano: lookAt "${name}" must be ${requirement}, got ${String(value)}`);
 };
 
 const failTarget = (): never => {
-  throw new RangeError(`3d-pano: lookAt "target" must be ${TARGET_REQUIREMENT}`);
+  throw new RangeError(`3d-pano: lookAt "target" must be ${VIEW_TARGET_REQUIREMENT}`);
 };
 
-const finiteField = (target: object, key: string): number | null => {
-  const value: unknown = Reflect.get(target, key);
-
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-};
-
-const copySpherePoint = (target: object): ISpherePoint => {
-  const yaw = finiteField(target, 'yaw');
-  const pitch = finiteField(target, 'pitch');
-
-  return yaw === null || pitch === null ? failTarget() : { yaw, pitch };
-};
-
-const copyDirection = (target: object): TViewTarget => {
-  const x = finiteField(target, 'x');
-  const y = finiteField(target, 'y');
-  const z = finiteField(target, 'z');
-
-  if (x === null || y === null || z === null) {
-    return failTarget();
-  }
-
-  return x === 0 && y === 0 && z === 0 ? failTarget() : { x, y, z };
-};
-
-const copyTarget = (target: unknown): TViewTarget => {
-  if (typeof target !== 'object' || target === null) {
-    return failTarget();
-  }
-
-  return 'yaw' in target || 'pitch' in target ? copySpherePoint(target) : copyDirection(target);
-};
+const copyTarget = (target: unknown): TViewTarget => parseViewTarget(target) ?? failTarget();
 
 const resolveFov = (fov: number | undefined): number | null => {
   if (fov === undefined) {
