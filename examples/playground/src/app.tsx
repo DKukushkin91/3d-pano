@@ -1,4 +1,4 @@
-import type { IPanoError, IShowSceneOptions } from '@dkukushkin/3d-pano';
+import type { IHotspot, IPanoError, IShowSceneOptions } from '@dkukushkin/3d-pano';
 import { type IPanoViewer, PanoViewer } from '@dkukushkin/3d-pano/react';
 import { type ChangeEvent, type ReactElement, useEffect, useMemo, useState } from 'react';
 
@@ -7,11 +7,13 @@ import { LoadingBar } from './loading-bar';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { OwnMarkupDemo } from './own-markup-demo';
 import { PinFocus } from './pin-focus';
+import { DemoPins, renderDemoHotspot } from './react-hotspots';
 import { ROOM_SWITCH, ScenePicker } from './scene-picker';
 import { ViewReadout } from './view-readout';
 
 interface IReactPlaygroundState {
   viewer: IPanoViewer | null;
+  hotspotClicks: string[];
   viewerInstances: number;
   appCommits: number;
   sceneLoadStarts: number;
@@ -33,6 +35,7 @@ const STALE_SCENE = 'attic';
 
 const playgroundState: IReactPlaygroundState = {
   viewer: null,
+  hotspotClicks: [],
   viewerInstances: 0,
   appCommits: 0,
   sceneLoadStarts: 0,
@@ -55,10 +58,15 @@ const handleViewChange = (): void => {
   playgroundState.viewChanges += 1;
 };
 
+const handleHotspotClick = ({ hotspot }: { hotspot: IHotspot }): void => {
+  playgroundState.hotspotClicks.push(hotspot.id);
+};
+
 /**
  * React-страница песочницы: сцена как проп с разными переходами для комнаты и ремонта, переход через
  * `ref`, тур, который пересобирается на каждом рендере, замена тура, монтирование и размонтирование.
- * Поворот к «пину» идёт из эффекта с `AbortController` в очистке (`PinFocus`). Вращение камеры страницу не
+ * Поворот к «пину» идёт из эффекта с `AbortController` в очистке (`PinFocus`). Точки тура рисует свой
+ * компонент через `renderHotspot`, пины товаров — `<Hotspot>` с переключателем видимости. Вращение камеры страницу не
  * перерисовывает: вид показывает `ViewReadout` в обход состояния. Счётчики,
  * включая число коммитов `App`, лежат в `window.reactPlayground` для проверки из консоли.
  */
@@ -66,6 +74,7 @@ export const App = (): ReactElement => {
   const [viewer, setViewer] = useState<IPanoViewer | null>(null);
   const [isMounted, setIsMounted] = useState(true);
   const [isKeyboardEnabled, setIsKeyboardEnabled] = useState(true);
+  const [isPinsVisible, setIsPinsVisible] = useState(true);
   const [isNarrowTour, setIsNarrowTour] = useState(false);
   const [scene, setScene] = useState(START_SCENE);
   const [sceneOptions, setSceneOptions] = useState<IShowSceneOptions>(ROOM_SWITCH);
@@ -99,6 +108,10 @@ export const App = (): ReactElement => {
 
   const handleLookRightClick = (): void => {
     viewer?.setView({ yaw: LOOK_RIGHT_YAW });
+  };
+
+  const handlePinsToggle = (): void => {
+    setIsPinsVisible((current) => !current);
   };
 
   const handleMountToggle = (): void => {
@@ -156,6 +169,9 @@ export const App = (): ReactElement => {
         <button type="button" onClick={handleLookRightClick} data-look-right>
           Look right
         </button>
+        <button type="button" onClick={handlePinsToggle} data-toggle-pins>
+          {isPinsVisible ? 'Hide pins' : 'Show pins'}
+        </button>
         <button type="button" onClick={handleMountToggle} data-toggle-mount>
           {isMounted ? 'Unmount' : 'Mount'}
         </button>
@@ -178,8 +194,11 @@ export const App = (): ReactElement => {
           onSceneChange={handleSceneChange}
           onViewChange={handleViewChange}
           onError={handleError}
+          onHotspotClick={handleHotspotClick}
+          renderHotspot={renderDemoHotspot}
         >
           <LoadingBar viewer={viewer} />
+          {isPinsVisible && <DemoPins />}
         </PanoViewer>
       )}
       <p className="readout" data-react-readout>

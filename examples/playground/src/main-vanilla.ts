@@ -1,6 +1,7 @@
 import {
   EnumErrorCategory,
   EnumViewerStatus,
+  type IHotspotHandle,
   type ILookAtOptions,
   type IPanoViewer,
   type IShowSceneOptions,
@@ -11,6 +12,7 @@ import {
 
 import { BROKEN_TOUR_JSON, DEMO_TOUR, NARROW_FOV_TOUR } from './demo-tour';
 import { createEventLog } from './event-log';
+import { addDemoPins } from './host-pins';
 import { describeMissingLocalAssets, findMissingLocalAssets } from './local-assets';
 import { createLookAtControls, createOverlayButton } from './look-at-controls';
 import { type IPlaygroundNetwork, createPlaygroundLoader } from './playground-loader';
@@ -43,6 +45,10 @@ const replaceTourButton = required(document.querySelector<HTMLButtonElement>('[d
 const brokenTourButton = required(document.querySelector<HTMLButtonElement>('[data-broken-tour]'));
 const toggleViewerButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-viewer]'));
 const toggleSizeButton = required(document.querySelector<HTMLButtonElement>('[data-toggle-size]'));
+const pinsToggle = required(document.querySelector<HTMLInputElement>('[data-pins]'));
+const preventNavigationToggle = required(
+  document.querySelector<HTMLInputElement>('[data-prevent-navigation]'),
+);
 const readout = required(document.querySelector<HTMLPreElement>('[data-readout]'));
 const logEvent = createEventLog(required(document.querySelector<HTMLOListElement>('[data-events]')));
 
@@ -50,6 +56,7 @@ const FAILING_FACE_SUFFIX = '/l.jpg';
 const network: IPlaygroundNetwork = { isSlow: false, failingSuffix: null };
 const loader = createPlaygroundLoader(network);
 let viewer: IPanoViewer | null = null;
+let pins: IHotspotHandle[] = [];
 let lastView: IView | null = null;
 let isNarrowTour = false;
 
@@ -93,6 +100,21 @@ const attachLogging = (target: IPanoViewer, name: string): void => {
   target.on('error', ({ error }) => {
     logEvent(`${name} error ${error.category}/${error.code} ${error.url ?? ''}`);
   });
+  target.on('hotspotClick', ({ sceneId, hotspot, preventDefault }) => {
+    if (preventNavigationToggle.checked) {
+      preventDefault();
+    }
+
+    logEvent(
+      `${name} hotspotClick ${sceneId}/${hotspot.id}${preventNavigationToggle.checked ? ' (prevented)' : ''}`,
+    );
+  });
+  target.on('hotspotEnter', ({ sceneId, hotspot }) => {
+    logEvent(`${name} hotspotEnter ${sceneId}/${hotspot.id}`);
+  });
+  target.on('hotspotLeave', ({ sceneId, hotspot }) => {
+    logEvent(`${name} hotspotLeave ${sceneId}/${hotspot.id}`);
+  });
 };
 
 const createMainViewer = (tour: ITour, view: IView | null): void => {
@@ -110,6 +132,8 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
       logEvent('overlay button click');
     }),
   );
+
+  pins = pinsToggle.checked ? addDemoPins(viewer) : [];
 
   if (view !== null) {
     viewer.setView(view);
@@ -165,6 +189,14 @@ const handleReplaceTourClick = (): void => {
       view: 'keep',
     }),
   );
+};
+
+const handlePinsChange = (): void => {
+  for (const pin of pins) {
+    pin.remove();
+  }
+
+  pins = pinsToggle.checked && viewer !== null ? addDemoPins(viewer) : [];
 };
 
 const handleSlowChange = (): void => {
@@ -241,6 +273,7 @@ createLookAtControls(
   { getView: () => viewer?.getView() ?? null, onLookAt: handleLookAt },
 );
 slowToggle.addEventListener('change', handleSlowChange);
+pinsToggle.addEventListener('change', handlePinsChange);
 failFaceToggle.addEventListener('change', handleFailFaceChange);
 retryButton.addEventListener('click', handleRetryClick);
 replaceTourButton.addEventListener('click', handleReplaceTourClick);

@@ -1,5 +1,6 @@
 import { EnumSourceType, type ITour } from '@dkukushkin/3d-pano';
 
+import { balconyHotspots, roomHotspots } from './demo-hotspots';
 import { GENERATED_ASSETS, LOCAL_ASSETS } from './local-assets';
 
 /**
@@ -17,7 +18,7 @@ export const NEOMETRIA_FACE_NAMES = {
 /**
  * Тур из локальных панорам владельца: балкон и номер — каждый одним файлом и гранями куба. Пара «файл ↔
  * грани» одного снимка — это «смена ремонта»: при смешивании с `view: 'keep'` смена должна быть
- * незаметной. Источники нарочно записаны по-разному — константой словаря и строкой: проверка типов
+ * незаметной. Точки на полу ведут из балкона в номер и обратно внутри одного варианта. Источники нарочно записаны по-разному — константой словаря и строкой: проверка типов
  * песочницы подтверждает, что обе формы равнозначны.
  */
 export const DEMO_TOUR: ITour = {
@@ -31,18 +32,21 @@ export const DEMO_TOUR: ITour = {
       title: 'Balcony — one equirectangular file',
       source: { type: EnumSourceType.Equirect, url: LOCAL_ASSETS.balcony },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
+      hotspots: balconyHotspots('hotel-room'),
     },
     {
       id: 'balcony-cube',
       title: 'Balcony — six cube faces',
       source: { type: 'cube', url: GENERATED_ASSETS.balconyFaces, faceNames: NEOMETRIA_FACE_NAMES },
       preview: { type: 'equirect', url: GENERATED_ASSETS.balconyPreview },
+      hotspots: balconyHotspots('hotel-room-cube'),
     },
     {
       id: 'hotel-room',
       title: 'Hotel room — one equirectangular file',
       source: { type: 'equirect', url: LOCAL_ASSETS.hotelRoom },
       preview: { type: EnumSourceType.Equirect, url: GENERATED_ASSETS.hotelRoomPreview },
+      hotspots: roomHotspots('balcony'),
     },
     {
       id: 'hotel-room-cube',
@@ -53,6 +57,7 @@ export const DEMO_TOUR: ITour = {
         faceNames: NEOMETRIA_FACE_NAMES,
       },
       preview: { type: 'equirect', url: GENERATED_ASSETS.hotelRoomPreview },
+      hotspots: roomHotspots('balcony-cube'),
     },
   ],
 };

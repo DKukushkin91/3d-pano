@@ -84,3 +84,68 @@ nav a {
   top: 1rem;
   right: 1rem;
 }
+
+[data-pano-hotspot-button] {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  font: inherit;
+  background: rgb(0 0 0 / 55%);
+  cursor: pointer;
+  transition:
+    transform 0.18s,
+    background 0.18s;
+}
+
+[data-pano-hotspot-button]:hover,
+[data-pano-hotspot-button]:focus-visible {
+  background: rgb(0 0 0 / 80%);
+  transform: scale(1.1);
+}
+
+[data-pano-hotspot^='to-'] [data-pano-hotspot-button] {
+  width: 120px;
+  height: 120px;
+  border: 10px solid #fff;
+  border-radius: 50%;
+  color: transparent;
+  background: rgb(255 255 255 / 25%);
+}
+
+[data-pano-hotspot^='to-'] [data-pano-hotspot-button]:hover {
+  background: rgb(255 255 255 / 60%);
+}
+
+.pin-card {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-left: 2px solid #f6c177;
+  color: #fff;
+  background: rgb(0 0 0 / 65%);
+  text-decoration: none;
+}
+
+.floor-spot {
+  display: block;
+  width: 120px;
+  height: 120px;
+  border: 10px solid #fff;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 25%);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.floor-spot:hover,
+.floor-spot:focus-visible {
+  background: rgb(255 255 255 / 60%);
+}
+
+.info-spot {
+  display: block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  color: #1e1e1e;
+  background: #f6c177;
+}
