@@ -35,15 +35,11 @@
         </details>
 
         <details class="panel" open>
-          <summary>Переход</summary>
-          <select
-            data-transition-type
-            title="Нажмите — камера сразу перейдёт в другую комнату этим переходом"
-            hidden
-          >
+          <summary>Переход по метке и кнопкам</summary>
+          <select data-transition-type title="Так сменится сцена по метке на полу и по кнопкам комнат" hidden>
             <option value="cut">Сразу</option>
-            <option value="blend" selected>Растворение</option>
-            <option value="move">Шаг</option>
+            <option value="blend">Растворение</option>
+            <option value="move" selected>Шаг</option>
           </select>
           <label class="field" title="Сколько длится переход">
             <span>Длительность <output data-duration-value></output></span>

@@ -6,6 +6,7 @@ import {
   type ITour,
   type TEasing,
   type TSceneTransition,
+  type TViewTarget,
 } from '@dkukushkin/3d-pano';
 
 /**
@@ -26,10 +27,12 @@ export interface ISceneControlElements {
 }
 
 /**
- * `markScene` отмечает комнату и формат сцены, которая сейчас на экране.
+ * `markScene` отмечает комнату и формат сцены, которая сейчас на экране; `readOptions` — опции перехода из
+ * панели, у шага — с точкой `point` (например, точкой нажатой метки).
  */
 export interface ISceneControls {
   markScene: (sceneId: string | null) => void;
+  readOptions: (point?: TViewTarget) => IShowSceneOptions;
 }
 
 export interface ISceneControlHandlers {
@@ -105,9 +108,8 @@ export const readShowSceneOptions = (elements: ISceneControlElements): IShowScen
 
 /**
  * Кнопки комнат (сцены тура без суффикса формата, подпись — `title`) для показа и предзагрузки, формат
- * сцены и список плавностей из словаря. Комната показывается в выбранном формате, смена формата сразу
- * показывает текущую комнату в нём, а выбор вида перехода сразу проигрывает его — переходом в другую
- * комнату.
+ * сцены и список плавностей из словаря. Комната показывается в выбранном формате, а смена формата сразу
+ * показывает текущую комнату в нём.
  */
 export const createSceneControls = (
   tour: ITour,
@@ -154,15 +156,16 @@ export const createSceneControls = (
       show(currentRoom);
     }
   });
-  elements.transitionType.addEventListener('input', () => {
-    const otherRoom = rooms.find((room) => room.id !== currentRoom);
-
-    if (otherRoom !== undefined) {
-      show(otherRoom.id);
-    }
-  });
 
   return {
+    readOptions: (point) => {
+      const options = readShowSceneOptions(elements);
+      const { transition } = options;
+
+      return point !== undefined && transition?.type === EnumTransitionType.Move
+        ? { ...options, transition: { ...transition, point } }
+        : options;
+    },
     markScene: (sceneId) => {
       const roomId = sceneId?.replace(FORMAT_SUFFIX, '') ?? null;
 

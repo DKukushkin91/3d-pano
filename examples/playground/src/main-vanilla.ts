@@ -112,6 +112,12 @@ const createMainViewer = (tour: ITour, view: IView | null): void => {
   viewer.on('sceneChange', ({ sceneId }) => {
     sceneControls.markScene(sceneId);
   });
+  viewer.on('hotspotClick', ({ hotspot, preventDefault }) => {
+    if (hotspot.target !== undefined && !preventNavigationToggle.checked) {
+      preventDefault();
+      handleShowScene(hotspot.target.scene, sceneControls.readOptions(hotspot.position));
+    }
+  });
   viewer.on('viewChange', ({ view: changedView }) => {
     lastView = changedView;
     renderReadout();
