@@ -16,11 +16,13 @@ export interface ITextureArrayLayout {
   layerHeight: number;
   layerCount: number;
   isHorizontallyRepeated: boolean;
+  isMipmapped: boolean;
 }
 
 /**
  * Повтор по горизонтали включается для эквиректангулярного изображения из одного тайла: тогда фильтрация на
- * шве ±180 смешивает левый и правый края, как и должно быть на сфере.
+ * шве ±180 смешивает левый и правый края, как и должно быть на сфере. Без MIP (пул тайлов) выделяется только
+ * нулевой уровень: уровень детализации там выбирает шейдер.
  */
 export const createTextureArray = (
   gl: WebGL2RenderingContext,
@@ -31,13 +33,17 @@ export const createTextureArray = (
   gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
   gl.texStorage3D(
     gl.TEXTURE_2D_ARRAY,
-    mipLevelCount(layout.layerWidth, layout.layerHeight),
+    layout.isMipmapped ? mipLevelCount(layout.layerWidth, layout.layerHeight) : 1,
     gl.RGBA8,
     layout.layerWidth,
     layout.layerHeight,
     layout.layerCount,
   );
-  gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(
+    gl.TEXTURE_2D_ARRAY,
+    gl.TEXTURE_MIN_FILTER,
+    layout.isMipmapped ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
+  );
   gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(
     gl.TEXTURE_2D_ARRAY,
@@ -55,13 +61,15 @@ export const createTextureArray = (
 };
 
 /**
- * Загружает изображение в левый верхний угол слоя без переворота: первая строка изображения — верх слоя,
- * как в формулах `v = 0` — зенит и `t = −1` — верх грани.
+ * Загружает изображение в слой со сдвигом `offset` (пиксели от левого верхнего угла) без переворота: первая
+ * строка изображения — верх слоя, как в формулах `v = 0` — зенит и `t = −1` — верх грани. Сдвиг нужен
+ * подложке тайлового куба: её тайлы собираются в грань.
  */
-export const uploadTextureLayer = (
+export const uploadTextureRegion = (
   gl: WebGL2RenderingContext,
   textureArray: ITextureArray,
   layerIndex: number,
+  offset: { x: number; y: number },
   image: ImageBitmap,
 ): void => {
   gl.bindTexture(gl.TEXTURE_2D_ARRAY, textureArray.texture);
@@ -70,8 +78,8 @@ export const uploadTextureLayer = (
   gl.texSubImage3D(
     gl.TEXTURE_2D_ARRAY,
     0,
-    0,
-    0,
+    offset.x,
+    offset.y,
     layerIndex,
     image.width,
     image.height,
@@ -80,6 +88,15 @@ export const uploadTextureLayer = (
     gl.UNSIGNED_BYTE,
     image,
   );
+};
+
+export const uploadTextureLayer = (
+  gl: WebGL2RenderingContext,
+  textureArray: ITextureArray,
+  layerIndex: number,
+  image: ImageBitmap,
+): void => {
+  uploadTextureRegion(gl, textureArray, layerIndex, { x: 0, y: 0 }, image);
 };
 
 export const generateTextureMipmaps = (gl: WebGL2RenderingContext, textureArray: ITextureArray): void => {

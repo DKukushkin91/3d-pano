@@ -1,5 +1,6 @@
 import type { EnumSourceType } from '../tour/tour-dictionaries';
 import type { ITextureArray } from './texture-array';
+import type { ITiledLevelUniforms } from './tile-table';
 
 /**
  * Что нужно отрисовщику, чтобы нарисовать эквиректангулярный слой: текстура тайлов, размер исходного
@@ -25,4 +26,23 @@ export interface ICubeDrawing {
   readyFaces: number;
 }
 
-export type TLayerDrawing = IEquirectDrawing | ICubeDrawing;
+/**
+ * Вид отрисовки тайлового куба: источник тот же `cube`, но рисует его своя программа.
+ */
+export const TILED_CUBE_DRAWING = 'tiled-cube';
+
+/**
+ * Тайловый куб: подложка (слой на грань, с MIP) и маска её готовых граней, пул тайлов (`null` — пул пуст),
+ * таблица сопоставления сцены и данные уровней для шейдера.
+ */
+export interface ITiledCubeDrawing {
+  type: typeof TILED_CUBE_DRAWING;
+  base: ITextureArray;
+  baseFaceSize: number;
+  readyFaces: number;
+  pool: ITextureArray | null;
+  table: { texture: WebGLTexture; width: number };
+  levels: ITiledLevelUniforms;
+}
+
+export type TLayerDrawing = IEquirectDrawing | ICubeDrawing | ITiledCubeDrawing;

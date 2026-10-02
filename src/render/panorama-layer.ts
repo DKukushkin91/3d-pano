@@ -3,7 +3,7 @@ import { textureArrayByteSize } from '../resources/texture-memory';
 import { type ITextureTile, planTextureSplit } from '../resources/texture-split-plan';
 import { CUBE_FACES, EnumSourceType, type TSourceType } from '../tour/tour-dictionaries';
 import { pixelsPerRadianForCube, pixelsPerRadianForEquirect } from '../view/view-limits';
-import type { TLayerDrawing } from './layer-drawing';
+import type { IEquirectDrawing, TLayerDrawing } from './layer-drawing';
 import {
   type ITextureArray,
   createTextureArray,
@@ -54,7 +54,7 @@ const uploadTiles = async (
 };
 
 const createEquirectLayer = (gl: WebGL2RenderingContext, maxTextureSize: number): IPanoramaLayer => {
-  let current: TLayerDrawing | null = null;
+  let current: IEquirectDrawing | null = null;
   let isDisposed = false;
 
   const addImage = async (_layerIndex: number, image: ImageBitmap): Promise<void> => {
@@ -65,6 +65,7 @@ const createEquirectLayer = (gl: WebGL2RenderingContext, maxTextureSize: number)
       layerHeight: plan.tileHeight,
       layerCount: plan.tiles.length,
       isHorizontallyRepeated: plan.columns === 1,
+      isMipmapped: true,
     });
     const placements = plan.tiles.map((tile, layerIndex) => ({ tile, layerIndex }));
 
@@ -92,8 +93,7 @@ const createEquirectLayer = (gl: WebGL2RenderingContext, maxTextureSize: number)
     addImage,
     drawing: () => current,
     isComplete: () => current !== null,
-    pixelsPerRadian: () =>
-      current?.type === EnumSourceType.Equirect ? pixelsPerRadianForEquirect(current.imageWidth) : null,
+    pixelsPerRadian: () => (current === null ? null : pixelsPerRadianForEquirect(current.imageWidth)),
     byteSize: () => (current === null ? 0 : textureArrayByteSize(current.textureArray)),
     dispose: () => {
       isDisposed = true;
@@ -126,6 +126,7 @@ const createCubeLayer = (gl: WebGL2RenderingContext, maxTextureSize: number): IP
       layerHeight: plan.tileHeight,
       layerCount: CUBE_FACES.length * plan.tiles.length,
       isHorizontallyRepeated: false,
+      isMipmapped: true,
     });
 
     return textureArray;
